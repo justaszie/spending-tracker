@@ -16,4 +16,5 @@ api/.env
 supabase
 
 data/
+api/app/test_statement.xlsx
 api/throwaway/

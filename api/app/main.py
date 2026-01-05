@@ -7,31 +7,28 @@ from typing import Annotated
 from uuid import UUID
 
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Form, HTTPException, Request, UploadFile
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import JSONResponse
-from supabase import Client, create_client
-from sqlmodel import create_engine, SQLModel, Session
+from sqlmodel import create_engine, SQLModel
+from supabase import create_client
 
+from app.deps import get_file_storage, DBDependency, FSDependency
 from app.jobs import IngestJob, create_new_job, load_job
-from app.project_types import Bank, ConfigException
+from app.project_types import Bank
 from app.file_storage import FileStorage
 from app.orchestration import run_job
 
-def get_db_session(request: Request):
-    with Session(request.app.state.db_engine) as session:
-        yield session
 
-def get_file_storage(request: Request):
-    return request.app.state.file_storage
+class ConfigException(Exception):
+    pass
 
-def get_supabase_client() -> Client:
-    supabase_url: str | None = os.environ.get("SUPABASE_URL")
-    supabase_admin_key: str | None = os.environ.get("SUPABASE_ADMIN_KEY")
-    if not supabase_url or not supabase_admin_key:
-        raise ConfigException("Supabase url and / or admin key missing in config")
-
-    supabase: Client = create_client(supabase_url, supabase_admin_key)
-    return supabase
 
 # Instantiating auth service, storage and logging config as part of app startup
 @asynccontextmanager
@@ -44,13 +41,18 @@ async def lifespan(app: FastAPI):  # type: ignore
     SQLModel.metadata.create_all(engine)
     app.state.db_engine = engine
 
-    app.state.supabase = get_supabase_client()
+    supabase_url: str | None = os.environ.get("SUPABASE_URL")
+    supabase_admin_key: str | None = os.environ.get("SUPABASE_ADMIN_KEY")
+    if not supabase_url or not supabase_admin_key:
+        raise ConfigException("Supabase url and / or admin key missing in config")
+    app.state.supabase = create_client(supabase_url, supabase_admin_key)
     logger.info("Supabase Client Initialized")
 
     app.state.file_storage = FileStorage(app.state.supabase)
     logger.info("File Storage Initialized")
 
     yield
+
 
 def configure_logging() -> None:
     logging.basicConfig(
@@ -61,6 +63,7 @@ def configure_logging() -> None:
     )
 
     logging.getLogger("googleapiclient").setLevel(logging.ERROR)
+
 
 load_dotenv()
 
@@ -77,10 +80,11 @@ def root() -> "str":
 
 @app.post("/ingest-job", status_code=202)
 def create_job(
+    request: Request,
     statement_file: UploadFile,
     bank: Annotated[Bank, Form()],
-    db_session: Annotated[Session, Depends(get_db_session)],
-    file_storage: Annotated[FileStorage, Depends(get_file_storage)],
+    db_session: DBDependency,
+    file_storage: FSDependency,
     background_tasks: BackgroundTasks,
 ) -> JSONResponse:
     job = IngestJob(bank=bank)
@@ -96,20 +100,26 @@ def create_job(
 
     db_entry = create_new_job(new_job=job, session=db_session)
 
-    background_tasks.add_task(run_job, job_id=str(db_entry.job_id))
+    background_tasks.add_task(
+        run_job,
+        job_id=str(db_entry.job_id),
+        db_engine=request.app.state.db_engine,
+        file_storage=get_file_storage(request)
+    )
 
     return JSONResponse({"job_id": str(db_entry.job_id), "status": db_entry.status})
 
+
 # TODO - Models and validation for returning jobs
 @app.get("/ingest-job/{job_id}")
-def get_job(job_id: UUID,
-            db_session: Annotated[Session, Depends(get_db_session)]
-) -> JSONResponse:
+def get_job(job_id: UUID, db_session: DBDependency) -> JSONResponse:
     job = load_job(job_id, db_session)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    return JSONResponse({
-        "job_id": str(job.job_id),
-        "status": job.status,
-    })
+    return JSONResponse(
+        {
+            "job_id": str(job.job_id),
+            "status": job.status,
+        }
+    )

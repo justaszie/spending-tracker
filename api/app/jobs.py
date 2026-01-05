@@ -39,8 +39,8 @@ def create_new_job(new_job: IngestJob, session: Session) -> IngestJob:
         ) from e
 
 
-def load_job(id: uuid.UUID, session: Session) -> IngestJob | None:
-    job = session.get(IngestJob, id)
+def load_job(job_id: uuid.UUID, session: Session) -> IngestJob | None:
+    job = session.get(IngestJob, job_id)
     return job
 
 

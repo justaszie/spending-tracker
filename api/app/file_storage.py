@@ -1,6 +1,7 @@
 # Integrate with supabase file storage
 import os
-from typing import Any, BinaryIO
+from io import BytesIO
+from typing import Any, BinaryIO, TextIO
 from uuid import UUID
 
 from .project_types import Bank
@@ -32,6 +33,6 @@ class FileStorage:
         self,
         filepath: str,
         bucket: str = os.environ.get("STATEMENTS_BUCKET"),
-    ) -> BinaryIO:
-        with open("data/test_statement.xlsx", "b+r") as statement:
-            return statement
+    ) -> BytesIO:
+        with open("app/test_statement.xlsx", "rb") as statement:
+            return BytesIO(statement.read())
