@@ -9,5 +9,11 @@ wheels/
 # Virtual environments
 .venv
 
+# Environment variables
+api/.env
+
+# Supabase
+supabase
+
 data/
 api/throwaway/
