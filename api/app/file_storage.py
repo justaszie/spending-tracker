@@ -1,4 +1,5 @@
 # Integrate with supabase file storage
+import datetime as dt
 import os
 from io import BytesIO
 from typing import Any, BinaryIO, TextIO
@@ -15,7 +16,8 @@ class FileStorage:
         self, user_id: UUID, job_id: UUID, bank: Bank, filename: str, file: BinaryIO
     ) -> str:
         bucket: str = os.environ.get("STATEMENTS_BUCKET")
-        file_path = f"{user_id}/{bank}/{job_id}_{filename}"
+        timestamp = dt.datetime.now().isoformat()
+        file_path = f"{user_id}/{bank}/{timestamp}_{filename}"
 
         file_data: bytes = file.read()
         if not file_data:
@@ -34,5 +36,9 @@ class FileStorage:
         filepath: str,
         bucket: str = os.environ.get("STATEMENTS_BUCKET"),
     ) -> BytesIO:
-        with open("app/test_statement.xlsx", "rb") as statement:
-            return BytesIO(statement.read())
+        response = (
+            self._storage_client.storage
+            .from_(bucket)
+            .download(filepath)
+        )
+        return BytesIO(response)
