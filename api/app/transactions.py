@@ -1,11 +1,11 @@
 import datetime as dt
+from decimal import Decimal
 from dataclasses import dataclass
+from enum import Enum
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
-@dataclass
-class Transaction:
-    started_at: dt.datetime
-    amount_cents: int
-    currency: str
 
 

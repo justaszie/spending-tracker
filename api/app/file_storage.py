@@ -12,6 +12,7 @@ class FileStorage:
     def __init__(self, storage_client: Any):
         self._storage_client = storage_client
 
+    # Make this more generic. The caller will provide the specific bucket and file_path
     def upload_statement(
         self, user_id: UUID, job_id: UUID, bank: Bank, filename: str, file: BinaryIO
     ) -> str:
