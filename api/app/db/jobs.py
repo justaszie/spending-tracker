@@ -5,6 +5,8 @@ import uuid
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Field, Session, SQLModel
 
+from app.project_types import Bank
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +15,7 @@ class IngestJob(SQLModel, table=True):
 
     job_id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     bank: str = Field(nullable=False)
-    #TODO: review models. file_path should only be null before we upload the file but we don't save jobs without file paths in DB
+    #TODO: We should not create job without file_path. Review models
     file_path: str | None = Field(default=None)
     created_at: dt.datetime = Field(nullable=False, default_factory=dt.datetime.now)
     started_at: dt.datetime | None = Field(nullable=True)

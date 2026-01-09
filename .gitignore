@@ -18,4 +18,5 @@ supabase
 data/
 api/app/test_statement.xlsx
 api/throwaway/
+api/test_output.csv
 .vscode

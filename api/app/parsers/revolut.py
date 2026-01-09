@@ -1,44 +1,8 @@
-import datetime as dt
-from decimal import Decimal
-from enum import Enum
-from typing import Any, BinaryIO, Callable
+from typing import Any, BinaryIO
 
 import openpyxl
-from pydantic import BaseModel
 
-from app.project_types import Bank
-
-
-class Side(Enum):
-    DEBIT = "Debit"
-    CREDIT = "Credit"
-
-
-class TxnSource(Enum):
-    CASH = "Cash"
-    SWEDBANK = "Swedbank"
-    REVOLUT = "Revolut"
-
-
-# TODO: Convert to base model for automated validation
-# allow extras so that we can add non-validate fields like dedup_hash
-# Purpose of this model should be make sure that extracted and cleaned transaction fits the expected model. I.e. parser done its job properly
-# the model does not expect any enhancments like dedup hash at this point. This is just orchestrator <--> Parser boundary
-class ParsedTransaction(BaseModel):
-    transaction_date: dt.datetime
-    counterparty: str
-    orig_amount: Decimal
-    orig_currency: str
-    side: Side
-    note: str | None = None
-
-
-ParserFN = Callable[[BinaryIO], list[ParsedTransaction]]
-
-
-def get_parser(bank: Bank) -> ParserFN | None:
-    if bank == "revolut":
-        return parse_revolut_statement
+from app.project_types import ParsedTransaction, TxnSource
 
 
 ATTRIBUTES_TO_FILE_HEADERS = {
@@ -64,7 +28,7 @@ VALUES_TO_EXCLUDE = {
     },
 }
 
-TRANSACTION_SOURCE = "Revolut"
+TRANSACTION_SOURCE = TxnSource.REVOLUT
 
 
 # TODO: consider typed dict or even BaseModel for raw transactions for more precision
@@ -133,6 +97,9 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
     # TODO: Avoid magic string value - maybe set up Enum for raw data values
     if raw_transaction["Type"].upper() == "CARD REFUND":
         clean_transaction["note"] = f"Refund from {clean_transaction['counterparty']}"
+
+
+    clean_transaction["source"] = TRANSACTION_SOURCE
 
     return clean_transaction
 

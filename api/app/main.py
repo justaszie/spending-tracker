@@ -20,7 +20,7 @@ from sqlmodel import create_engine, SQLModel
 from supabase import create_client
 
 from app.deps import get_file_storage, DBDependency, FSDependency
-from app.jobs import IngestJob, create_new_job, load_job
+from app.db.jobs import IngestJob, create_new_job, load_job
 from app.project_types import Bank
 from app.file_storage import FileStorage
 from app.orchestration import run_job
@@ -87,6 +87,8 @@ def create_job(
     file_storage: FSDependency,
     background_tasks: BackgroundTasks,
 ) -> JSONResponse:
+    # TODO: create a simple Job instance at first. Not real ORM instance.
+    # This way we can validate that bank is valid before we try to create the DB instance
     job = IngestJob(bank=bank)
 
     filepath = file_storage.upload_statement(
