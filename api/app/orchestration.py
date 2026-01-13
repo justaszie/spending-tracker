@@ -1,3 +1,5 @@
+import datetime as dt
+import logging
 from uuid import UUID
 
 import pandas as pd
@@ -5,47 +7,82 @@ from sqlalchemy import Engine
 from sqlmodel import Session
 
 from app.file_storage import FileStorage
-from app.db.jobs import load_job
+from app.db.jobs import load_job, update_job
+from app.db.transactions import get_existing_dedup_keys, insert_transactions, Transaction
 from app.parsers.registry import get_parser
-from app.project_types import ParsedTransaction
-from app.transformation import enhance_transactions
+from app.project_types import JobStatus, ParsedTransaction
+from app.enrichment import enrich_transactions
+
+logger = logging.getLogger(__name__)
 
 
+def run_job(job_id: str, db: Engine, file_storage: FileStorage) -> None:
+    # 1. Load job info
+    job_uuid = UUID(job_id)
+    job = load_job(job_uuid, db)
+    if not job:
+        return
 
-def run_job(job_id: str, db_engine: Engine, file_storage: FileStorage) -> None:
-    with Session(db_engine) as session:
-        # 1. Load job info
-        job = load_job(UUID(job_id), session)
-        if not job:
-            return
+    logger.log(logging.INFO, f"### Starting Job: {job.id} for {job.statement_source}")
+    job.started_at = dt.datetime.now()
+    job.status = JobStatus.RUNNING
+    update_job(updated_job=job, db=db)
 
-        print(f"### Starting Job: {job.job_id} for {job.bank}")
-        # Load the statement from file storage
-        statement = file_storage.load_file(job.file_path)
+    # Load the statement from file storage
+    statement = file_storage.load_file(job.file_path)
 
-        # Find the right parser
-        parser = get_parser(job.bank)
+    # Find the right parser
+    parser = get_parser(job.statement_source)
 
-        # TODO: how to deal when right parser not found
-        # Log it and update job record status=failed, reason=technical_error
-        if not parser:
-            return
+    # TODO: how to deal when right parser not found
+    # Log it and update job record status=failed, reason=technical_error
+    if not parser:
+        return
 
-        # 4. Get parsed transactions
-        parsed_txns: list[ParsedTransaction] = parser(statement)
+    # 4. Get parsed transactions
+    parsed_txns: list[ParsedTransaction] = parser(statement)
 
-        # TODO: TESTING to observe data
-        df = pd.DataFrame(txn.model_dump() for txn in parsed_txns)
-        df.to_csv('test_output.csv')
+    # TODO: TESTING to observe data
+    df = pd.DataFrame(txn.model_dump() for txn in parsed_txns)
+    df.to_csv('test_output_parsed.csv')
 
-        # 5. Enhance transactions to match the DB schema (EUR, Categories, Dedup key)
-        enhanced = enhance_transactions(parsed_txns)
+    # 5. Enhance transactions to match the DB schema (EUR, Categories, Dedup key)
+    enhanced = enrich_transactions(parsed_txns, job_id=job_uuid)
+    df = pd.DataFrame(txn.model_dump() for txn in enhanced)
+    df.to_csv('test_output_enriched.csv')
 
-        # 6. Insert new transactions
-        #TODO: Check how to convert the enum values to actual strings before inserting
+    # 6. Deduplicate
+    # TODO: potentially extract to dedup function - TBD what is a good structure of function, mutating?
 
-        # 7. Update job status in DB.
+    new: list[Transaction] = []
+    duplicates: list[Transaction] = []
 
-        # 8. Log the results
-        print('### PARSED TRANSACTIONS ###')
-        # print(parse_revolut_statement(Path("abc")))
+    # Using set for O(1) lookups
+    existing_dedup_keys = set(get_existing_dedup_keys(db=db))
+    for transaction in enhanced:
+        if transaction.dedup_key not in existing_dedup_keys:
+            new.append(transaction)
+        else:
+            duplicates.append(transaction)
+
+    # TODO: TESTING to observe data
+    df = pd.DataFrame(txn.model_dump() for txn in duplicates)
+    df.to_csv('test_duplicates.csv')
+
+    # 7. Insert new transactions
+    #TODO: Check IF we need to convert the enum values to actual strings before inserting and how
+    insert_transactions(transactions=new, db=db)
+    logger.log(logging.INFO, f"Inserted {len(new)} new transactions | {len(duplicates)} duplicates")
+
+    # 8. Update job status in DB.
+    job.finished_at = dt.datetime.now()
+    #TODO: Define how do we know if it fails and add update to failure status / reason
+    # exception is one of the triggers but maybe something else
+    job.status = JobStatus.COMPLETE
+    job.ingested_txn_count = len(new)
+    job.duplicate_txn_count = len(duplicates)
+
+    # TODO: call update_job
+    update_job(updated_job=job, db=db)
+
+    # 9. Log the results

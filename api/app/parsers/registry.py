@@ -2,14 +2,14 @@
 from typing import BinaryIO, Callable
 
 from app.parsers.revolut import parse_revolut_statement
-from app.project_types import Bank, ParsedTransaction
+from app.project_types import StatementSource, ParsedTransaction
 
 ParserFN = Callable[[BinaryIO], list[ParsedTransaction]]
 
-_registry: dict[Bank, ParserFN] = {
+_registry: dict[StatementSource, ParserFN] = {
     "revolut": parse_revolut_statement,
     # "swedbank": ...,
 }
 
-def get_parser(bank: Bank) -> ParserFN | None:
-    return _registry.get(bank)
+def get_parser(statement_source: StatementSource) -> ParserFN | None:
+    return _registry.get(statement_source)

@@ -1,3 +1,4 @@
+from hashlib import sha256
 from typing import Any, BinaryIO
 
 import openpyxl
@@ -6,10 +7,11 @@ from app.project_types import ParsedTransaction, TxnSource
 
 
 ATTRIBUTES_TO_FILE_HEADERS = {
-    "transaction_date": "Started Date",
+    "transaction_datetime": "Started Date",
     "counterparty": "Description",
     "orig_amount": "Amount",
     "orig_currency": "Currency",
+    "balance_after": "Balance" # Only used for dedup key, not used in return transaction object
 }
 
 VALUES_TO_INCLUDE = {
@@ -77,6 +79,8 @@ def clean_raw_transactions(raw_txns: list[dict[str, Any]]) -> list[ParsedTransac
     transactions = []
     for raw_txn in raw_txns:
         transformed = clean_raw_transaction(raw_txn)
+        dedup_key = calculate_dedup_key(transformed)
+        transformed["dedup_key"] = dedup_key
         transactions.append(ParsedTransaction.model_validate(transformed))
 
     return transactions
@@ -86,6 +90,9 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
     clean_transaction = {
         attribute: raw_transaction[header]
         for attribute, header in ATTRIBUTES_TO_FILE_HEADERS.items()
+        # TODO : refactor to avoid special cases. This was added because some transactions don't have balance in the statement
+        # Always add attribute key. If data is not available, add None so that we avoid KeyError when we try to access
+        if raw_transaction.get(header)
     }
 
     clean_transaction["side"] = (
@@ -111,3 +118,23 @@ def parse_revolut_statement(statement: BinaryIO) -> list[ParsedTransaction]:
     clean_txns = clean_raw_transactions(filtered)
 
     return clean_txns
+
+# TODO - dedup key logic should be extracted. We should just pass the data for the key
+# maybe put in utils.py or something
+def calculate_dedup_key(transaction: dict[str, Any]) -> str:
+    # The combination of transaction datetime, the counterparty/description and
+    # the original amount is reliable enough to differentiate transactions.
+    # although not risk-free as some sources give only date and note datetime
+    # for tranasctions.
+    dedup_data = (
+        f"{transaction["transaction_datetime"]}_"
+        f"{transaction["counterparty"]}_"
+        f"{transaction["orig_amount"]}_"
+        f"{transaction["balance_after"] if transaction.get("balance_after") else ''}"
+    )
+
+    hash_algo = sha256()
+    hash_algo.update(dedup_data.encode())
+
+    return hash_algo.hexdigest()
+

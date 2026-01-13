@@ -16,12 +16,13 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from sqlmodel import create_engine, SQLModel
 from supabase import create_client
 
 from app.deps import get_file_storage, DBDependency, FSDependency
 from app.db.jobs import IngestJob, create_new_job, load_job
-from app.project_types import Bank
+from app.project_types import StatementSource
 from app.file_storage import FileStorage
 from app.orchestration import run_job
 
@@ -78,50 +79,51 @@ def root() -> "str":
     return "HELLO FROM SPENDING TRACKER"
 
 
+# class APIGetJobModel(BaseModel):
+
+
 @app.post("/ingest-job", status_code=202)
 def create_job(
     request: Request,
     statement_file: UploadFile,
-    bank: Annotated[Bank, Form()],
-    db_session: DBDependency,
+    statement_source: Annotated[StatementSource, Form()],
+    db: DBDependency,
     file_storage: FSDependency,
     background_tasks: BackgroundTasks,
 ) -> JSONResponse:
-    # TODO: create a simple Job instance at first. Not real ORM instance.
-    # This way we can validate that bank is valid before we try to create the DB instance
-    job = IngestJob(bank=bank)
+    # The API consumer may not provide filename for the uploaded data
+    file_name = statement_file.filename or f"{statement_source.value}_statement"
 
-    filepath = file_storage.upload_statement(
-        user_id=os.environ.get("TEST_USER_ID"),
-        job_id=job.job_id,
-        bank=bank,
-        filename=statement_file.filename,
+    file_path = file_storage.upload_statement(
+        user_id=UUID(os.environ.get("TEST_USER_ID")),
+        statement_source=statement_source,
+        filename=file_name,
         file=statement_file.file,
     )
-    job.file_path = filepath
 
-    db_entry = create_new_job(new_job=job, session=db_session)
+    job = IngestJob(statement_source=statement_source, file_path=file_path)
+    db_entry = create_new_job(new_job=job, db=db)
 
     background_tasks.add_task(
         run_job,
-        job_id=str(db_entry.job_id),
-        db_engine=request.app.state.db_engine,
+        job_id=str(db_entry.id),
+        db=db,
         file_storage=get_file_storage(request)
     )
 
-    return JSONResponse({"job_id": str(db_entry.job_id), "status": db_entry.status})
+    return JSONResponse({"job_id": str(db_entry.id), "status": db_entry.status})
 
 
-# TODO - Models and validation for returning jobs
+# TODO - Models and validation for returning job data
 @app.get("/ingest-job/{job_id}")
-def get_job(job_id: UUID, db_session: DBDependency) -> JSONResponse:
-    job = load_job(job_id, db_session)
+def get_job(job_id: UUID, db: DBDependency) -> JSONResponse:
+    job = load_job(job_id, db)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
     return JSONResponse(
         {
-            "job_id": str(job.job_id),
+            "job_id": str(job.id),
             "status": job.status,
         }
     )
