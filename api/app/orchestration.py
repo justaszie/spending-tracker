@@ -70,7 +70,6 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage) -> None:
     df.to_csv('test_duplicates.csv')
 
     # 7. Insert new transactions
-    #TODO: Check IF we need to convert the enum values to actual strings before inserting and how
     insert_transactions(transactions=new, db=db)
     logger.log(logging.INFO, f"Inserted {len(new)} new transactions | {len(duplicates)} duplicates")
 
@@ -82,7 +81,6 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage) -> None:
     job.ingested_txn_count = len(new)
     job.duplicate_txn_count = len(duplicates)
 
-    # TODO: call update_job
     update_job(updated_job=job, db=db)
 
-    # 9. Log the results
+    logger.log(logging.INFO, f"### Completed Job: {job.id} for {job.statement_source}")
