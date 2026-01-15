@@ -25,8 +25,9 @@ COFFESHOP_MERCHANTS = {
     "taste map",
     "uab agerosa",
     "vero cafe",
+    "Totorių gatvė", # Huracan totoriu
 }
-BUSINESS_LUNCH_MERCHANTS = {"aloha", "berneliu uzeiga", "bernelių užeiga"}
+BUSINESS_LUNCH_MERCHANTS = {"aloha", "berneliu uzeiga", "bernelių užeiga", "Ministerija Dienos pietūs", "A. Taraškienės firma 3515"}
 STREAMING_MERCHANTS = {"disney", "netflix", "spotify", "youtube"}
 FOOD_DELIVERY_MERCHANTS = {"bolt food", "wolt"}
 RESTAURANT_MERCHANTS = {
@@ -45,6 +46,7 @@ RESTAURANT_MERCHANTS = {
     "Asaki",
     "Beigelistai",
     "Desertas Islandijos G3",
+    "Jūsų Šnekutis",
 }
 
 
