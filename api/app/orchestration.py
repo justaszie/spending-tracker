@@ -47,19 +47,19 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage) -> None:
     df.to_csv('test_output_parsed.csv')
 
     # 5. Enhance transactions to match the DB schema (EUR, Categories, Dedup key)
-    enhanced = enrich_transactions(parsed_txns, job_id=job_uuid)
-    df = pd.DataFrame(txn.model_dump() for txn in enhanced)
+    enriched = enrich_transactions(parsed_txns, job_id=job_uuid)
+    df = pd.DataFrame(txn.model_dump() for txn in enriched)
     df.to_csv('test_output_enriched.csv')
 
-    # 6. Deduplicate
-    # TODO: potentially extract to dedup function - TBD what is a good structure of function, mutating?
+    # TODO: potentially extract to dedup function(s)
+    # - TBD what is a good structure of function, mutating?
 
     new: list[Transaction] = []
     duplicates: list[Transaction] = []
 
     # Using set for O(1) lookups
     existing_dedup_keys = set(get_existing_dedup_keys(db=db))
-    for transaction in enhanced:
+    for transaction in enriched:
         if transaction.dedup_key not in existing_dedup_keys:
             new.append(transaction)
         else:

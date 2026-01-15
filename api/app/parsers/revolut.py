@@ -11,15 +11,16 @@ ATTRIBUTES_TO_FILE_HEADERS = {
     "counterparty": "Description",
     "orig_amount": "Amount",
     "orig_currency": "Currency",
-    "balance_after": "Balance" # Only used for dedup key, not used in return transaction object
+    "transaction_completed_datetime": "Completed Date",
+    "balance_after": "Balance"
 }
 
 VALUES_TO_INCLUDE = {
-    "Product": {"Current"},
+    "Product": {"CURRENT"},
+    "State": {"COMPLETED"},
 }
 VALUES_TO_EXCLUDE = {
     "Type": {"CASHBACK", "EXCHANGE", "TOPUP", "FEE", "TRADE"},
-    "State": {"REVERTED"},
     "Description": {
         "TO GBP",
         "TO GBP SAVINGS",
@@ -49,8 +50,10 @@ def get_raw_transactions(statement: BinaryIO) -> list[dict[str, Any]]:
 
         # TODO: Edge cases: empty rows, then non-empy rows after empty ones, etc.
         raw_txns = [
-            {header: value for header, value in zip(headers, row)} for row in rows
+            {header: value for header, value in zip(headers, row)}
+            for row in rows
         ]
+
         return raw_txns
     finally:
         workbook.close()
@@ -65,11 +68,11 @@ def filter_raw_transactions(transactions: list[dict[str, Any]]) -> list[dict[str
 # This would add observability - which rule discarded a particular tranasction
 def is_relevant_transaction(transaction: dict[str, Any]) -> bool:
     for column, values in VALUES_TO_INCLUDE.items():
-        if transaction[column] not in values:
+        if transaction[column].upper() not in values:
             return False
 
     for column, values in VALUES_TO_EXCLUDE.items():
-        if transaction[column] in values:
+        if transaction[column].upper() in values:
             return False
 
     return True
@@ -79,8 +82,10 @@ def clean_raw_transactions(raw_txns: list[dict[str, Any]]) -> list[ParsedTransac
     transactions = []
     for raw_txn in raw_txns:
         transformed = clean_raw_transaction(raw_txn)
+
         dedup_key = calculate_dedup_key(transformed)
         transformed["dedup_key"] = dedup_key
+
         transactions.append(ParsedTransaction.model_validate(transformed))
 
     return transactions
@@ -88,11 +93,8 @@ def clean_raw_transactions(raw_txns: list[dict[str, Any]]) -> list[ParsedTransac
 
 def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
     clean_transaction = {
-        attribute: raw_transaction[header]
+        attribute: raw_transaction.get(header)
         for attribute, header in ATTRIBUTES_TO_FILE_HEADERS.items()
-        # TODO : refactor to avoid special cases. This was added because some transactions don't have balance in the statement
-        # Always add attribute key. If data is not available, add None so that we avoid KeyError when we try to access
-        if raw_transaction.get(header)
     }
 
     clean_transaction["side"] = (
@@ -122,15 +124,13 @@ def parse_revolut_statement(statement: BinaryIO) -> list[ParsedTransaction]:
 # TODO - dedup key logic should be extracted. We should just pass the data for the key
 # maybe put in utils.py or something
 def calculate_dedup_key(transaction: dict[str, Any]) -> str:
-    # The combination of transaction datetime, the counterparty/description and
-    # the original amount is reliable enough to differentiate transactions.
-    # although not risk-free as some sources give only date and note datetime
-    # for tranasctions.
+    #TODO: Normalize the values - lower / upper, strip.
     dedup_data = (
         f"{transaction["transaction_datetime"]}_"
+        f"{transaction["transaction_completed_datetime"]}_"
         f"{transaction["counterparty"]}_"
         f"{transaction["orig_amount"]}_"
-        f"{transaction["balance_after"] if transaction.get("balance_after") else ''}"
+        f"{transaction["balance_after"]}_"
     )
 
     hash_algo = sha256()
