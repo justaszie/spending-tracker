@@ -3,7 +3,7 @@ import re
 from decimal import Decimal
 from uuid import UUID
 
-from currency_converter import CurrencyConverter, RateNotFoundError
+from currency_converter import CurrencyConverter, ECB_URL, RateNotFoundError
 
 from app.db.transactions import Transaction
 from app.project_types import ParsedTransaction
@@ -52,12 +52,12 @@ RESTAURANT_MERCHANTS = {
 
 def enrich_transactions(transactions: list[ParsedTransaction], job_id: UUID) -> list[Transaction]:
     result = []
-
+    converter = CurrencyConverter(ECB_URL)
     for transaction in transactions:
         # 1. convert to eur
         try:
             eur_amount = get_eur_amount(
-                transaction.transaction_datetime, transaction.orig_currency, transaction.orig_amount
+                converter,transaction.transaction_datetime, transaction.orig_currency, transaction.orig_amount
             )
         # If there are issues with the converter module, we use null eur amount
         except Exception:
@@ -210,7 +210,7 @@ def _is_hot_drinks(transaction: ParsedTransaction):
 
 
 def get_eur_amount(
-    txn_date: dt.date, orig_currency: str, orig_amount: Decimal
+    converter: CurrencyConverter, txn_date: dt.date, orig_currency: str, orig_amount: Decimal,
 ) -> Decimal | None:
     MAX_RETRIES = 10
 
@@ -227,10 +227,12 @@ def get_eur_amount(
             return None
 
         try:
-            eur_amount = CurrencyConverter().convert(
+            eur_amount = converter.convert(
                 orig_amount, orig_currency, "EUR", date=exchange_rate_date
             )
         except RateNotFoundError:
+            if(orig_currency == 'GBP'):
+                print(f"CAN'T FIND EURGBP. Trying date {exchange_rate_date}.")
             exchange_rate_date = exchange_rate_date - dt.timedelta(days=1)
             retry_attempts += 1
 
