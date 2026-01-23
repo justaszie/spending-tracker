@@ -13,6 +13,7 @@ from app.db.transactions import (
     insert_transactions,
     Transaction,
 )
+from app.deps import AppSettings
 from app.parsers.registry import get_parser
 from app.project_types import JobStatus, ParsedTransaction
 from app.enrichment import enrich_transactions
@@ -20,7 +21,7 @@ from app.enrichment import enrich_transactions
 logger = logging.getLogger(__name__)
 
 
-def run_job(job_id: str, db: Engine, file_storage: FileStorage) -> None:
+def run_job(job_id: str, db: Engine, file_storage: FileStorage, app_settings: AppSettings) -> None:
     # 1. Load job info
     job_uuid = UUID(job_id)
     job = load_job(job_uuid, db)
@@ -33,7 +34,7 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage) -> None:
     update_job(updated_job=job, db=db)
 
     # Load the statement from file storage
-    statement = file_storage.load_file(job.file_path)
+    statement = file_storage.load_file(job.file_path, bucket=app_settings.statements_bucket)
 
     # Find the right parser
     parser = get_parser(job.statement_source)

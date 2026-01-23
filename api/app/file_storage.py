@@ -1,6 +1,5 @@
 # Integrate with supabase file storage
 import datetime as dt
-import os
 from io import BytesIO
 from typing import Any, BinaryIO
 from uuid import UUID
@@ -15,12 +14,12 @@ class FileStorage:
     # Make this more generic. The caller will provide the specific bucket and file_path
     def upload_statement(
         self,
-        user_id: UUID,
         statement_source: StatementSource,
         filename: str,
         file: BinaryIO,
+        bucket: str,
+        user_id: UUID
     ) -> str:
-        bucket: str = os.environ.get("STATEMENTS_BUCKET")
         timestamp = dt.datetime.now().isoformat()
         file_path = f"{user_id}/{statement_source.value}/{timestamp}_{filename}"
 
@@ -39,7 +38,7 @@ class FileStorage:
     def load_file(
         self,
         filepath: str,
-        bucket: str = os.environ.get("STATEMENTS_BUCKET"),
+        bucket: str,
     ) -> BytesIO:
         response = self._storage_client.storage.from_(bucket).download(filepath)
         return BytesIO(response)

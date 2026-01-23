@@ -2,9 +2,9 @@ from typing import Annotated
 
 from fastapi import Depends, Request
 from sqlalchemy import Engine
-from sqlmodel import Session
 
 from app.file_storage import FileStorage
+from app.config import AppSettings
 
 
 def get_db_engine(request: Request):
@@ -14,6 +14,12 @@ def get_db_engine(request: Request):
 def get_file_storage(request: Request) -> FileStorage:
     return request.app.state.file_storage
 
+def get_settings() -> AppSettings:
+    # Ignoring type checking. Type checker expects config variables passed as args
+    # but they are being read from environment.
+    return AppSettings() # type: ignore
+
 
 DBDependency = Annotated[Engine, Depends(get_db_engine)]
 FSDependency = Annotated[FileStorage, Depends(get_file_storage)]
+SettingsDependency = Annotated[AppSettings, Depends(get_settings)]

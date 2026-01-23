@@ -1,8 +1,5 @@
-import json
 import logging
-import os
 from contextlib import asynccontextmanager
-from dotenv import load_dotenv
 from typing import Annotated
 from uuid import UUID
 
@@ -12,15 +9,18 @@ from fastapi import (
     FastAPI,
     Form,
     HTTPException,
-    Request,
     UploadFile,
 )
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from sqlmodel import create_engine, SQLModel
 from supabase import create_client
 
-from app.deps import get_file_storage, DBDependency, FSDependency
+from app.deps import (
+    SettingsDependency,
+    get_settings,
+    DBDependency,
+    FSDependency,
+)
 from app.db.jobs import IngestJob, create_new_job, load_job
 from app.project_types import StatementSource
 from app.file_storage import FileStorage
@@ -34,7 +34,8 @@ class ConfigException(Exception):
 # Instantiating auth service, storage and logging config as part of app startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore
-    connection_string = os.environ.get("DB_CONNECTION_STRING")
+    app_settings = get_settings()
+    connection_string = app_settings.db_connection_string
     if not connection_string:
         logger.error("Missing database connection string in environment")
         raise Exception("Missing database connection string in environment")
@@ -42,10 +43,8 @@ async def lifespan(app: FastAPI):  # type: ignore
     SQLModel.metadata.create_all(engine)
     app.state.db_engine = engine
 
-    supabase_url: str | None = os.environ.get("SUPABASE_URL")
-    supabase_admin_key: str | None = os.environ.get("SUPABASE_ADMIN_KEY")
-    if not supabase_url or not supabase_admin_key:
-        raise ConfigException("Supabase url and / or admin key missing in config")
+    supabase_url = app_settings.supabase_url
+    supabase_admin_key = app_settings.supabase_admin_key
     app.state.supabase = create_client(supabase_url, supabase_admin_key)
     logger.info("Supabase Client Initialized")
 
@@ -66,8 +65,6 @@ def configure_logging() -> None:
     logging.getLogger("googleapiclient").setLevel(logging.ERROR)
 
 
-load_dotenv()
-
 configure_logging()
 logger = logging.getLogger(__name__)
 
@@ -81,28 +78,33 @@ def root() -> "str":
 
 @app.post("/ingest-job", status_code=202)
 def create_job(
-    request: Request,
     statement_file: UploadFile,
     statement_source: Annotated[StatementSource, Form()],
     db: DBDependency,
     file_storage: FSDependency,
+    app_settings: SettingsDependency,
     background_tasks: BackgroundTasks,
 ) -> JSONResponse:
     # Filename is not mandatory for API consumer to provide. In this case we generate it.
     file_name = statement_file.filename or f"{statement_source.value}_statement"
 
     file_path = file_storage.upload_statement(
-        user_id=UUID(os.environ.get("TEST_USER_ID")),
         statement_source=statement_source,
         filename=file_name,
         file=statement_file.file,
+        user_id=app_settings.test_user_id,
+        bucket=app_settings.statements_bucket,
     )
 
     job = IngestJob(statement_source=statement_source, file_path=file_path)
     db_entry = create_new_job(new_job=job, db=db)
 
     background_tasks.add_task(
-        run_job, job_id=str(db_entry.id), db=db, file_storage=get_file_storage(request)
+        run_job,
+        job_id=str(db_entry.id),
+        db=db,
+        file_storage=file_storage,
+        app_settings=app_settings,
     )
 
     return JSONResponse({"job_id": str(db_entry.id), "status": db_entry.status})
