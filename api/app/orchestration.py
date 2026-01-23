@@ -34,7 +34,7 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage, app_settings: Ap
     update_job(updated_job=job, db=db)
 
     # Load the statement from file storage
-    statement = file_storage.load_file(job.file_path, bucket=app_settings.statements_bucket)
+    statement = file_storage.load_file(job.file_path, bucket=app_settings.statements_storage_bucket)
 
     # Find the right parser
     parser = get_parser(job.statement_source)

@@ -6,16 +6,21 @@ from uuid import UUID
 
 from fastapi import (
     BackgroundTasks,
+    Depends,
     FastAPI,
     Form,
     HTTPException,
+    Request,
     UploadFile,
 )
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import JSONResponse
 from sqlmodel import create_engine, SQLModel
 from supabase import create_client
+from supabase_auth.errors import AuthApiError
 
 from app.deps import (
+    AuthDependency,
     SettingsDependency,
     get_settings,
     DBDependency,
@@ -29,6 +34,31 @@ from app.orchestration import run_job
 
 class ConfigException(Exception):
     pass
+
+user_creds_auth = HTTPBasic()
+
+
+# Validate username (email) and password, sign user in and return a JWT token if successful
+def validate_user_creds(
+    app_settings: SettingsDependency,
+    creds: Annotated[HTTPBasicCredentials, Depends(user_creds_auth)]
+) -> str:
+    # Create a supabase client separate from global admin client that uses storage
+    supabase_client = create_client(app_settings.supabase_url, app_settings.supabase_anon_key)
+    try:
+        response = supabase_client.auth.sign_in_with_password(
+            {
+                "email": creds.username,
+                "password": creds.password,
+            }
+        )
+    except AuthApiError as e:
+        logger.log(logging.WARNING, f"Failed to validate user credentials: {e}")
+        raise HTTPException(status_code=401, detail="User credentials invalid")
+    if not response.session:
+        raise HTTPException(status_code=401, detail="User credentials invalid")
+
+    return response.session.access_token
 
 
 # Instantiating auth service, storage and logging config as part of app startup
@@ -75,9 +105,13 @@ app = FastAPI(lifespan=lifespan)
 def root() -> "str":
     return "HELLO FROM SPENDING TRACKER"
 
+@app.post("/auth")
+def authenticate_user(jwt: Annotated[str, Depends(validate_user_creds)]) -> JSONResponse:
+    return JSONResponse({"access_token": jwt})
 
 @app.post("/ingest-job", status_code=202)
 def create_job(
+    user_id: AuthDependency,
     statement_file: UploadFile,
     statement_source: Annotated[StatementSource, Form()],
     db: DBDependency,
@@ -92,11 +126,11 @@ def create_job(
         statement_source=statement_source,
         filename=file_name,
         file=statement_file.file,
-        user_id=app_settings.test_user_id,
-        bucket=app_settings.statements_bucket,
+        user_id=user_id,
+        bucket=app_settings.statements_storage_bucket,
     )
 
-    job = IngestJob(statement_source=statement_source, file_path=file_path)
+    job = IngestJob(user_id=user_id, statement_source=statement_source, file_path=file_path)
     db_entry = create_new_job(new_job=job, db=db)
 
     background_tasks.add_task(
@@ -111,7 +145,7 @@ def create_job(
 
 
 @app.get("/ingest-job/{job_id}")
-def get_job(job_id: UUID, db: DBDependency) -> JSONResponse:
+def get_job(user_id: AuthDependency, job_id: UUID, db: DBDependency) -> JSONResponse:
     job = load_job(job_id, db)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
