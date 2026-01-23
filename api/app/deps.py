@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -14,6 +15,8 @@ def get_db_engine(request: Request):
 def get_file_storage(request: Request) -> FileStorage:
     return request.app.state.file_storage
 
+# Settings singleton will be stored in cache and reused for every request
+@lru_cache
 def get_settings() -> AppSettings:
     # Ignoring type checking. Type checker expects config variables passed as args
     # but they are being read from environment.
