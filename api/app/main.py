@@ -93,7 +93,7 @@ def create_job(
         filename=file_name,
         file=statement_file.file,
         user_id=app_settings.test_user_id,
-        bucket=app_settings.statements_bucket,
+        bucket=app_settings.statements_storage_bucket,
     )
 
     job = IngestJob(statement_source=statement_source, file_path=file_path)
