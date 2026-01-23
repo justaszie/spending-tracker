@@ -8,7 +8,11 @@ from sqlmodel import Session
 
 from app.file_storage import FileStorage
 from app.db.jobs import load_job, update_job
-from app.db.transactions import get_existing_dedup_keys, insert_transactions, Transaction
+from app.db.transactions import (
+    get_existing_dedup_keys,
+    insert_transactions,
+    Transaction,
+)
 from app.parsers.registry import get_parser
 from app.project_types import JobStatus, ParsedTransaction
 from app.enrichment import enrich_transactions
@@ -34,25 +38,21 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage) -> None:
     # Find the right parser
     parser = get_parser(job.statement_source)
 
-    # TODO: how to deal when right parser not found
     # Log it and update job record status=failed, reason=technical_error
-    if not parser:
+    if parser is None:
         return
 
     # 4. Get parsed transactions
     parsed_txns: list[ParsedTransaction] = parser(statement)
 
-    # TODO: TESTING to observe data
+    # [DEV OBSERVABILITY]
     df = pd.DataFrame(txn.model_dump() for txn in parsed_txns)
-    df.to_csv('test_output_parsed.csv')
+    df.to_csv("test_output_parsed.csv")
 
     # 5. Enhance transactions to match the DB schema (EUR, Categories, Dedup key)
     enriched = enrich_transactions(parsed_txns, job_id=job_uuid)
     df = pd.DataFrame(txn.model_dump() for txn in enriched)
-    df.to_csv('test_output_enriched.csv')
-
-    # TODO: potentially extract to dedup function(s)
-    # - TBD what is a good structure of function, mutating?
+    df.to_csv("test_output_enriched.csv")
 
     new: list[Transaction] = []
     duplicates: list[Transaction] = []
@@ -65,18 +65,19 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage) -> None:
         else:
             duplicates.append(transaction)
 
-    # TODO: TESTING to observe data
+    # [DEV OBSERVABILITY]
     df = pd.DataFrame(txn.model_dump() for txn in duplicates)
-    df.to_csv('test_duplicates.csv')
+    df.to_csv("test_duplicates.csv")
 
     # 7. Insert new transactions
     insert_transactions(transactions=new, db=db)
-    logger.log(logging.INFO, f"Inserted {len(new)} new transactions | {len(duplicates)} duplicates")
+    logger.log(
+        logging.INFO,
+        f"Inserted {len(new)} new transactions | {len(duplicates)} duplicates",
+    )
 
     # 8. Update job status in DB.
     job.finished_at = dt.datetime.now()
-    #TODO: Define how do we know if it fails and add update to failure status / reason
-    # exception is one of the triggers but maybe something else
     job.status = JobStatus.COMPLETE
     job.ingested_txn_count = len(new)
     job.duplicate_txn_count = len(duplicates)

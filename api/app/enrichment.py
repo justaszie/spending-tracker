@@ -9,6 +9,7 @@ from app.db.transactions import Transaction
 from app.project_types import ParsedTransaction
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 # These don't need to be in lowercase anymore. Matching logic is case insensitive now
@@ -25,9 +26,15 @@ COFFESHOP_MERCHANTS = {
     "taste map",
     "uab agerosa",
     "vero cafe",
-    "Totorių gatvė", # Huracan totoriu
+    "Totorių gatvė",  # Huracan totoriu
 }
-BUSINESS_LUNCH_MERCHANTS = {"aloha", "berneliu uzeiga", "bernelių užeiga", "Ministerija Dienos pietūs", "A. Taraškienės firma 3515"}
+BUSINESS_LUNCH_MERCHANTS = {
+    "aloha",
+    "berneliu uzeiga",
+    "bernelių užeiga",
+    "Ministerija Dienos pietūs",
+    "A. Taraškienės firma 3515",
+}
 STREAMING_MERCHANTS = {"disney", "netflix", "spotify", "youtube"}
 FOOD_DELIVERY_MERCHANTS = {"bolt food", "wolt"}
 RESTAURANT_MERCHANTS = {
@@ -50,14 +57,19 @@ RESTAURANT_MERCHANTS = {
 }
 
 
-def enrich_transactions(transactions: list[ParsedTransaction], job_id: UUID) -> list[Transaction]:
+def enrich_transactions(
+    transactions: list[ParsedTransaction], job_id: UUID
+) -> list[Transaction]:
     result = []
     converter = CurrencyConverter(ECB_URL)
     for transaction in transactions:
         # 1. convert to eur
         try:
             eur_amount = get_eur_amount(
-                converter,transaction.transaction_datetime, transaction.orig_currency, transaction.orig_amount
+                converter,
+                transaction.transaction_datetime,
+                transaction.orig_currency,
+                transaction.orig_amount,
             )
         # If there are issues with the converter module, we use null eur amount
         except Exception:
@@ -72,10 +84,12 @@ def enrich_transactions(transactions: list[ParsedTransaction], job_id: UUID) -> 
         new_values = {
             "eur_amount": eur_amount,
             "auto_added": True,
-            "job_id": job_id, # TODO - review if it's the right place to add it. Maybe should be provided by run_job?
+            "job_id": job_id,
         }
-        enriched_transaction = Transaction.model_validate({**transaction.model_dump(), **new_values, **categorization})
-        # TODO: Added for observability while working on the prototype.
+        enriched_transaction = Transaction.model_validate(
+            {**transaction.model_dump(), **new_values, **categorization}
+        )
+        # [DEV OBSERVABILITY]
         logger.log(logging.INFO, f"Fully processed transaction: {enriched_transaction}")
 
         result.append(enriched_transaction)
@@ -190,8 +204,6 @@ def _is_groceries(transaction: ParsedTransaction):
     return any(counterparty == merchant.lower() for merchant in SUPERMARKET_MERCHANTS)
 
 
-# TODO consider avoid using the magic numbers somehow
-# TODO: want to use eur amounts but we don't have it in ParsedTransaction
 def _is_breakfast(transaction: ParsedTransaction):
     counterparty = transaction.counterparty.lower().strip()
     return (
@@ -210,7 +222,10 @@ def _is_hot_drinks(transaction: ParsedTransaction):
 
 
 def get_eur_amount(
-    converter: CurrencyConverter, txn_date: dt.date, orig_currency: str, orig_amount: Decimal,
+    converter: CurrencyConverter,
+    txn_date: dt.date,
+    orig_currency: str,
+    orig_amount: Decimal,
 ) -> Decimal | None:
     MAX_RETRIES = 10
 
@@ -231,7 +246,7 @@ def get_eur_amount(
                 orig_amount, orig_currency, "EUR", date=exchange_rate_date
             )
         except RateNotFoundError:
-            if(orig_currency == 'GBP'):
+            if orig_currency == "GBP":
                 print(f"CAN'T FIND EURGBP. Trying date {exchange_rate_date}.")
             exchange_rate_date = exchange_rate_date - dt.timedelta(days=1)
             retry_attempts += 1

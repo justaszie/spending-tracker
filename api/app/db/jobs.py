@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 class IngestJob(SQLModel, table=True):
     __tablename__ = "jobs"
 
-    # TODO: probably don't need Field instances for most, except when default_factory is used
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     statement_source: StatementSource = Field(nullable=False)
     file_path: str = Field(nullable=False)
@@ -48,12 +47,12 @@ def load_job(job_id: uuid.UUID, db: Engine) -> IngestJob | None:
         job = session.get(IngestJob, job_id)
         return job
 
+
 def update_job(updated_job: IngestJob, db: Engine) -> None:
     with Session(db) as session:
         session.add(updated_job)
         session.commit()
         session.refresh(updated_job)
-
 
 
 class DuplicateEntryError(ValueError):

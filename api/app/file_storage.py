@@ -14,10 +14,13 @@ class FileStorage:
 
     # Make this more generic. The caller will provide the specific bucket and file_path
     def upload_statement(
-        self, user_id: UUID, statement_source: StatementSource, filename: str, file: BinaryIO
+        self,
+        user_id: UUID,
+        statement_source: StatementSource,
+        filename: str,
+        file: BinaryIO,
     ) -> str:
         bucket: str = os.environ.get("STATEMENTS_BUCKET")
-        # TODO - maybe create bucket if it doesn't exist yet. Upload fails if it doesn't.
         timestamp = dt.datetime.now().isoformat()
         file_path = f"{user_id}/{statement_source.value}/{timestamp}_{filename}"
 
@@ -38,9 +41,5 @@ class FileStorage:
         filepath: str,
         bucket: str = os.environ.get("STATEMENTS_BUCKET"),
     ) -> BytesIO:
-        response = (
-            self._storage_client.storage
-            .from_(bucket)
-            .download(filepath)
-        )
+        response = self._storage_client.storage.from_(bucket).download(filepath)
         return BytesIO(response)

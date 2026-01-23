@@ -80,23 +80,18 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
         for attribute, header in ATTRIBUTES_TO_FILE_HEADERS.items()
     }
 
-
-    # TODO: replace single quote string literals with double quotes using copilot across the file
-
     # If no counterparty in the original field, we build it from other values
-    if clean_transaction['counterparty'] == '':
+    if clean_transaction["counterparty"] == "":
         # Special rule to populate cash withdrawals
-        note = clean_transaction.get('note')
-        if note is not None and 'grynieji' in note.lower():
-            clean_transaction['counterparty'] = 'Cash Withdrawal'
+        note = clean_transaction.get("note")
+        if note is not None and "grynieji" in note.lower():
+            clean_transaction["counterparty"] = "Cash Withdrawal"
         else:
-            clean_transaction['counterparty'] = note
+            clean_transaction["counterparty"] = note
 
-    clean_transaction['source'] = TRANSACTION_SOURCE
+    clean_transaction["source"] = TRANSACTION_SOURCE
 
-    clean_transaction['side'] = (
-        'Debit' if raw_transaction['D/K'] == 'D' else 'Credit'
-    )
+    clean_transaction["side"] = "Debit" if raw_transaction["D/K"] == "D" else "Credit"
 
     return clean_transaction
 
@@ -104,15 +99,13 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
 def parse_swedbank_statement(statement: BinaryIO) -> list[ParsedTransaction]:
     raw_txns = get_raw_transactions(statement)
     filtered = [txn for txn in raw_txns if is_relevant_transaction(txn)]
-    # TODO: Store and log discarded transactions somewhere easy, like csv.
     clean_txns = clean_raw_transactions(filtered)
 
     return clean_txns
 
-# # TODO - dedup key logic should be extracted. We should just pass the data for the key
-# # maybe put in utils.py or something
+
 def calculate_dedup_key(transaction: dict[str, Any]) -> str:
-    dedup_data = transaction['unique_id'].strip().lower()
+    dedup_data = transaction["unique_id"].strip().lower()
 
     hash_algo = sha256()
     hash_algo.update(dedup_data.encode())

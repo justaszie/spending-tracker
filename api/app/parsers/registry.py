@@ -12,5 +12,6 @@ _registry: dict[StatementSource, ParserFN] = {
     StatementSource.SWEDBANK: parse_swedbank_statement,
 }
 
+
 def get_parser(statement_source: StatementSource) -> ParserFN | None:
     return _registry.get(statement_source)

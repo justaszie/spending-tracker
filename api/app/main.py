@@ -79,9 +79,6 @@ def root() -> "str":
     return "HELLO FROM SPENDING TRACKER"
 
 
-# class APIGetJobModel(BaseModel):
-
-
 @app.post("/ingest-job", status_code=202)
 def create_job(
     request: Request,
@@ -91,7 +88,7 @@ def create_job(
     file_storage: FSDependency,
     background_tasks: BackgroundTasks,
 ) -> JSONResponse:
-    # The API consumer may not provide filename for the uploaded data
+    # Filename is not mandatory for API consumer to provide. In this case we generate it.
     file_name = statement_file.filename or f"{statement_source.value}_statement"
 
     file_path = file_storage.upload_statement(
@@ -105,16 +102,12 @@ def create_job(
     db_entry = create_new_job(new_job=job, db=db)
 
     background_tasks.add_task(
-        run_job,
-        job_id=str(db_entry.id),
-        db=db,
-        file_storage=get_file_storage(request)
+        run_job, job_id=str(db_entry.id), db=db, file_storage=get_file_storage(request)
     )
 
     return JSONResponse({"job_id": str(db_entry.id), "status": db_entry.status})
 
 
-# TODO - Models and validation for returning job data
 @app.get("/ingest-job/{job_id}")
 def get_job(job_id: UUID, db: DBDependency) -> JSONResponse:
     job = load_job(job_id, db)

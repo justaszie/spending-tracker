@@ -7,6 +7,7 @@ from sqlmodel import Field, select, Session, SQLModel
 
 from app.project_types import Side, TxnSource
 
+
 class Transaction(SQLModel, table=True):
     __tablename__ = "transactions"
 
@@ -38,4 +39,3 @@ def get_existing_dedup_keys(db: Engine) -> list[str]:
     with Session(db) as session:
         result = session.exec(select(Transaction.dedup_key)).all()
         return list(result)
-
