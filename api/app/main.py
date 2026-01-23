@@ -6,20 +6,24 @@ from uuid import UUID
 
 from fastapi import (
     BackgroundTasks,
+    Depends,
     FastAPI,
     Form,
     HTTPException,
     UploadFile,
 )
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import JSONResponse
 from sqlmodel import create_engine, SQLModel
 from supabase import create_client
 
 from app.deps import (
+    AuthDependency,
     SettingsDependency,
     get_settings,
     DBDependency,
     FSDependency,
+    validate_user_creds,
 )
 from app.db.jobs import IngestJob, create_new_job, load_job
 from app.project_types import StatementSource
@@ -75,9 +79,13 @@ app = FastAPI(lifespan=lifespan)
 def root() -> "str":
     return "HELLO FROM SPENDING TRACKER"
 
+@app.post("/auth")
+def authenticate_user(jwt: Annotated[str, Depends(validate_user_creds)]) -> JSONResponse:
+    return JSONResponse({"access_token": jwt})
 
 @app.post("/ingest-job", status_code=202)
 def create_job(
+    user_id: AuthDependency,
     statement_file: UploadFile,
     statement_source: Annotated[StatementSource, Form()],
     db: DBDependency,
@@ -92,7 +100,7 @@ def create_job(
         statement_source=statement_source,
         filename=file_name,
         file=statement_file.file,
-        user_id=app_settings.test_user_id,
+        user_id=user_id,
         bucket=app_settings.statements_storage_bucket,
     )
 
@@ -111,7 +119,7 @@ def create_job(
 
 
 @app.get("/ingest-job/{job_id}")
-def get_job(job_id: UUID, db: DBDependency) -> JSONResponse:
+def get_job(user_id: AuthDependency, job_id: UUID, db: DBDependency) -> JSONResponse:
     job = load_job(job_id, db)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
