@@ -10,7 +10,6 @@ from app.project_types import Side, TxnSource
 class Transaction(SQLModel, table=True):
     __tablename__ = "transactions"
 
-    # TODO: Consider job_id FK to link txns to job that inserted them
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     transaction_datetime: dt.datetime = Field(nullable=False)
     counterparty: str = Field(nullable=False)
@@ -29,17 +28,14 @@ class Transaction(SQLModel, table=True):
     job_id: uuid.UUID = Field(nullable=True, default=None, foreign_key="jobs.id")
 
 
-# TODO - check what happens when we try to insert batch with a few duplicates
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
     with Session(db) as session:
         session.add_all(transactions)
         session.commit()
 
 
-# TODO - consider just using get all entries and caller would extract the keys from it.
 def get_existing_dedup_keys(db: Engine) -> list[str]:
     with Session(db) as session:
-        transactions = session.exec(select(Transaction))
-        result = [transaction.dedup_key for transaction in transactions]
-        return result
+        result = session.exec(select(Transaction.dedup_key)).all()
+        return list(result)
 
