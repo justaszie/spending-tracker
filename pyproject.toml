@@ -12,7 +12,6 @@ dependencies = [
     "pandas-stubs>=2.3.3.251219",
     "psycopg2>=2.9.11",
     "python-multipart>=0.0.20",
-    "ruff>=0.14.14",
     "sqlmodel>=0.0.27",
     "supabase>=2.25.0",
     "uvicorn>=0.38.0",
@@ -21,4 +20,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel>=7.1.0",
+    "ruff>=0.14.14",
 ]
