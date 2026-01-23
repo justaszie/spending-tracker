@@ -10,12 +10,14 @@ from fastapi import (
     FastAPI,
     Form,
     HTTPException,
+    Request,
     UploadFile,
 )
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import JSONResponse
 from sqlmodel import create_engine, SQLModel
 from supabase import create_client
+from supabase_auth.errors import AuthApiError
 
 from app.deps import (
     AuthDependency,
@@ -23,7 +25,6 @@ from app.deps import (
     get_settings,
     DBDependency,
     FSDependency,
-    validate_user_creds,
 )
 from app.db.jobs import IngestJob, create_new_job, load_job
 from app.project_types import StatementSource
@@ -33,6 +34,31 @@ from app.orchestration import run_job
 
 class ConfigException(Exception):
     pass
+
+user_creds_auth = HTTPBasic()
+
+
+# Validate username (email) and password, sign user in and return a JWT token if successful
+def validate_user_creds(
+    app_settings: SettingsDependency,
+    creds: Annotated[HTTPBasicCredentials, Depends(user_creds_auth)]
+) -> str:
+    # Create a supabase client separate from global admin client that uses storage
+    supabase_client = create_client(app_settings.supabase_url, app_settings.supabase_anon_key)
+    try:
+        response = supabase_client.auth.sign_in_with_password(
+            {
+                "email": creds.username,
+                "password": creds.password,
+            }
+        )
+    except AuthApiError as e:
+        logger.log(logging.WARNING, f"Failed to validate user credentials: {e}")
+        raise HTTPException(status_code=401, detail="User credentials invalid")
+    if not response.session:
+        raise HTTPException(status_code=401, detail="User credentials invalid")
+
+    return response.session.access_token
 
 
 # Instantiating auth service, storage and logging config as part of app startup
@@ -104,7 +130,7 @@ def create_job(
         bucket=app_settings.statements_storage_bucket,
     )
 
-    job = IngestJob(statement_source=statement_source, file_path=file_path)
+    job = IngestJob(user_id=user_id, statement_source=statement_source, file_path=file_path)
     db_entry = create_new_job(new_job=job, db=db)
 
     background_tasks.add_task(

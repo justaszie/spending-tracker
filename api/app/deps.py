@@ -18,22 +18,6 @@ from app.config import AppSettings
 
 logger = logging.getLogger(__name__)
 jwt_auth = HTTPBearer()
-user_creds_auth = HTTPBasic()
-
-
-# Validate username (email) and password, sign user in and return a JWT token if successful
-def validate_user_creds(
-    request: Request, creds: Annotated[HTTPBasicCredentials, Depends(user_creds_auth)]
-) -> str:
-    supabase_client = request.app.state.supabase
-    response = supabase_client.auth.sign_in_with_password(
-        {
-            "email": creds.username,
-            "password": creds.password,
-        }
-    )
-    # return response ["session"]["access_token"]
-    return response.session.access_token
 
 
 def get_authenticated_user(
