@@ -87,7 +87,7 @@ async def lifespan(app: FastAPI):  # type: ignore
     app.state.file_storage = FileStorage(supabase_admin)
     logger.info("File Storage Initialized")
 
-    # 5. Auth feature flag - skip jwt validatin in DEV environment
+    # 5. Auth feature flag - skip jwt validation in DEV environment
     if app_config.app_environment == AppEnvironment.DEV:
         app.dependency_overrides[get_authenticated_user] = lambda : app_config.test_user_id
 
