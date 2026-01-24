@@ -25,6 +25,7 @@ class Transaction(SQLModel, table=True):
     sub_category: str | None = Field(default=None)
     detail: str | None = Field(default=None)
     meal_type: str | None = Field(default=None)
+    refunded_eur_amount: Decimal = Field(nullable=False, default=Decimal("0"))
     dedup_key: str = Field(nullable=False, unique=True)
     job_id: uuid.UUID = Field(nullable=True, default=None, foreign_key="jobs.id")
     user_id: uuid.UUID = Field(nullable=False)
