@@ -1,4 +1,3 @@
-# Registry of parsers
 from typing import BinaryIO, Callable
 
 from app.parsers.revolut import parse_revolut_statement
@@ -7,6 +6,7 @@ from app.project_types import StatementSource, ParsedTransaction
 
 ParserFN = Callable[[BinaryIO], list[ParsedTransaction]]
 
+# Registry of parsers
 _registry: dict[StatementSource, ParserFN] = {
     StatementSource.REVOLUT: parse_revolut_statement,
     StatementSource.SWEDBANK: parse_swedbank_statement,

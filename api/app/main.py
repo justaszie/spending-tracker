@@ -10,7 +10,6 @@ from fastapi import (
     FastAPI,
     Form,
     HTTPException,
-    Request,
     UploadFile,
 )
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -19,10 +18,10 @@ from sqlmodel import create_engine, SQLModel
 from supabase import create_client
 from supabase_auth.errors import AuthApiError
 
-from app.deps import (
+from app.config import AppConfig
+from app.dependencies import (
     AuthDependency,
-    SettingsDependency,
-    get_settings,
+    ConfigDependency,
     DBDependency,
     FSDependency,
 )
@@ -32,19 +31,16 @@ from app.file_storage import FileStorage
 from app.orchestration import run_job
 
 
-class ConfigException(Exception):
-    pass
-
 user_creds_auth = HTTPBasic()
 
 
 # Validate username (email) and password, sign user in and return a JWT token if successful
 def validate_user_creds(
-    app_settings: SettingsDependency,
+    app_config: ConfigDependency,
     creds: Annotated[HTTPBasicCredentials, Depends(user_creds_auth)]
 ) -> str:
     # Create a supabase client separate from global admin client that uses storage
-    supabase_client = create_client(app_settings.supabase_url, app_settings.supabase_anon_key)
+    supabase_client = create_client(app_config.supabase_url, app_config.supabase_anon_key)
     try:
         response = supabase_client.auth.sign_in_with_password(
             {
@@ -64,8 +60,14 @@ def validate_user_creds(
 # Instantiating auth service, storage and logging config as part of app startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore
-    app_settings = get_settings()
-    connection_string = app_settings.db_connection_string
+    # 1. Initialize app config
+    # Ignoring type checking. Type checker expects config variables passed as args
+    # but they are being read from environment.
+    app_config = AppConfig() # type: ignore
+    app.state.app_config = app_config
+
+    # 2. Initialize database client
+    connection_string = app_config.db_connection_string
     if not connection_string:
         logger.error("Missing database connection string in environment")
         raise Exception("Missing database connection string in environment")
@@ -73,12 +75,15 @@ async def lifespan(app: FastAPI):  # type: ignore
     SQLModel.metadata.create_all(engine)
     app.state.db_engine = engine
 
-    supabase_url = app_settings.supabase_url
-    supabase_admin_key = app_settings.supabase_admin_key
-    app.state.supabase = create_client(supabase_url, supabase_admin_key)
-    logger.info("Supabase Client Initialized")
+    # 3. Initialize service role supabase client
+    supabase_url = app_config.supabase_url
+    supabase_admin_key = app_config.supabase_admin_key
+    supabase_admin = create_client(supabase_url, supabase_admin_key)
+    app.state.supabase_admin = supabase_admin
+    logger.info("Supabase Admin Client Initialized")
 
-    app.state.file_storage = FileStorage(app.state.supabase)
+    # 4. Initialize file storage client
+    app.state.file_storage = FileStorage(supabase_admin)
     logger.info("File Storage Initialized")
 
     yield
@@ -109,14 +114,14 @@ def root() -> "str":
 def authenticate_user(jwt: Annotated[str, Depends(validate_user_creds)]) -> JSONResponse:
     return JSONResponse({"access_token": jwt})
 
-@app.post("/ingest-job", status_code=202)
+@app.post("/ingest-jobs", status_code=202)
 def create_job(
     user_id: AuthDependency,
     statement_file: UploadFile,
     statement_source: Annotated[StatementSource, Form()],
     db: DBDependency,
     file_storage: FSDependency,
-    app_settings: SettingsDependency,
+    app_config: ConfigDependency,
     background_tasks: BackgroundTasks,
 ) -> JSONResponse:
     # Filename is not mandatory for API consumer to provide. In this case we generate it.
@@ -127,7 +132,7 @@ def create_job(
         filename=file_name,
         file=statement_file.file,
         user_id=user_id,
-        bucket=app_settings.statements_storage_bucket,
+        bucket=app_config.statements_storage_bucket,
     )
 
     job = IngestJob(user_id=user_id, statement_source=statement_source, file_path=file_path)
@@ -138,13 +143,13 @@ def create_job(
         job_id=str(db_entry.id),
         db=db,
         file_storage=file_storage,
-        app_settings=app_settings,
+        app_config=app_config,
     )
 
     return JSONResponse({"job_id": str(db_entry.id), "status": db_entry.status})
 
 
-@app.get("/ingest-job/{job_id}")
+@app.get("/ingest-jobs/{job_id}")
 def get_job(user_id: AuthDependency, job_id: UUID, db: DBDependency) -> JSONResponse:
     job = load_job(job_id, db)
     if not job:

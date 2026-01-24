@@ -1,4 +1,3 @@
-# Integrate with supabase file storage
 import datetime as dt
 from io import BytesIO
 from typing import Any, BinaryIO
@@ -7,6 +6,7 @@ from uuid import UUID
 from app.project_types import StatementSource
 
 
+# Integrate with supabase file storage
 class FileStorage:
     def __init__(self, storage_client: Any):
         self._storage_client = storage_client

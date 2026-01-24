@@ -1,10 +1,8 @@
-from enum import StrEnum
-from uuid import UUID
-
 import datetime as dt
 from decimal import Decimal
+from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class StatementSource(StrEnum):
