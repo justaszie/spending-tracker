@@ -20,10 +20,9 @@ from app.enrichment import enrich_transactions
 logger = logging.getLogger(__name__)
 
 
-def run_job(job_id: str, db: Engine, file_storage: FileStorage, app_config: AppConfig) -> None:
+def run_job(job_id: UUID, user_id: UUID, db: Engine, file_storage: FileStorage, app_config: AppConfig) -> None:
     # 1. Load job info
-    job_uuid = UUID(job_id)
-    job = load_job(job_uuid, db)
+    job = load_job(job_id, db)
     if not job:
         return
 
@@ -50,7 +49,7 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage, app_config: AppC
     df.to_csv("test_output_parsed.csv")
 
     # 5. Enhance transactions to match the DB schema (EUR, Categories, Dedup key)
-    enriched = enrich_transactions(parsed_txns, job_id=job_uuid)
+    enriched: list[Transaction] = enrich_transactions(parsed_txns, job_id=job_id, user_id=user_id)
     df = pd.DataFrame(txn.model_dump() for txn in enriched)
     df.to_csv("test_output_enriched.csv")
 
@@ -78,7 +77,7 @@ def run_job(job_id: str, db: Engine, file_storage: FileStorage, app_config: AppC
 
     # 8. Update job status in DB.
     job.finished_at = dt.datetime.now()
-    job.status = JobStatus.COMPLETE
+    job.status = JobStatus.COMPLETED
     job.ingested_txn_count = len(new)
     job.duplicate_txn_count = len(duplicates)
 

@@ -13,19 +13,19 @@ class StatementSource(StrEnum):
 class JobStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
-    COMPLETE = "complete"
+    COMPLETED = "completed"
     FAILED = "failed"
 
 
 class Side(StrEnum):
-    DEBIT = "Debit"
-    CREDIT = "Credit"
+    DEBIT = "debit"
+    CREDIT = "credit"
 
 
 class TxnSource(StrEnum):
-    CASH = "Cash"
-    SWEDBANK = "Swedbank"
-    REVOLUT = "Revolut"
+    CASH = "cash"
+    SWEDBANK = "swedbank"
+    REVOLUT = "revolut"
 
 
 class ParsedTransaction(BaseModel):

@@ -27,6 +27,7 @@ class Transaction(SQLModel, table=True):
     meal_type: str | None = Field(default=None)
     dedup_key: str = Field(nullable=False, unique=True)
     job_id: uuid.UUID = Field(nullable=True, default=None, foreign_key="jobs.id")
+    user_id: uuid.UUID = Field(nullable=False)
 
 
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:

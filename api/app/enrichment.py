@@ -58,7 +58,7 @@ RESTAURANT_MERCHANTS = {
 
 
 def enrich_transactions(
-    transactions: list[ParsedTransaction], job_id: UUID
+    transactions: list[ParsedTransaction], job_id: UUID, user_id: UUID
 ) -> list[Transaction]:
     result = []
     converter = CurrencyConverter(ECB_URL)
@@ -85,6 +85,7 @@ def enrich_transactions(
             "eur_amount": eur_amount,
             "auto_added": True,
             "job_id": job_id,
+            "user_id": user_id,
         }
         enriched_transaction = Transaction.model_validate(
             {**transaction.model_dump(), **new_values, **categorization}

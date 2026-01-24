@@ -15,7 +15,6 @@ class IngestJob(SQLModel, table=True):
     __tablename__ = "jobs"
 
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
-    user_id: uuid.UUID | None = Field(nullable=True, default=None)
     statement_source: StatementSource = Field(nullable=False)
     file_path: str = Field(nullable=False)
     created_at: dt.datetime = Field(nullable=False, default_factory=dt.datetime.now)
@@ -25,6 +24,7 @@ class IngestJob(SQLModel, table=True):
     failure_reason: str | None = Field(default=None)
     ingested_txn_count: int | None = Field(default=None)
     duplicate_txn_count: int | None = Field(default=None)
+    user_id: uuid.UUID | None = Field(nullable=True, default=None)
 
 
 def create_new_job(new_job: IngestJob, db: Engine) -> IngestJob:

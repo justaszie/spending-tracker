@@ -140,7 +140,8 @@ def create_job(
 
     background_tasks.add_task(
         run_job,
-        job_id=str(db_entry.id),
+        job_id=db_entry.id,
+        user_id=user_id,
         db=db,
         file_storage=file_storage,
         app_config=app_config,
