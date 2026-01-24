@@ -18,12 +18,13 @@ from sqlmodel import create_engine, SQLModel
 from supabase import create_client
 from supabase_auth.errors import AuthApiError
 
-from app.config import AppConfig
+from app.config import AppConfig, AppEnvironment
 from app.dependencies import (
     AuthDependency,
     ConfigDependency,
     DBDependency,
     FSDependency,
+    get_authenticated_user,
 )
 from app.db.jobs import IngestJob, create_new_job, load_job
 from app.project_types import StatementSource
@@ -86,6 +87,10 @@ async def lifespan(app: FastAPI):  # type: ignore
     app.state.file_storage = FileStorage(supabase_admin)
     logger.info("File Storage Initialized")
 
+    # 5. Auth feature flag - skip jwt validatin in DEV environment
+    if app_config.app_environment == AppEnvironment.DEV:
+        app.dependency_overrides[get_authenticated_user] = lambda : app_config.test_user_id
+
     yield
 
 
@@ -104,6 +109,8 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(lifespan=lifespan)
+
+
 
 
 @app.get("/")
