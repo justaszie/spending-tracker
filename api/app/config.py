@@ -10,7 +10,7 @@ class AppEnvironment(StrEnum):
 
 class AppConfig(BaseSettings):
     statements_storage_bucket: str = "statements"
-    test_user_id: UUID
+    test_user_id: UUID | None = None
     app_environment: AppEnvironment = AppEnvironment.PROD
     db_connection_string: str
     supabase_url: str
