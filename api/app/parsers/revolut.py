@@ -3,7 +3,7 @@ from typing import Any, BinaryIO
 
 import openpyxl
 
-from app.project_types import ParsedTransaction, TxnSource
+from app.project_types import ParsedTransaction, TxnSource, Side
 
 
 ATTRIBUTES_TO_FILE_HEADERS = {
@@ -20,12 +20,13 @@ VALUES_TO_INCLUDE = {
     "State": {"COMPLETED"},
 }
 VALUES_TO_EXCLUDE = {
-    "Type": {"CASHBACK", "EXCHANGE", "TOPUP", "FEE", "TRADE"},
+    "Type": {"CASHBACK", "EXCHANGE", "TOPUP", "FEE", "TRADE", "ATM"},
     "Description": {
         "TO GBP",
         "TO GBP SAVINGS",
         "TO JUSTAS Å½IEMINYKAS",
         "TO JUSTAS ŽIEMINYKAS",
+        "TO JUSTAS ZIEMINYKAS",
         "TO USD",
         "TO INVESTMENT ACCOUNT",
     },
@@ -91,7 +92,7 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
     }
 
     clean_transaction["side"] = (
-        "Debit" if clean_transaction["orig_amount"] <= 0 else "Credit"
+        Side.DEBIT if clean_transaction["orig_amount"] <= 0 else Side.CREDIT
     )
 
     clean_transaction["orig_amount"] = abs(clean_transaction["orig_amount"])

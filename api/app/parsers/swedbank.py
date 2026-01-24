@@ -4,7 +4,7 @@ from io import TextIOWrapper
 from hashlib import sha256
 from typing import Any, BinaryIO
 
-from app.project_types import ParsedTransaction, TxnSource
+from app.project_types import ParsedTransaction, TxnSource, Side
 
 
 ATTRIBUTES_TO_FILE_HEADERS = {
@@ -38,12 +38,15 @@ def filter_raw_transactions(transactions: list[dict[str, Any]]) -> list[dict[str
 
 
 def is_relevant_transaction(transaction: dict[str, Any]) -> bool:
-    debit_credit = transaction["D/K"]
-    counterparty = transaction["Gavėjas"].lower()
-    note = transaction["Paaiškinimai"].lower()
+    counterparty = transaction["Gavėjas"].upper()
+    note = transaction["Paaiškinimai"].upper()
 
-    # Exclude inbound transfers from other accounts
-    if counterparty == "justas zieminykas" and debit_credit == "K":
+    # Exclude transfers to / from my own other accounts
+    if counterparty == "JUSTAS ZIEMINYKAS":
+        return False
+
+    # Exclude cash withdrawals
+    if note is not None and "GRYNIEJI" in note.upper():
         return False
 
     # Exclude entries such as total amount spent during period.
@@ -51,7 +54,7 @@ def is_relevant_transaction(transaction: dict[str, Any]) -> bool:
     # and the note field matches specific patterns like "apyvarta..."
     if not counterparty and any(
         [
-            re.search(pattern, note) is not None
+            re.search(pattern, note, re.IGNORECASE) is not None
             for pattern in EXCL_TRANSCTION_DESCRIPTION_PATTERNS
         ]
     ):
@@ -80,18 +83,13 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
         for attribute, header in ATTRIBUTES_TO_FILE_HEADERS.items()
     }
 
-    # If no counterparty in the original field, we build it from other values
+    # If no counterparty in the original field, we use note field that should have some info
     if clean_transaction["counterparty"] == "":
-        # Special rule to populate cash withdrawals
-        note = clean_transaction.get("note")
-        if note is not None and "grynieji" in note.lower():
-            clean_transaction["counterparty"] = "Cash Withdrawal"
-        else:
-            clean_transaction["counterparty"] = note
+        clean_transaction["counterparty"] = clean_transaction.get("note")
 
     clean_transaction["source"] = TRANSACTION_SOURCE
 
-    clean_transaction["side"] = "Debit" if raw_transaction["D/K"] == "D" else "Credit"
+    clean_transaction["side"] = Side.DEBIT if raw_transaction["D/K"] == "D" else Side.CREDIT
 
     return clean_transaction
 
@@ -105,7 +103,7 @@ def parse_swedbank_statement(statement: BinaryIO) -> list[ParsedTransaction]:
 
 
 def calculate_dedup_key(transaction: dict[str, Any]) -> str:
-    dedup_data = transaction["unique_id"].strip().lower()
+    dedup_data = transaction["unique_id"].strip().upper()
 
     hash_algo = sha256()
     hash_algo.update(dedup_data.encode())
