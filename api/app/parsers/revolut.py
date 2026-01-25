@@ -115,11 +115,11 @@ def parse_revolut_statement(statement: BinaryIO) -> list[ParsedTransaction]:
 
 def calculate_dedup_key(transaction: dict[str, Any]) -> str:
     dedup_data = (
-        f"{transaction["transaction_datetime"]}_"
-        f"{transaction["transaction_completed_datetime"]}_"
-        f"{transaction["counterparty"]}_"
-        f"{transaction["orig_amount"]}_"
-        f"{transaction["balance_after"]}_"
+        f"{str(transaction["transaction_datetime"]).strip().lower()}_"
+        f"{str(transaction["transaction_completed_datetime"]).strip().lower()}_"
+        f"{str(transaction["counterparty"]).strip().lower()}_"
+        f"{str(transaction["orig_amount"]).strip().lower()}_"
+        f"{str(transaction["balance_after"]).strip().lower()}_"
     )
 
     hash_algo = sha256()

@@ -103,7 +103,7 @@ def parse_swedbank_statement(statement: BinaryIO) -> list[ParsedTransaction]:
 
 
 def calculate_dedup_key(transaction: dict[str, Any]) -> str:
-    dedup_data = transaction["unique_id"].strip().upper()
+    dedup_data = str(transaction["unique_id"]).strip().lower()
 
     hash_algo = sha256()
     hash_algo.update(dedup_data.encode())
