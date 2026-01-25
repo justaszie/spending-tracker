@@ -19,7 +19,7 @@ class Transaction(SQLModel, table=True):
     side: Side = Field(nullable=False)
     source: TxnSource = Field(nullable=False)
     eur_amount: Decimal = Field(nullable=False)
-    manually_added: bool = Field(nullable=False, default=True)
+    manually_added: bool = Field(nullable=False, default=False)
     note: str | None = Field(default=None)
     category: str | None = Field(default=None)
     sub_category: str | None = Field(default=None)
