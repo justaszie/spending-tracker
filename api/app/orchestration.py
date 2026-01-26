@@ -13,6 +13,7 @@ from app.db.transactions import (
     Transaction,
 )
 from app.dependencies import AppConfig
+from app.filters import filter_transactions
 from app.parsers.registry import get_parser
 from app.project_types import JobStatus, ParsedTransaction
 from app.enrichment import enrich_transactions
@@ -20,7 +21,13 @@ from app.enrichment import enrich_transactions
 logger = logging.getLogger(__name__)
 
 
-def run_job(job_id: UUID, user_id: UUID, db: Engine, file_storage: FileStorage, app_config: AppConfig) -> None:
+def run_job(
+    job_id: UUID,
+    user_id: UUID,
+    db: Engine,
+    file_storage: FileStorage,
+    app_config: AppConfig,
+) -> None:
     # 1. Load job info
     job = load_job(job_id, db)
     if not job:
@@ -32,7 +39,9 @@ def run_job(job_id: UUID, user_id: UUID, db: Engine, file_storage: FileStorage, 
     update_job(updated_job=job, db=db)
 
     # Load the statement from file storage
-    statement = file_storage.load_file(job.file_path, bucket=app_config.statements_storage_bucket)
+    statement = file_storage.load_file(
+        job.file_path, bucket=app_config.statements_storage_bucket
+    )
 
     # Find the right parser
     parser = get_parser(job.statement_source)
@@ -48,8 +57,18 @@ def run_job(job_id: UUID, user_id: UUID, db: Engine, file_storage: FileStorage, 
     df = pd.DataFrame(txn.model_dump() for txn in parsed_txns)
     df.to_csv("test_output_parsed.csv")
 
+    filtered = filter_transactions(parsed_txns)
+
+    # [DEV OBSERVABILITY]
+    df = pd.DataFrame(txn.model_dump() for txn in filtered)
+    df.to_csv("test_output_filtered.csv")
+
     # 5. Enhance transactions to match the DB schema (EUR, Categories, Dedup key)
-    enriched: list[Transaction] = enrich_transactions(parsed_txns, job_id=job_id, user_id=user_id)
+    enriched: list[Transaction] = enrich_transactions(
+        filtered, job_id=job_id, user_id=user_id
+    )
+
+    # [DEV OBSERVABILITY]
     df = pd.DataFrame(txn.model_dump() for txn in enriched)
     df.to_csv("test_output_enriched.csv")
 

@@ -3,7 +3,7 @@ from typing import Any, BinaryIO
 
 import openpyxl
 
-from app.project_types import ParsedTransaction, TxnSource, Side
+from app.project_types import ParsedTransaction, TransactionType, TxnSource, Side
 
 
 ATTRIBUTES_TO_FILE_HEADERS = {
@@ -13,6 +13,7 @@ ATTRIBUTES_TO_FILE_HEADERS = {
     "orig_currency": "Currency",
     "transaction_completed_datetime": "Completed Date",
     "balance_after": "Balance",
+    "statement_txn_type": "Type",
 }
 
 VALUES_TO_INCLUDE = {
@@ -20,16 +21,7 @@ VALUES_TO_INCLUDE = {
     "State": {"COMPLETED"},
 }
 VALUES_TO_EXCLUDE = {
-    "Type": {"CASHBACK", "EXCHANGE", "TOPUP", "FEE", "TRADE", "ATM"},
-    "Description": {
-        "TO GBP",
-        "TO GBP SAVINGS",
-        "TO JUSTAS Å½IEMINYKAS",
-        "TO JUSTAS ŽIEMINYKAS",
-        "TO JUSTAS ZIEMINYKAS",
-        "TO USD",
-        "TO INVESTMENT ACCOUNT",
-    },
+    "Type": {"CASHBACK", "EXCHANGE", "TOPUP", "FEE", "TRADE"},
 }
 
 TRANSACTION_SOURCE = TxnSource.REVOLUT
@@ -47,8 +39,7 @@ def get_raw_transactions(statement: BinaryIO) -> list[dict[str, Any]]:
         headers = next(rows)
 
         raw_txns = [
-            {header: value for header, value in zip(headers, row)}
-            for row in rows
+            {header: value for header, value in zip(headers, row)} for row in rows
         ]
 
         return raw_txns
@@ -76,9 +67,8 @@ def clean_raw_transactions(raw_txns: list[dict[str, Any]]) -> list[ParsedTransac
     transactions = []
     for raw_txn in raw_txns:
         transformed = clean_raw_transaction(raw_txn)
-
-        dedup_key = calculate_dedup_key(transformed)
-        transformed["dedup_key"] = dedup_key
+        transformed["dedup_key"] = calculate_dedup_key(transformed)
+        transformed["type"] = define_transaction_type(transformed)
 
         transactions.append(ParsedTransaction.model_validate(transformed))
 
@@ -100,7 +90,6 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
     if raw_transaction["Type"].upper() == "CARD REFUND":
         clean_transaction["note"] = f"Refund from {clean_transaction['counterparty']}"
 
-
     clean_transaction["source"] = TRANSACTION_SOURCE
 
     return clean_transaction
@@ -113,13 +102,14 @@ def parse_revolut_statement(statement: BinaryIO) -> list[ParsedTransaction]:
 
     return clean_txns
 
+
 def calculate_dedup_key(transaction: dict[str, Any]) -> str:
     dedup_data = (
-        f"{str(transaction["transaction_datetime"]).strip().lower()}_"
-        f"{str(transaction["transaction_completed_datetime"]).strip().lower()}_"
-        f"{str(transaction["counterparty"]).strip().lower()}_"
-        f"{str(transaction["orig_amount"]).strip().lower()}_"
-        f"{str(transaction["balance_after"]).strip().lower()}_"
+        f"{str(transaction['transaction_datetime']).strip().lower()}_"
+        f"{str(transaction['transaction_completed_datetime']).strip().lower()}_"
+        f"{str(transaction['counterparty']).strip().lower()}_"
+        f"{str(transaction['orig_amount']).strip().lower()}_"
+        f"{str(transaction['balance_after']).strip().lower()}_"
     )
 
     hash_algo = sha256()
@@ -127,3 +117,14 @@ def calculate_dedup_key(transaction: dict[str, Any]) -> str:
 
     return hash_algo.hexdigest()
 
+
+def define_transaction_type(transaction: dict[str, Any]) -> TransactionType:
+    match transaction.get("statement_txn_type"):
+        case "ATM":
+            return TransactionType.CASH_WITHDRAWAL
+        case "Card Payment":
+            return TransactionType.CARD_PAYMENT
+        case "Transfer":
+            return TransactionType.TRANSFER
+        case _:
+            return TransactionType.OTHER

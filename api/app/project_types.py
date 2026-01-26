@@ -28,8 +28,16 @@ class TxnSource(StrEnum):
     REVOLUT = "revolut"
 
 
+class TransactionType(StrEnum):
+    CARD_PAYMENT = "card_payment"
+    CASH_WITHDRAWAL = "cash_withdrawal"
+    TRANSFER = "transfer"
+    OTHER = "other"
+
+
 class ParsedTransaction(BaseModel):
     transaction_datetime: dt.datetime
+    type: TransactionType
     counterparty: str
     orig_amount: Decimal
     orig_currency: str

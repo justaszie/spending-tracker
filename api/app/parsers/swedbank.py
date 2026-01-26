@@ -4,7 +4,7 @@ from io import TextIOWrapper
 from hashlib import sha256
 from typing import Any, BinaryIO
 
-from app.project_types import ParsedTransaction, TxnSource, Side
+from app.project_types import ParsedTransaction, TransactionType, TxnSource, Side
 
 
 ATTRIBUTES_TO_FILE_HEADERS = {
@@ -14,6 +14,7 @@ ATTRIBUTES_TO_FILE_HEADERS = {
     "orig_currency": "Valiuta",
     "note": "Paaiškinimai",
     "unique_id": "Įrašo Nr.",
+    "type_code": "Kodas",
 }
 
 EXCL_TRANSCTION_DESCRIPTION_PATTERNS = (
@@ -41,14 +42,6 @@ def is_relevant_transaction(transaction: dict[str, Any]) -> bool:
     counterparty = transaction["Gavėjas"].upper()
     note = transaction["Paaiškinimai"].upper()
 
-    # Exclude transfers to / from my own other accounts
-    if counterparty == "JUSTAS ZIEMINYKAS":
-        return False
-
-    # Exclude cash withdrawals
-    if note is not None and "GRYNIEJI" in note.upper():
-        return False
-
     # Exclude entries such as total amount spent during period.
     # The format for such transactions is that there's no counterparty
     # and the note field matches specific patterns like "apyvarta..."
@@ -67,9 +60,8 @@ def clean_raw_transactions(raw_txns: list[dict[str, Any]]) -> list[ParsedTransac
     transactions = []
     for raw_txn in raw_txns:
         transformed = clean_raw_transaction(raw_txn)
-
-        dedup_key = calculate_dedup_key(transformed)
-        transformed["dedup_key"] = dedup_key
+        transformed["dedup_key"] = calculate_dedup_key(transformed)
+        transformed["type"] = define_transaction_type(transformed)
 
         transactions.append(ParsedTransaction.model_validate(transformed))
 
@@ -89,7 +81,9 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
 
     clean_transaction["source"] = TRANSACTION_SOURCE
 
-    clean_transaction["side"] = Side.DEBIT if raw_transaction["D/K"] == "D" else Side.CREDIT
+    clean_transaction["side"] = (
+        Side.DEBIT if raw_transaction["D/K"] == "D" else Side.CREDIT
+    )
 
     return clean_transaction
 
@@ -109,3 +103,15 @@ def calculate_dedup_key(transaction: dict[str, Any]) -> str:
     hash_algo.update(dedup_data.encode())
 
     return hash_algo.hexdigest()
+
+
+def define_transaction_type(transaction: dict[str, Any]) -> TransactionType:
+    # Cash withdrawals are marked as card payments with specific keyword in "Paaiskinimai" column
+    if transaction["type_code"] == "K" and "grynieji" in transaction["note"]:
+        return TransactionType.CASH_WITHDRAWAL
+
+    mapping = {
+        "K": TransactionType.CARD_PAYMENT,
+        "MK": TransactionType.TRANSFER,
+    }
+    return mapping.get(transaction["type_code"], TransactionType.OTHER)
