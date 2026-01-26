@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class AppEnvironment(StrEnum):
     DEV = "DEV"
     PROD = "PROD"
@@ -17,4 +18,4 @@ class AppConfig(BaseSettings):
     supabase_anon_key: str
     supabase_admin_key: str
 
-    model_config = SettingsConfigDict(env_file='.env')
+    model_config = SettingsConfigDict(env_file=".env")

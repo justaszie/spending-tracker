@@ -18,7 +18,7 @@ class FileStorage:
         filename: str,
         file: BinaryIO,
         bucket: str,
-        user_id: UUID
+        user_id: UUID,
     ) -> str:
         timestamp = dt.datetime.now().isoformat()
         file_path = f"{user_id}/{statement_source.value}/{timestamp}_{filename}"

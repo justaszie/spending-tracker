@@ -38,10 +38,12 @@ user_creds_auth = HTTPBasic()
 # Validate username (email) and password, sign user in and return a JWT token if successful
 def validate_user_creds(
     app_config: ConfigDependency,
-    creds: Annotated[HTTPBasicCredentials, Depends(user_creds_auth)]
+    creds: Annotated[HTTPBasicCredentials, Depends(user_creds_auth)],
 ) -> str:
     # Create a supabase client separate from global admin client that uses storage
-    supabase_client = create_client(app_config.supabase_url, app_config.supabase_anon_key)
+    supabase_client = create_client(
+        app_config.supabase_url, app_config.supabase_anon_key
+    )
     try:
         response = supabase_client.auth.sign_in_with_password(
             {
@@ -64,7 +66,7 @@ async def lifespan(app: FastAPI):  # type: ignore
     # 1. Initialize app config
     # Ignoring type checking. Type checker expects config variables passed as args
     # but they are being read from environment.
-    app_config = AppConfig() # type: ignore
+    app_config = AppConfig()  # type: ignore
     app.state.app_config = app_config
 
     # 2. Initialize database client
@@ -89,7 +91,9 @@ async def lifespan(app: FastAPI):  # type: ignore
 
     # 5. Auth feature flag - skip jwt validation in DEV environment
     if app_config.app_environment == AppEnvironment.DEV:
-        app.dependency_overrides[get_authenticated_user] = lambda : app_config.test_user_id
+        app.dependency_overrides[get_authenticated_user] = (
+            lambda: app_config.test_user_id
+        )
 
     yield
 
@@ -111,15 +115,17 @@ logger = logging.getLogger(__name__)
 app = FastAPI(lifespan=lifespan)
 
 
-
-
 @app.get("/")
 def root() -> "str":
     return "HELLO FROM SPENDING TRACKER"
 
+
 @app.post("/auth")
-def authenticate_user(jwt: Annotated[str, Depends(validate_user_creds)]) -> JSONResponse:
+def authenticate_user(
+    jwt: Annotated[str, Depends(validate_user_creds)],
+) -> JSONResponse:
     return JSONResponse({"access_token": jwt})
+
 
 @app.post("/ingest-jobs", status_code=202)
 def create_job(
@@ -142,7 +148,9 @@ def create_job(
         bucket=app_config.statements_storage_bucket,
     )
 
-    job = IngestJob(user_id=user_id, statement_source=statement_source, file_path=file_path)
+    job = IngestJob(
+        user_id=user_id, statement_source=statement_source, file_path=file_path
+    )
     db_entry = create_new_job(new_job=job, db=db)
 
     background_tasks.add_task(
