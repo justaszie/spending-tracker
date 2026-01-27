@@ -5,6 +5,7 @@ from uuid import UUID
 import pandas as pd
 from sqlalchemy import Engine
 
+from app.config import AppEnvironment
 from app.file_storage import FileStorage
 from app.db.jobs import load_job, update_job
 from app.db.transactions import (
@@ -54,14 +55,16 @@ def run_job(
     parsed_txns: list[ParsedTransaction] = parser(statement)
 
     # [DEV OBSERVABILITY]
-    df = pd.DataFrame(txn.model_dump() for txn in parsed_txns)
-    df.to_csv("test_output_parsed.csv")
+    if app_config.app_environment == AppEnvironment.DEV:
+        df = pd.DataFrame(txn.model_dump() for txn in parsed_txns)
+        df.to_csv("test_output_parsed.csv")
 
     filtered = filter_transactions(parsed_txns)
 
     # [DEV OBSERVABILITY]
-    df = pd.DataFrame(txn.model_dump() for txn in filtered)
-    df.to_csv("test_output_filtered.csv")
+    if app_config.app_environment == AppEnvironment.DEV:
+        df = pd.DataFrame(txn.model_dump() for txn in filtered)
+        df.to_csv("test_output_filtered.csv")
 
     # 5. Enhance transactions to match the DB schema (EUR, Categories, Dedup key)
     enriched: list[Transaction] = enrich_transactions(
@@ -69,8 +72,9 @@ def run_job(
     )
 
     # [DEV OBSERVABILITY]
-    df = pd.DataFrame(txn.model_dump() for txn in enriched)
-    df.to_csv("test_output_enriched.csv")
+    if app_config.app_environment == AppEnvironment.DEV:
+        df = pd.DataFrame(txn.model_dump() for txn in enriched)
+        df.to_csv("test_output_enriched.csv")
 
     new: list[Transaction] = []
     duplicates: list[Transaction] = []
@@ -84,8 +88,9 @@ def run_job(
             duplicates.append(transaction)
 
     # [DEV OBSERVABILITY]
-    df = pd.DataFrame(txn.model_dump() for txn in duplicates)
-    df.to_csv("test_duplicates.csv")
+    if app_config.app_environment == AppEnvironment.DEV:
+        df = pd.DataFrame(txn.model_dump() for txn in duplicates)
+        df.to_csv("test_duplicates.csv")
 
     # 7. Insert new transactions
     insert_transactions(transactions=new, db=db)

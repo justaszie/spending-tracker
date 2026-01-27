@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "spending-tracker"
 version = "0.1.0"
@@ -18,10 +22,19 @@ dependencies = [
     "uvicorn>=0.38.0",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
 [dependency-groups]
 dev = [
     "ipykernel>=7.1.0",
     "mypy>=1.19.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "pytest-mock>=3.15.1",
     "ruff>=0.14.14",
     "types-openpyxl>=3.1.5.20250919",
 ]
+
+[tool.pytest]
+testpaths = ["tests"]
