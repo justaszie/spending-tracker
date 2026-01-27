@@ -1,7 +1,10 @@
+import datetime as dt
+from decimal import Decimal
 from hashlib import sha256
 from typing import Any, BinaryIO
 
 import openpyxl
+from pydantic import BaseModel, Field, computed_field
 
 from app.project_types import ParsedTransaction, TransactionType, TxnSource, Side
 
@@ -26,8 +29,44 @@ VALUES_TO_EXCLUDE = {
 
 TRANSACTION_SOURCE = TxnSource.REVOLUT
 
+class RawTransactionRevolut(BaseModel):
+    transaction_datetime: dt.datetime = Field(alias="Started Date")
+    counterparty: str = Field(alias="Description")
+    orig_amount: Decimal = Field(alias="Amount")
+    orig_currency: str = Field(alias="Currency")
+    transaction_completed_datetime: dt.datetime = Field(alias="Completed Date")
+    balance_after: Decimal = Field(alias="Balance")
+    statement_txn_type: str = Field(alias="Type")
 
-def get_raw_transactions(statement: BinaryIO) -> list[dict[str, Any]]:
+    @computed_field
+    @property
+    def type(self) -> TransactionType:
+        mapping = {
+            "ATM": TransactionType.CASH_WITHDRAWAL,
+            "Card Payment": TransactionType.CARD_PAYMENT,
+            "Transfer": TransactionType.TRANSFER,
+        }
+        return mapping.get(self.statement_txn_type, TransactionType.OTHER)
+
+    @computed_field
+    @property
+    def dedup_key(self) -> str:
+        dedup_data = (
+
+            f"{self.transaction_datetime.isoformat()}_"
+            f"{str(transaction['transaction_completed_datetime']).strip().lower()}_"
+            f"{str(transaction['counterparty']).strip().lower()}_"
+            f"{str(transaction['orig_amount']).strip().lower()}_"
+            f"{str(transaction['balance_after']).strip().lower()}_"
+        )
+
+        hash_algo = sha256()
+        hash_algo.update(dedup_data.encode())
+
+        return hash_algo.hexdigest()
+
+
+def get_statement_rows(statement: BinaryIO) -> list[dict[str, Any]]:
     # read_only mode auto-closes the excel file
     workbook = openpyxl.load_workbook(statement, read_only=True)
     try:
@@ -35,33 +74,27 @@ def get_raw_transactions(statement: BinaryIO) -> list[dict[str, Any]]:
         if not sheet:
             return []
 
-        rows = sheet.iter_rows(values_only=True)
-        headers = next(rows)
+        rows_iterator = sheet.iter_rows(values_only=True)
+        first_row = next(rows_iterator)
+        headers = [str(header) for header in first_row]
 
-        raw_txns = [
-            {header: value for header, value in zip(headers, row)} for row in rows
+        rows = [
+            {header: value for header, value in zip(headers, row)} for row in rows_iterator
         ]
-
-        return raw_txns
+        return rows
     finally:
         workbook.close()
 
-
-def filter_raw_transactions(transactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [txn for txn in transactions if is_relevant_transaction(txn)]
-
-
-def is_relevant_transaction(transaction: dict[str, Any]) -> bool:
+def _is_valid_txn(row: dict[str, Any]) -> bool:
     for column, values in VALUES_TO_INCLUDE.items():
-        if transaction[column].upper() not in values:
+        if row[column].upper() not in values:
             return False
 
     for column, values in VALUES_TO_EXCLUDE.items():
-        if transaction[column].upper() in values:
+        if row[column].upper() in values:
             return False
 
     return True
-
 
 def clean_raw_transactions(raw_txns: list[dict[str, Any]]) -> list[ParsedTransaction]:
     transactions = []
@@ -118,13 +151,4 @@ def calculate_dedup_key(transaction: dict[str, Any]) -> str:
     return hash_algo.hexdigest()
 
 
-def define_transaction_type(transaction: dict[str, Any]) -> TransactionType:
-    match transaction.get("statement_txn_type"):
-        case "ATM":
-            return TransactionType.CASH_WITHDRAWAL
-        case "Card Payment":
-            return TransactionType.CARD_PAYMENT
-        case "Transfer":
-            return TransactionType.TRANSFER
-        case _:
-            return TransactionType.OTHER
+
