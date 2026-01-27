@@ -94,10 +94,6 @@ def run_job(
 
     # 7. Insert new transactions
     insert_transactions(transactions=new, db=db)
-    logger.log(
-        logging.INFO,
-        f"Inserted {len(new)} new transactions | {len(duplicates)} duplicates",
-    )
 
     # 8. Update job status in DB.
     job.finished_at = dt.datetime.now()
@@ -108,3 +104,10 @@ def run_job(
     update_job(updated_job=job, db=db)
 
     logger.log(logging.INFO, f"### Completed Job: {job.id} for {job.statement_source}")
+    logger.log(
+        logging.INFO,
+        f"Inserted {len(new)} new transactions | {len(duplicates)} duplicates",
+    )
+
+
+
