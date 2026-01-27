@@ -2,14 +2,17 @@ import uuid
 import datetime as dt
 from decimal import Decimal
 
-from sqlalchemy import Engine
+from sqlalchemy import Engine, UniqueConstraint
 from sqlmodel import Field, select, Session, SQLModel
 
 from app.project_types import Side, TxnSource
 
 
 class Transaction(SQLModel, table=True):
-    __tablename__ = "transactions"
+    __tablename__ = "transactions" # type: ignore
+    __table_args__ = (
+        UniqueConstraint("user_id", "dedup_key", name="uq_transaction_user_id_dedup_key"),
+    )
 
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     transaction_datetime: dt.datetime = Field(nullable=False)
@@ -26,7 +29,7 @@ class Transaction(SQLModel, table=True):
     detail: str | None = Field(default=None)
     meal_type: str | None = Field(default=None)
     refunded_eur_amount: Decimal = Field(nullable=False, default=Decimal("0"))
-    dedup_key: str = Field(nullable=False, unique=True)
+    dedup_key: str = Field(nullable=False)
     job_id: uuid.UUID = Field(nullable=True, default=None, foreign_key="jobs.id")
     user_id: uuid.UUID = Field(nullable=False)
 

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class IngestJob(SQLModel, table=True):
-    __tablename__ = "jobs"
+    __tablename__ = "jobs" # type: ignore
 
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     statement_source: StatementSource = Field(nullable=False)
