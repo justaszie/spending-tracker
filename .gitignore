@@ -10,16 +10,14 @@ wheels/
 .venv
 
 # Environment variables
-api/.env
+.env
 
 # Supabase
 supabase
 
 data/
-**/*.csv
-api/app/test_statement.xlsx
-api/throwaway/
-api/test_output.csv
+*.csv
+throwaway/
 .vscode
-api/data
 historical.py
+run
