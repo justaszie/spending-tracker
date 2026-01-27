@@ -90,8 +90,6 @@ def enrich_transactions(
         enriched_transaction = Transaction.model_validate(
             {**transaction.model_dump(), **new_values, **categorization}
         )
-        # [DEV OBSERVABILITY]
-        logger.log(logging.INFO, f"Fully processed transaction: {enriched_transaction}")
 
         result.append(enriched_transaction)
 
@@ -247,8 +245,6 @@ def get_eur_amount(
                 orig_amount, orig_currency, "EUR", date=exchange_rate_date
             )
         except RateNotFoundError:
-            if orig_currency == "GBP":
-                print(f"CAN'T FIND EURGBP. Trying date {exchange_rate_date}.")
             exchange_rate_date = exchange_rate_date - dt.timedelta(days=1)
             retry_attempts += 1
 
