@@ -14,12 +14,12 @@ from pydantic import (
     ValidationError,
 )
 
-from app.project_types import ParsedTransaction, TransactionType, TxnSource, Side
+from app.project_types import ImportedTransaction, TransactionType, TxnSource, Side
 
 logger = logging.getLogger(__name__)
 
 
-def parse_revolut_statement(statement: BinaryIO) -> list[ParsedTransaction]:
+def parse_revolut_statement(statement: BinaryIO) -> list[ImportedTransaction]:
     statement_rows = get_statement_rows(statement)
     normalized_trasactions = []
     rejected_count = 0
@@ -31,10 +31,10 @@ def parse_revolut_statement(statement: BinaryIO) -> list[ParsedTransaction]:
 
     standardized_transactions = []
     for normalized in normalized_trasactions:
-        standardized_transactions.append(normalized.to_parsed_transaction())
+        standardized_transactions.append(normalized.to_imported_transaction())
 
     logger.log(logging.INFO, "### Revolut Parser finished")
-    logger.log(logging.INFO, f"Parsed valid transactions: {len(standardized_transactions)}")
+    logger.log(logging.INFO, f"Imported valid transactions: {len(standardized_transactions)}")
     logger.log(logging.INFO, f"Rejected rows: {rejected_count}")
 
     return standardized_transactions
@@ -144,6 +144,6 @@ class RawTransactionRevolut(BaseModel):
 
         return self
 
-    # Conversion to app domain model: ParsedTransaction
-    def to_parsed_transaction(self) -> ParsedTransaction:
-        return ParsedTransaction.model_validate(self.model_dump())
+    # Conversion to app domain model: ImportedTransaction
+    def to_imported_transaction(self) -> ImportedTransaction:
+        return ImportedTransaction.model_validate(self.model_dump())

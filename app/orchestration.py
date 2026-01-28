@@ -16,7 +16,7 @@ from app.db.transactions import (
 from app.dependencies import AppConfig
 from app.filters import filter_transactions
 from app.parsers.registry import get_parser
-from app.project_types import JobStatus, ParsedTransaction
+from app.project_types import JobStatus, ImportedTransaction
 from app.enrichment import enrich_transactions
 
 logger = logging.getLogger(__name__)
@@ -51,15 +51,15 @@ def run_job(
     if parser is None:
         return
 
-    # 4. Get parsed transactions
-    parsed_txns: list[ParsedTransaction] = parser(statement)
+    # 4. Get imported transactions
+    imported_txns: list[ImportedTransaction] = parser(statement)
 
     # [DEV OBSERVABILITY]
     if app_config.app_environment == AppEnvironment.DEV:
-        df = pd.DataFrame(txn.model_dump() for txn in parsed_txns)
-        df.to_csv("test_output_parsed.csv")
+        df = pd.DataFrame(txn.model_dump() for txn in imported_txns)
+        df.to_csv("test_output_imported.csv")
 
-    filtered = filter_transactions(parsed_txns)
+    filtered = filter_transactions(imported_txns)
 
     # [DEV OBSERVABILITY]
     if app_config.app_environment == AppEnvironment.DEV:
