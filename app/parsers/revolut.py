@@ -147,7 +147,8 @@ def calculate_dedup_key(transaction: RawTransactionRevolut) -> str:
         f"{str(transaction.started_at).strip().lower()}_"
         f"{str(transaction.completed_at).strip().lower()}_"
         f"{str(transaction.description).strip().lower()}_"
-        f"{str(transaction.amount).strip().lower()}_"
+        # TODO - replace with raw amount. Requires migrating existing PROD data
+        f"{str(abs(transaction.amount)).strip().lower()}_"
         f"{str(transaction.balance_after).strip().lower()}_"
     )
 
