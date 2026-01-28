@@ -22,7 +22,7 @@ class Side(StrEnum):
     CREDIT = "credit"
 
 
-class TxnSource(StrEnum):
+class TransactionSource(StrEnum):
     CASH = "cash"
     SWEDBANK = "swedbank"
     REVOLUT = "revolut"
@@ -42,6 +42,6 @@ class ImportedTransaction(BaseModel):
     orig_amount: Decimal
     orig_currency: str
     side: Side
-    source: TxnSource
+    source: TransactionSource
     note: str | None = None
     dedup_key: str

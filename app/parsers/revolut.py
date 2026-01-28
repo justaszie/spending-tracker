@@ -13,7 +13,7 @@ from pydantic import (
     ValidationError,
 )
 
-from app.project_types import ImportedTransaction, TransactionType, TxnSource, Side
+from app.project_types import ImportedTransaction, TransactionType, TransactionSource, Side
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ def convert_to_standardized_transaction(
         orig_currency=transaction.currency,
         side=get_side(transaction),
         note=get_note(transaction),
-        source=TxnSource.REVOLUT,
+        source=TransactionSource.REVOLUT,
         dedup_key=calculate_dedup_key(transaction),
     )
 

@@ -5,7 +5,7 @@ from decimal import Decimal
 from sqlalchemy import Engine, UniqueConstraint
 from sqlmodel import Field, select, Session, SQLModel
 
-from app.project_types import Side, TxnSource
+from app.project_types import Side, TransactionSource, TransactionType
 
 
 class Transaction(SQLModel, table=True):
@@ -16,11 +16,12 @@ class Transaction(SQLModel, table=True):
 
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     transaction_datetime: dt.datetime = Field(nullable=False)
+    type: TransactionType = Field(nullable=True, default=None)
     counterparty: str = Field(nullable=False)
     orig_amount: Decimal = Field(nullable=False)
     orig_currency: str = Field(nullable=False)
     side: Side = Field(nullable=False)
-    source: TxnSource = Field(nullable=False)
+    source: TransactionSource = Field(nullable=False)
     eur_amount: Decimal = Field(nullable=False)
     manually_added: bool = Field(nullable=False, default=False)
     note: str | None = Field(default=None)

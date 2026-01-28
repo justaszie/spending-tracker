@@ -16,7 +16,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.project_types import ImportedTransaction, TransactionType, TxnSource, Side
+from app.project_types import ImportedTransaction, TransactionType, TransactionSource, Side
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ def convert_to_standardized_transaction(
         orig_currency=transaction.currency,
         side=get_side(transaction),
         note=transaction.description,
-        source=TxnSource.SWEDBANK,
+        source=TransactionSource.SWEDBANK,
         dedup_key=calculate_dedup_key(transaction),
     )
     return standardized
