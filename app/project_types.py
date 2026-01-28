@@ -35,7 +35,7 @@ class TransactionType(StrEnum):
     OTHER = "other"
 
 
-class ParsedTransaction(BaseModel):
+class ImportedTransaction(BaseModel):
     transaction_datetime: dt.datetime
     type: TransactionType
     counterparty: str

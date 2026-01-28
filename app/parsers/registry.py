@@ -2,9 +2,9 @@ from typing import BinaryIO, Callable
 
 from app.parsers.revolut import parse_revolut_statement
 from app.parsers.swedbank import parse_swedbank_statement
-from app.project_types import StatementSource, ParsedTransaction
+from app.project_types import StatementSource, ImportedTransaction
 
-ParserFN = Callable[[BinaryIO], list[ParsedTransaction]]
+ParserFN = Callable[[BinaryIO], list[ImportedTransaction]]
 
 # Registry of parsers
 _registry: dict[StatementSource, ParserFN] = {

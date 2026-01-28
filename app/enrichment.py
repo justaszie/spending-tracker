@@ -6,7 +6,7 @@ from uuid import UUID
 from currency_converter import CurrencyConverter, ECB_URL, RateNotFoundError
 
 from app.db.transactions import Transaction
-from app.project_types import ParsedTransaction
+from app.project_types import ImportedTransaction
 
 import logging
 
@@ -58,7 +58,7 @@ RESTAURANT_MERCHANTS = {
 
 
 def enrich_transactions(
-    transactions: list[ParsedTransaction], job_id: UUID, user_id: UUID
+    transactions: list[ImportedTransaction], job_id: UUID, user_id: UUID
 ) -> list[Transaction]:
     result = []
     converter = CurrencyConverter(ECB_URL)
@@ -96,7 +96,7 @@ def enrich_transactions(
     return result
 
 
-def get_categorization(transaction: ParsedTransaction) -> dict[str, str]:
+def get_categorization(transaction: ImportedTransaction) -> dict[str, str]:
     if _is_groceries(transaction):
         return {
             "category": "Groceries",
@@ -171,17 +171,17 @@ def get_categorization(transaction: ParsedTransaction) -> dict[str, str]:
     return {}
 
 
-def _is_eating_out(transaction: ParsedTransaction):
+def _is_eating_out(transaction: ImportedTransaction):
     counterparty = transaction.counterparty.lower().strip()
     return any(merchant.lower() in counterparty for merchant in RESTAURANT_MERCHANTS)
 
 
-def _is_food_delivery(transaction: ParsedTransaction):
+def _is_food_delivery(transaction: ImportedTransaction):
     counterparty = transaction.counterparty.lower().strip()
     return any(counterparty == merchant.lower() for merchant in FOOD_DELIVERY_MERCHANTS)
 
 
-def _is_business_lunch(transaction: ParsedTransaction):
+def _is_business_lunch(transaction: ImportedTransaction):
     counterparty = transaction.counterparty.lower().strip()
     return (
         any(counterparty == merchant.lower() for merchant in BUSINESS_LUNCH_MERCHANTS)
@@ -190,7 +190,7 @@ def _is_business_lunch(transaction: ParsedTransaction):
     )
 
 
-def _is_streaming_services(transaction: ParsedTransaction):
+def _is_streaming_services(transaction: ImportedTransaction):
     counterparty = transaction.counterparty.lower().strip()
     return any(
         re.search(rf"^{merchant}.*$", counterparty, flags=re.IGNORECASE)
@@ -198,12 +198,12 @@ def _is_streaming_services(transaction: ParsedTransaction):
     )
 
 
-def _is_groceries(transaction: ParsedTransaction):
+def _is_groceries(transaction: ImportedTransaction):
     counterparty = transaction.counterparty.lower().strip()
     return any(counterparty == merchant.lower() for merchant in SUPERMARKET_MERCHANTS)
 
 
-def _is_breakfast(transaction: ParsedTransaction):
+def _is_breakfast(transaction: ImportedTransaction):
     counterparty = transaction.counterparty.lower().strip()
     return (
         counterparty in ("caffeine", "kavos era")
@@ -212,7 +212,7 @@ def _is_breakfast(transaction: ParsedTransaction):
     )
 
 
-def _is_hot_drinks(transaction: ParsedTransaction):
+def _is_hot_drinks(transaction: ImportedTransaction):
     counterparty = transaction.counterparty.lower().strip()
     return (
         any(counterparty == merchant.lower() for merchant in COFFESHOP_MERCHANTS)

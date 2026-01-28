@@ -4,7 +4,7 @@ from io import TextIOWrapper
 from hashlib import sha256
 from typing import Any, BinaryIO
 
-from app.project_types import ParsedTransaction, TransactionType, TxnSource, Side
+from app.project_types import ImportedTransaction, TransactionType, TxnSource, Side
 
 
 ATTRIBUTES_TO_FILE_HEADERS = {
@@ -56,14 +56,14 @@ def is_relevant_transaction(transaction: dict[str, Any]) -> bool:
     return True
 
 
-def clean_raw_transactions(raw_txns: list[dict[str, Any]]) -> list[ParsedTransaction]:
+def clean_raw_transactions(raw_txns: list[dict[str, Any]]) -> list[ImportedTransaction]:
     transactions = []
     for raw_txn in raw_txns:
         transformed = clean_raw_transaction(raw_txn)
         transformed["dedup_key"] = calculate_dedup_key(transformed)
         transformed["type"] = define_transaction_type(transformed)
 
-        transactions.append(ParsedTransaction.model_validate(transformed))
+        transactions.append(ImportedTransaction.model_validate(transformed))
 
     return transactions
 
@@ -88,7 +88,7 @@ def clean_raw_transaction(raw_transaction: dict[str, Any]) -> dict[str, Any]:
     return clean_transaction
 
 
-def parse_swedbank_statement(statement: BinaryIO) -> list[ParsedTransaction]:
+def parse_swedbank_statement(statement: BinaryIO) -> list[ImportedTransaction]:
     raw_txns = get_raw_transactions(statement)
     filtered = [txn for txn in raw_txns if is_relevant_transaction(txn)]
     clean_txns = clean_raw_transactions(filtered)
