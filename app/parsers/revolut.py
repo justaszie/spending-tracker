@@ -20,27 +20,21 @@ logger = logging.getLogger(__name__)
 
 def parse_revolut_statement(statement: BinaryIO) -> list[ImportedTransaction]:
     statement_rows = get_statement_rows(statement)
-    normalized_trasactions = []
+    transactions = []
     rejected_count = 0
     for row in statement_rows:
         try:
-            normalized_trasactions.append(RawTransactionRevolut.model_validate(row))
+            transactions.append(RawTransactionRevolut.model_validate(row))
         except ValidationError:
             rejected_count += 1
 
-    standardized_transactions = []
-    for normalized in normalized_trasactions:
-        standardized_transactions.append(
-            convert_to_standardized_transaction(normalized)
-        )
+    normalized = [convert_to_standardized_transaction(txn) for txn in transactions]
 
     logger.log(logging.INFO, "### Revolut Parser finished")
-    logger.log(
-        logging.INFO, f"Imported valid transactions: {len(standardized_transactions)}"
-    )
+    logger.log(logging.INFO, f"Imported valid transactions: {len(normalized)}")
     logger.log(logging.INFO, f"Rejected rows: {rejected_count}")
 
-    return standardized_transactions
+    return normalized
 
 
 def get_statement_rows(statement: BinaryIO) -> list[dict[str, Any]]:
