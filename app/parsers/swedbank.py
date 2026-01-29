@@ -16,7 +16,12 @@ from pydantic import (
     model_validator,
 )
 
-from app.project_types import ImportedTransaction, TransactionType, TransactionSource, Side
+from app.project_types import (
+    ImportedTransaction,
+    TransactionType,
+    TransactionSource,
+    Side,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,21 +33,21 @@ EXCL_DESCRIPTION_PATTERNS = (
 
 def parse_swedbank_statement(statement: BinaryIO) -> list[ImportedTransaction]:
     statement_rows = get_statement_rows(statement)
-    transactions = []
+    standardized = []
     rejected_count = 0
+
     for row in statement_rows:
         try:
-            transactions.append(RawTransactionSwedbank.model_validate(row))
+            transaction = RawTransactionSwedbank.model_validate(row)
+            standardized.append(convert_to_standardized_transaction(transaction))
         except ValidationError:
             rejected_count += 1
 
-    normalized = [convert_to_standardized_transaction(txn) for txn in transactions]
-
     logger.log(logging.INFO, "### Swedbank Parser finished")
-    logger.log(logging.INFO, f"Imported valid transactions: {len(normalized)}")
+    logger.log(logging.INFO, f"Imported valid transactions: {len(standardized)}")
     logger.log(logging.INFO, f"Rejected rows: {rejected_count}")
 
-    return normalized
+    return standardized
 
 
 def get_statement_rows(statement: BinaryIO) -> list[dict[str, Any]]:
