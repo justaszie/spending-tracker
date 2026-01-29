@@ -38,3 +38,50 @@ dev = [
 
 [tool.pytest]
 testpaths = ["tests"]
+
+[tool.ruff]
+# Set line length (matches Black's default)
+line-length = 88
+# Target Python version
+target-version = "py313"
+
+[tool.ruff.lint]
+# Standard rule set used in best Python codebases
+select = [
+    "E",      # pycodestyle errors (indentation, whitespace, etc.)
+    "W",      # pycodestyle warnings (whitespace issues)
+    "F",      # Pyflakes (unused imports, undefined names, etc.)
+    "I",      # isort (import sorting)
+    "N",      # pep8-naming (naming conventions)
+    "UP",     # pyupgrade (modernize Python syntax)
+    "B",      # flake8-bugbear (common bugs and design problems)
+    "SIM",    # flake8-simplify (code simplification)
+    "C4",     # flake8-comprehensions (better comprehensions)
+    "PIE",    # flake8-pie (misc improvements)
+    "T20",    # flake8-print (detect print statements)
+    "PT",     # flake8-pytest-style (pytest best practices)
+    "RET",    # flake8-return (return statement best practices)
+    "ARG",    # flake8-unused-arguments (unused function arguments)
+    "PTH",    # flake8-use-pathlib (use pathlib instead of os.path)
+    "RUF",    # Ruff-specific rules
+    "ERA",    # eradicate (commented out code)
+]
+
+# Ignore specific rules if needed
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "T201",   # Print statements (useful for debugging, can be strict)
+]
+
+[tool.ruff.lint.isort]
+# Configure import sorting style
+known-first-party = ["app"]
+split-on-trailing-comma = true
+force-sort-within-sections = true
+# Separate import styles: straight imports (import x) come before from imports (from x import y)
+# This is the standard convention and isort's default behavior
+force-single-line = false
+
+[tool.ruff.lint.mccabe]
+# Maximum complexity (default: 10)
+max-complexity = 10
