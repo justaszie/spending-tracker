@@ -40,16 +40,6 @@ def enrich_transactions(
         # 2. Calculate spending categories
         category_values = get_category_data(transaction, CATEGORY_RULES)
 
-        category_db_name_mapping = {
-            "l1_category": "category",
-            "l2_category": "sub_category",
-            "l3_category": "detail"
-        }
-        category_values = {
-            category_db_name_mapping.get(key, key): value
-            for key, value in category_values.items()
-        }
-
         new_values = {
             "eur_amount": eur_amount,
             "manually_added": False,
