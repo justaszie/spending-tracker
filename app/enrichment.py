@@ -1,5 +1,4 @@
 import datetime as dt
-import re
 from decimal import Decimal
 from typing import Sequence
 from uuid import UUID
@@ -40,6 +39,9 @@ def enrich_transactions(
         # 2. Calculate spending categories
         category_values = get_category_data(transaction, CATEGORY_RULES)
 
+
+
+
         new_values = {
             "eur_amount": eur_amount,
             "manually_added": False,
@@ -47,13 +49,25 @@ def enrich_transactions(
             "user_id": user_id,
         }
 
-        enriched_transaction = {**transaction.model_dump(), **new_values, **category_values}
+        enriched_transaction = {
+            **transaction.model_dump(),
+            **new_values,
+            **category_values,
+        }
+
+        if is_food_spending(category_values):
+            enriched_transaction["meal_type"] = get_meal_type(transaction, category_values)
 
         result.append(Transaction.model_validate(enriched_transaction))
 
     return result
 
-def get_category_data(transaction: ImportedTransaction, rules: Sequence[CategoryRuleFunction]) -> CategoryData:
+def is_food_spending(category_values: CategoryData) -> bool:
+    return category_values.get("l2_category") == "Food"
+
+def get_category_data(
+    transaction: ImportedTransaction, rules: Sequence[CategoryRuleFunction]
+) -> CategoryData:
     # Input: standardized transaction object
     # Ouput: category data dictionary. Empty dictionary if no data to return (no rule aplies)
 
@@ -65,6 +79,20 @@ def get_category_data(transaction: ImportedTransaction, rules: Sequence[Category
             return category_values
 
     return {}
+
+
+def get_meal_type(transaction: ImportedTransaction, category_values: CategoryData) -> str | None:
+
+    if category_values.get("l3_category") == "Hot Drinks & Snacks":
+        return "Snacks"
+
+    hour = transaction.transaction_datetime.hour
+    if hour < 11:
+        return "Breakfast"
+    elif hour < 17:
+        return "Lunch"
+    else:
+        return "Dinner"
 
 
 def get_eur_amount(

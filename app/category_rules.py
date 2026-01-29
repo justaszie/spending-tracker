@@ -66,39 +66,23 @@ RESTAURANT_MERCHANTS = {
 def _is_eating_out(transaction: ImportedTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(merchant.lower() in counterparty for merchant in RESTAURANT_MERCHANTS):
-        categorization = {
+        return {
             "l1_category": "Food & Drink",
             "l2_category": "Food",
             "l3_category": "Eating Out",
         }
-        hour = transaction.transaction_datetime.hour
-        if hour < 11:
-            meal_type = "Breakfast"
-        elif hour < 17:
-            meal_type = "Lunch"
-        else:
-            meal_type = "Dinner"
-
-        categorization["meal_type"] = meal_type
-        return categorization
+    return None
 
 
 def _is_food_delivery(transaction: ImportedTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(counterparty == merchant.lower() for merchant in FOOD_DELIVERY_MERCHANTS):
-        categorization = {
+        return {
             "l1_category": "Food & Drink",
             "l2_category": "Food",
             "l3_category": "Food Delivery",
         }
-        hour = transaction.transaction_datetime.hour
-        if 10 < hour <= 15:
-            meal_type = "Lunch"
-        else:
-            meal_type = "Dinner"
-
-        categorization["meal_type"] = meal_type
-        return categorization
+    return None
 
 
 def _is_business_lunch(transaction: ImportedTransaction) -> CategoryData | None:
@@ -109,12 +93,12 @@ def _is_business_lunch(transaction: ImportedTransaction) -> CategoryData | None:
         and 11 <= transaction.transaction_datetime.hour < 15
     ):
         return {
-            "category": "Food & Drink",
-            "sub_category": "Food",
-            "detail": "Eating Out",
+            "l1_category": "Food & Drink",
+            "l2_category": "Food",
+            "l3_category": "Eating Out",
             "note": "Business Lunch",
-            "meal_type": "Lunch",
         }
+    return None
 
 
 def _is_streaming_services(transaction: ImportedTransaction) -> CategoryData | None:
@@ -128,6 +112,7 @@ def _is_streaming_services(transaction: ImportedTransaction) -> CategoryData | N
             "l2_category": "Streaming Services",
             "l3_category": f"{transaction.counterparty} subscription",
         }
+    return None
 
 
 def _is_groceries(transaction: ImportedTransaction) -> CategoryData | None:
@@ -138,6 +123,7 @@ def _is_groceries(transaction: ImportedTransaction) -> CategoryData | None:
             "l2_category": "Groceries",
             "l3_category": "Groceries",
         }
+    return None
 
 
 def _is_breakfast(transaction: ImportedTransaction) -> CategoryData | None:
@@ -151,8 +137,8 @@ def _is_breakfast(transaction: ImportedTransaction) -> CategoryData | None:
             "l1_category": "Food & Drink",
             "l2_category": "Food",
             "l3_category": "Eating Out",
-            "meal_type": "Breakfast",
         }
+    return None
 
 
 def _is_hot_drinks(transaction: ImportedTransaction) -> CategoryData | None:
@@ -165,8 +151,8 @@ def _is_hot_drinks(transaction: ImportedTransaction) -> CategoryData | None:
             "l1_category": "Food & Drink",
             "l2_category": "Food",
             "l3_category": "Hot Drinks & Snacks",
-            "meal_type": "Snacks",
         }
+    return None
 
 
 # For now, the list of specific categorization rules is setup manually
