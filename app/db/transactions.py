@@ -9,9 +9,11 @@ from app.project_types import Side, TransactionSource, TransactionType
 
 
 class Transaction(SQLModel, table=True):
-    __tablename__ = "transactions" # type: ignore
+    __tablename__ = "transactions"  # type: ignore
     __table_args__ = (
-        UniqueConstraint("user_id", "dedup_key", name="uq_transaction_user_id_dedup_key"),
+        UniqueConstraint(
+            "user_id", "dedup_key", name="uq_transaction_user_id_dedup_key"
+        ),
     )
 
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)

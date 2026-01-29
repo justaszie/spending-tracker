@@ -13,7 +13,12 @@ from pydantic import (
     ValidationError,
 )
 
-from app.project_types import ImportedTransaction, TransactionType, TransactionSource, Side
+from app.project_types import (
+    ImportedTransaction,
+    TransactionType,
+    TransactionSource,
+    Side,
+)
 
 logger = logging.getLogger(__name__)
 

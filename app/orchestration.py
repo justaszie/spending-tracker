@@ -108,6 +108,3 @@ def run_job(
         logging.INFO,
         f"Inserted {len(new)} new transactions | {len(duplicates)} duplicates",
     )
-
-
-
