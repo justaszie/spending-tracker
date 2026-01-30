@@ -25,7 +25,7 @@ from app.enrichment import (
 from app.file_storage import FileStorage
 from app.filters import filter_transactions
 from app.parsers.registry import get_parser
-from app.project_types import ImportedTransaction, JobStatus
+from app.project_types import ImportedTransaction, JobStatus, Side
 
 logger = logging.getLogger(__name__)
 
@@ -107,11 +107,19 @@ def run_job(
             orig_amount=transaction.orig_amount,
         )
 
-        spending_categories = get_category_data(transaction, CATEGORY_RULES)
+        # Spending categories only relevant for debit transactions
+        spending_categories = (
+            get_category_data(transaction, CATEGORY_RULES)
+            if transaction.side == Side.DEBIT
+            else {}
+        )
 
-        meal_type = None
-        if is_food_spending(spending_categories):
-            meal_type = get_meal_type(transaction, spending_categories)
+        # Calculating meal type for food transactions only
+        meal_type = (
+            get_meal_type(transaction, spending_categories)
+            if is_food_spending(spending_categories)
+            else None
+        )
 
         enriched.append(
             convert_to_db_transaction(
