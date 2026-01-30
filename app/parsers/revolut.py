@@ -131,6 +131,7 @@ def get_transaction_type(transaction: RawTransactionRevolut) -> TransactionType:
         "ATM": TransactionType.CASH_WITHDRAWAL,
         "Card Payment": TransactionType.CARD_PAYMENT,
         "Transfer": TransactionType.TRANSFER,
+        "Card Refund": TransactionType.CARD_REFUND,
     }
     return mapping.get(transaction.type, TransactionType.OTHER)
 
@@ -151,8 +152,8 @@ def calculate_dedup_key(transaction: RawTransactionRevolut) -> str:
         f"{transaction.started_at.isoformat()}_"
         f"{transaction.completed_at.isoformat()}_"
         f"{str(transaction.description).strip().lower()}_"
-        f"{str(transaction.amount.quantize(Decimal("0.01"))).strip().lower()}_"
-        f"{str(transaction.balance_after.quantize(Decimal("0.01"))).strip().lower()}_"
+        f"{str(transaction.amount.quantize(Decimal('0.01'))).strip().lower()}_"
+        f"{str(transaction.balance_after.quantize(Decimal('0.01'))).strip().lower()}_"
     )
 
     hash_algo = sha256()
