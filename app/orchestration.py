@@ -156,6 +156,10 @@ def convert_to_db_transaction(
     job_id: UUID | None = None,
     manually_added: bool = False,
 ) -> Transaction:
+    # free textn notes can be either populated from the source or by categorization logic.
+    # We prefer the source value as it's closer to truth and has richer information
+    transaction_note = transaction.note or spending_categories.get("note")
+
     return Transaction(
         transaction_datetime=transaction.transaction_datetime,
         type=transaction.type,
@@ -169,7 +173,7 @@ def convert_to_db_transaction(
         l1_category=spending_categories.get("l1_category"),
         l2_category=spending_categories.get("l2_category"),
         l3_category=spending_categories.get("l3_category"),
-        note=spending_categories.get("note"),
+        note=transaction_note,
         meal_type=meal_type,
         job_id=job_id,
         user_id=user_id,
