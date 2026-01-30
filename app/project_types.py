@@ -31,7 +31,9 @@ class TransactionSource(StrEnum):
 class TransactionType(StrEnum):
     CARD_PAYMENT = "card_payment"
     CASH_WITHDRAWAL = "cash_withdrawal"
+    CASH_PAYMENT = "cash_payment"
     TRANSFER = "transfer"
+    CARD_REFUND = "card_refund"
     OTHER = "other"
 
 
