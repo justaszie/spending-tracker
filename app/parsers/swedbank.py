@@ -90,6 +90,11 @@ class RawTransactionSwedbank(BaseModel):
 
         return self
 
+    @field_validator("amount", mode="after")
+    @classmethod
+    def standaridze_amount(cls, value: Decimal) -> Decimal:
+        return value.quantize(Decimal("0.01"))
+
 
 def calculate_dedup_key(transaction: RawTransactionSwedbank) -> str:
     dedup_data = str(transaction.unique_id).strip().lower()

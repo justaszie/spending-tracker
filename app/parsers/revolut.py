@@ -100,6 +100,12 @@ class RawTransactionRevolut(BaseModel):
 
         return self
 
+    @model_validator(mode="after")
+    def standardize_amounts_format(self) -> "RawTransactionRevolut":
+        self.amount = self.amount.quantize(Decimal("0.01"))
+        self.balance_after = self.balance_after.quantize(Decimal("0.01"))
+        return self
+
 
 def convert_to_standardized_transaction(
     transaction: RawTransactionRevolut,
@@ -145,8 +151,8 @@ def calculate_dedup_key(transaction: RawTransactionRevolut) -> str:
         f"{transaction.started_at.isoformat()}_"
         f"{transaction.completed_at.isoformat()}_"
         f"{str(transaction.description).strip().lower()}_"
-        f"{str(transaction.amount).strip().lower()}_"
-        f"{str(transaction.balance_after).strip().lower()}_"
+        f"{str(transaction.amount.quantize(Decimal("0.01"))).strip().lower()}_"
+        f"{str(transaction.balance_after.quantize(Decimal("0.01"))).strip().lower()}_"
     )
 
     hash_algo = sha256()
