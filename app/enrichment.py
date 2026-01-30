@@ -16,7 +16,9 @@ class EurConversionError(Exception):
 
 
 def get_category_data(
-    transaction: ImportedTransaction, rules: Sequence[CategoryRuleFunction]
+    transaction: ImportedTransaction,
+    eur_amount: Decimal,
+    rules: Sequence[CategoryRuleFunction],
 ) -> CategoryData:
     # Input: standardized transaction object
     # Ouput: category data dictionary. Empty dictionary if no data to return (no rule aplies)
@@ -24,7 +26,7 @@ def get_category_data(
     # Rule selection policy:
     # We take the results of the first category rule that returns value
     for rule_fn in rules:
-        category_values = rule_fn(transaction)
+        category_values = rule_fn(transaction, eur_amount)
         if category_values:
             return category_values
 

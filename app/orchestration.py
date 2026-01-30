@@ -109,7 +109,7 @@ def run_job(
 
         # Spending categories only relevant for debit transactions
         spending_categories = (
-            get_category_data(transaction, CATEGORY_RULES)
+            get_category_data(transaction, eur_amount, CATEGORY_RULES)
             if transaction.side == Side.DEBIT
             else {}
         )
