@@ -23,7 +23,7 @@ class Side(StrEnum):
 
 
 class TransactionSource(StrEnum):
-    CASH = "cash"
+    MANUAL = "manual"
     SWEDBANK = "swedbank"
     REVOLUT = "revolut"
 
