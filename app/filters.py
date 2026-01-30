@@ -29,7 +29,7 @@ def is_own_account_transfer(transaction: ImportedTransaction) -> bool:
 
 
 ACTIVE_FILTERS: list[FilterFN] = [
-    lambda txn: txn.type != TransactionType.CASH_WITHDRAWAL,
+    # lambda txn: txn.type != TransactionType.CASH_WITHDRAWAL,
     lambda txn: not is_own_account_transfer(txn),
 ]
 
