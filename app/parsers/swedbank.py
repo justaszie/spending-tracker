@@ -55,7 +55,7 @@ def get_statement_rows(statement: BinaryIO) -> list[dict[str, Any]]:
     # Output: list of dictionaries (mapping each column to value) - 1 for each row in csv
     text_reader = TextIOWrapper(statement)
     dict_reader = DictReader(text_reader)
-    return [txn_as_dict for txn_as_dict in dict_reader]
+    return list(dict_reader)
 
 
 class RawTransactionSwedbank(BaseModel):

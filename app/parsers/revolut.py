@@ -131,6 +131,7 @@ def get_transaction_type(transaction: RawTransactionRevolut) -> TransactionType:
         "ATM": TransactionType.CASH_WITHDRAWAL,
         "Card Payment": TransactionType.CARD_PAYMENT,
         "Transfer": TransactionType.TRANSFER,
+        "Card Refund": TransactionType.CARD_REFUND,
     }
     return mapping.get(transaction.type, TransactionType.OTHER)
 
