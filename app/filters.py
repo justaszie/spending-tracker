@@ -1,12 +1,12 @@
 # Responsibility: implement filters (WHAT) and filtering logic (HOW)
 # for a set of imported transactions.
+from collections.abc import Callable
 import copy
 import re
-from typing import Callable
 
 from app.project_types import ImportedTransaction, TransactionType
 
-OWN_ACCOUNT_PATTERNS = {
+OWN_ACCOUNT_NAMES = (
     r"^JUSTAS ZIEMINYKAS$",
     r"^TO GBP$",
     r"^TO GBP SAVINGS$",
@@ -16,14 +16,18 @@ OWN_ACCOUNT_PATTERNS = {
     r"^TO USD$",
     r"^TO INVESTMENT ACCOUNT$",
     r"^Revolut\*\*6494\* E14 4HD London$",  # Top up using Google Play with Swedbank card
-}
+)
+
+OWN_ACCOUNT_PATTERNS = tuple(
+    re.compile(pattern, re.IGNORECASE) for pattern in OWN_ACCOUNT_NAMES
+)
 
 FilterFN = Callable[[ImportedTransaction], bool]
 
 
 def is_own_account_transfer(transaction: ImportedTransaction) -> bool:
     return transaction.type == TransactionType.TRANSFER and any(
-        re.search(pattern, transaction.counterparty, re.IGNORECASE) is not None
+        pattern.search(transaction.counterparty) is not None
         for pattern in OWN_ACCOUNT_PATTERNS
     )
 
