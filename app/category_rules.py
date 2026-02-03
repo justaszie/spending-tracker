@@ -98,7 +98,7 @@ def eating_out(
     counterparty = transaction.counterparty.lower().strip()
     if any(merchant.lower() in counterparty for merchant in RESTAURANT_MERCHANTS):
         return {
-            "l1_category": "Food & Drink",
+            "l1_category": "Food & Drinks",
             "l2_category": "Food",
             "l3_category": "Eating Out",
         }
@@ -111,7 +111,7 @@ def food_delivery(
     counterparty = transaction.counterparty.lower().strip()
     if any(counterparty == merchant.lower() for merchant in FOOD_DELIVERY_MERCHANTS):
         return {
-            "l1_category": "Food & Drink",
+            "l1_category": "Food & Drinks",
             "l2_category": "Food",
             "l3_category": "Food Delivery",
         }
@@ -128,7 +128,7 @@ def business_lunch(
         and 11 <= transaction.transaction_datetime.hour < 15
     ):
         return {
-            "l1_category": "Food & Drink",
+            "l1_category": "Food & Drinks",
             "l2_category": "Food",
             "l3_category": "Eating Out",
             "note": "Business Lunch",
@@ -172,7 +172,7 @@ def breakfast(
         and standard_ccy_amount > 5
     ):
         return {
-            "l1_category": "Food & Drink",
+            "l1_category": "Food & Drinks",
             "l2_category": "Food",
             "l3_category": "Eating Out",
         }
@@ -188,7 +188,7 @@ def hot_drinks(
         and standard_ccy_amount < 5
     ):
         return {
-            "l1_category": "Food & Drink",
+            "l1_category": "Food & Drinks",
             "l2_category": "Food",
             "l3_category": "Hot Drinks & Snacks",
         }
