@@ -49,7 +49,7 @@ def run_job(
 
     # Load the statement from file storage
     statement = file_storage.load_file(
-        job.file_path, bucket=app_config.statements_storage_bucket
+        job.file_path, bucket=app_config.STATEMENTS_STORAGE_BUCKET
     )
 
     # Find the right parser
@@ -63,14 +63,14 @@ def run_job(
     imported_txns: list[ImportedTransaction] = parser(statement)
 
     # [DEV OBSERVABILITY]
-    if app_config.app_environment == AppEnvironment.DEV:
+    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
         df = pd.DataFrame(txn.model_dump() for txn in imported_txns)
         df.to_csv("test_output_imported.csv")
 
     filtered = filter_transactions(imported_txns)
 
     # [DEV OBSERVABILITY]
-    if app_config.app_environment == AppEnvironment.DEV:
+    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
         df = pd.DataFrame(txn.model_dump() for txn in filtered)
         df.to_csv("test_output_filtered.csv")
 
@@ -86,7 +86,7 @@ def run_job(
             duplicates.append(transaction)
 
     # [DEV OBSERVABILITY]
-    if app_config.app_environment == AppEnvironment.DEV:
+    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
         df = pd.DataFrame(txn.model_dump() for txn in duplicates)
         df.to_csv("test_duplicates.csv")
 
@@ -133,7 +133,7 @@ def run_job(
         )
 
     # [DEV OBSERVABILITY]
-    if app_config.app_environment == AppEnvironment.DEV:
+    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
         df = pd.DataFrame(txn.model_dump() for txn in enriched)
         df.to_csv("test_output_enriched.csv")
 

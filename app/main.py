@@ -32,7 +32,7 @@ def validate_user_creds(
 ) -> str:
     # Create a supabase client separate from global admin client that uses storage
     supabase_client = create_client(
-        app_config.supabase_url, app_config.supabase_anon_key
+        app_config.SUPABASE_URL, app_config.SUPABASE_ANON_KEY
     )
     try:
         response = supabase_client.auth.sign_in_with_password(
@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):  # type: ignore
     app.state.app_config = app_config
 
     # 2. Initialize database client
-    connection_string = app_config.db_connection_string
+    connection_string = app_config.DB_CONNECTION_STRING
     if not connection_string:
         logger.error("Missing database connection string in environment")
         raise Exception("Missing database connection string in environment")
@@ -69,8 +69,8 @@ async def lifespan(app: FastAPI):  # type: ignore
     app.state.db_engine = engine
 
     # 3. Initialize service role supabase client
-    supabase_url = app_config.supabase_url
-    supabase_admin_key = app_config.supabase_admin_key
+    supabase_url = app_config.SUPABASE_URL
+    supabase_admin_key = app_config.SUPABASE_ADMIN_KEY
     supabase_admin = create_client(supabase_url, supabase_admin_key)
     app.state.supabase_admin = supabase_admin
     logger.info("Supabase Admin Client Initialized")
@@ -80,9 +80,9 @@ async def lifespan(app: FastAPI):  # type: ignore
     logger.info("File Storage Initialized")
 
     # 5. Auth feature flag - skip jwt validation in DEV environment
-    if app_config.app_environment == AppEnvironment.DEV:
+    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
         app.dependency_overrides[get_authenticated_user] = (
-            lambda: app_config.test_user_id
+            lambda: app_config.TEST_USER_ID
         )
 
     yield

@@ -12,11 +12,11 @@ class AppEnvironment(StrEnum):
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env")
 
-    statements_storage_bucket: str = "statements"
-    test_user_id: UUID | None = None
-    app_environment: AppEnvironment = AppEnvironment.PROD
-    db_connection_string: str
-    supabase_url: str
-    supabase_anon_key: str
-    supabase_admin_key: str
+    STATEMENTS_STORAGE_BUCKET: str = "statements"
+    TEST_USER_ID: UUID | None = None
+    APP_ENVIRONMENT: AppEnvironment = AppEnvironment.PROD
+    DB_CONNECTION_STRING: str
+    SUPABASE_URL: str
+    SUPABASE_ANON_KEY: str
+    SUPABASE_ADMIN_KEY: str
     V1_API_PREFIX: str = "/api/v1"

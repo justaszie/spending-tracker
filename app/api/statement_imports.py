@@ -44,7 +44,7 @@ def create_import_job(
         filename=file_name,
         file=statement_file.file,
         user_id=user_id,
-        bucket=app_config.statements_storage_bucket,
+        bucket=app_config.STATEMENTS_STORAGE_BUCKET,
     )
 
     job = StatementImportJob(
