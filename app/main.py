@@ -13,7 +13,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlmodel import SQLModel, create_engine
 from supabase_auth.errors import AuthApiError
 
-from app.api.routes.import_jobs import router as jobs_router
+from app.api.statement_imports import router as imports_router
 from app.config import AppConfig, AppEnvironment
 from app.dependencies import (
     ConfigDependency,
@@ -125,4 +125,4 @@ def authenticate_user(
 
 api_prefix = AppConfig().V1_API_PREFIX
 app.include_router(core_router, prefix=api_prefix)
-app.include_router(jobs_router, prefix=api_prefix)
+app.include_router(imports_router, prefix=api_prefix)
