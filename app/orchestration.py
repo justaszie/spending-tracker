@@ -24,7 +24,7 @@ from app.enrichment import (
 )
 from app.file_storage import FileStorage
 from app.filters import filter_transactions
-from app.parsers.registry import get_parser
+from app.statement_extractors.registry import get_extractor
 from app.project_types import ImportedTransaction, JobStatus, Side
 
 logger = logging.getLogger(__name__)
@@ -52,15 +52,15 @@ def run_job(
         job.file_path, bucket=app_config.STATEMENTS_STORAGE_BUCKET
     )
 
-    # Find the right parser
-    parser = get_parser(job.statement_source)
+    # Find the right extractor
+    extractor_fn = get_extractor(job.statement_source)
 
     # Log it and update job record status=failed, reason=technical_error
-    if parser is None:
+    if extractor_fn is None:
         return
 
     # 4. Get imported transactions
-    imported_txns: list[ImportedTransaction] = parser(statement)
+    imported_txns: list[ImportedTransaction] = extractor_fn(statement)
 
     # [DEV OBSERVABILITY]
     if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:

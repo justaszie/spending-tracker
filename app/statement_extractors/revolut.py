@@ -23,7 +23,7 @@ from app.project_types import (
 logger = logging.getLogger(__name__)
 
 
-def parse_revolut_statement(statement: BinaryIO) -> list[ImportedTransaction]:
+def extract_transactions(statement: BinaryIO) -> list[ImportedTransaction]:
     statement_rows = get_statement_rows(statement)
     standardized = []
     rejected_count = 0
@@ -35,7 +35,7 @@ def parse_revolut_statement(statement: BinaryIO) -> list[ImportedTransaction]:
         except ValidationError:
             rejected_count += 1
 
-    logger.log(logging.INFO, "### Revolut Parser finished")
+    logger.log(logging.INFO, "### Revolut Extractor finished")
     logger.log(logging.INFO, f"Imported valid transactions: {len(standardized)}")
     logger.log(logging.INFO, f"Rejected rows: {rejected_count}")
 

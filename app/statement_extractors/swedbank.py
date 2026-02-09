@@ -31,7 +31,7 @@ EXCL_DESCRIPTION_PATTERNS = (
 )
 
 
-def parse_swedbank_statement(statement: BinaryIO) -> list[ImportedTransaction]:
+def extract_transactions(statement: BinaryIO) -> list[ImportedTransaction]:
     statement_rows = get_statement_rows(statement)
     standardized = []
     rejected_count = 0
@@ -43,7 +43,7 @@ def parse_swedbank_statement(statement: BinaryIO) -> list[ImportedTransaction]:
         except ValidationError:
             rejected_count += 1
 
-    logger.log(logging.INFO, "### Swedbank Parser finished")
+    logger.log(logging.INFO, "### Swedbank Extractor finished")
     logger.log(logging.INFO, f"Imported valid transactions: {len(standardized)}")
     logger.log(logging.INFO, f"Rejected rows: {rejected_count}")
 
