@@ -23,7 +23,7 @@ from app.project_types import StatementSource
 router = APIRouter(prefix="/import-jobs", tags=["Import Jobs"])
 
 
-@router.post("/", status_code=202)
+@router.post("", status_code=202)
 def create_job(
     user_id: AuthDependency,
     statement_file: UploadFile,
