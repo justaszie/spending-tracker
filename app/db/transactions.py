@@ -32,7 +32,9 @@ class Transaction(SQLModel, table=True):
     l3_category: str | None = Field(default=None)
     meal_type: str | None = Field(default=None)
     dedup_key: str = Field(nullable=False)
-    import_job_id: uuid.UUID = Field(nullable=True, default=None, foreign_key="statement_import_jobs.id")
+    import_job_id: uuid.UUID = Field(
+        nullable=True, default=None, foreign_key="statement_import_jobs.id"
+    )
     user_id: uuid.UUID = Field(nullable=False, index=True)
 
 

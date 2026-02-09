@@ -25,6 +25,7 @@ router = APIRouter(prefix="/statement-imports", tags=["Importing Statements"])
 
 ### API Request - Response Models
 
+
 ### Routes
 @router.post("", status_code=202)
 def create_import_job(
@@ -61,11 +62,15 @@ def create_import_job(
         app_config=app_config,
     )
 
-    return JSONResponse({"import_job_id": str(db_entry.id), "import_job_status": db_entry.status})
+    return JSONResponse(
+        {"import_job_id": str(db_entry.id), "import_job_status": db_entry.status}
+    )
 
 
 @router.get("/{import_job_id}")
-def get_import_job(user_id: AuthDependency, import_job_id: UUID, db: DBDependency) -> JSONResponse:
+def get_import_job(
+    user_id: AuthDependency, import_job_id: UUID, db: DBDependency
+) -> JSONResponse:
     job = load_job(import_job_id, db)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")

@@ -24,8 +24,8 @@ from app.enrichment import (
 )
 from app.file_storage import FileStorage
 from app.filters import filter_transactions
-from app.statement_extractors.registry import get_extractor
 from app.project_types import ExtractedTransaction, JobStatus, Side
+from app.statement_extractors.registry import get_extractor
 
 logger = logging.getLogger(__name__)
 
