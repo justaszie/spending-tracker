@@ -1,11 +1,11 @@
+from csv import DictReader
+from decimal import Decimal
+from hashlib import sha256
+from io import TextIOWrapper
+from typing import Any, BinaryIO
 import datetime as dt
 import logging
 import re
-from csv import DictReader
-from decimal import Decimal
-from io import TextIOWrapper
-from hashlib import sha256
-from typing import Any, BinaryIO
 
 from pydantic import (
     BaseModel,
@@ -18,9 +18,9 @@ from pydantic import (
 
 from app.project_types import (
     ImportedTransaction,
-    TransactionType,
-    TransactionSource,
     Side,
+    TransactionSource,
+    TransactionType,
 )
 
 logger = logging.getLogger(__name__)

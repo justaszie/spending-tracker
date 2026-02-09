@@ -1,11 +1,11 @@
-import datetime as dt
 from decimal import Decimal
-import logging
 from uuid import UUID
+import datetime as dt
+import logging
 
 from currency_converter import ECB_URL, CurrencyConverter
-import pandas as pd
 from sqlalchemy import Engine
+import pandas as pd
 
 from app.category_rules import CATEGORY_RULES, CategoryData
 from app.config import AppEnvironment

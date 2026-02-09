@@ -1,8 +1,8 @@
 # This module contains definition of categorization rules
 from collections.abc import Callable
 from decimal import Decimal
-import re
 from typing import NotRequired, TypedDict
+import re
 
 from app.project_types import ImportedTransaction
 
@@ -244,6 +244,7 @@ def shopping_other(
         }
 
     return None
+
 
 def gym_membership(
     transaction: ImportedTransaction, standard_ccy_amount: Decimal

@@ -77,8 +77,8 @@ ignore = [
 # Configure import sorting style
 known-first-party = ["app"]
 split-on-trailing-comma = true
-force-sort-within-sections = true
 # Separate import styles: straight imports (import x) come before from imports (from x import y)
+from-first = true
 # This is the standard convention and isort's default behavior
 force-single-line = false
 

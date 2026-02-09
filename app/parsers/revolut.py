@@ -1,23 +1,23 @@
-import datetime as dt
-import logging
 from decimal import Decimal
 from hashlib import sha256
 from typing import Any, BinaryIO
+import datetime as dt
+import logging
 
-import openpyxl
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    model_validator,
     ValidationError,
+    model_validator,
 )
+import openpyxl
 
 from app.project_types import (
     ImportedTransaction,
-    TransactionType,
-    TransactionSource,
     Side,
+    TransactionSource,
+    TransactionType,
 )
 
 logger = logging.getLogger(__name__)
@@ -152,8 +152,8 @@ def calculate_dedup_key(transaction: RawTransactionRevolut) -> str:
         f"{transaction.started_at.isoformat()}_"
         f"{transaction.completed_at.isoformat()}_"
         f"{str(transaction.description).strip().lower()}_"
-        f"{str(transaction.amount.quantize(Decimal("0.01"))).strip().lower()}_"
-        f"{str(transaction.balance_after.quantize(Decimal("0.01"))).strip().lower()}_"
+        f"{str(transaction.amount.quantize(Decimal('0.01'))).strip().lower()}_"
+        f"{str(transaction.balance_after.quantize(Decimal('0.01'))).strip().lower()}_"
     )
 
     hash_algo = sha256()

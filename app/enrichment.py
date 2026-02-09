@@ -1,6 +1,6 @@
 from collections.abc import Sequence
-import datetime as dt
 from decimal import Decimal
+import datetime as dt
 import logging
 
 from currency_converter import CurrencyConverter, RateNotFoundError

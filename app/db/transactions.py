@@ -1,9 +1,9 @@
-import uuid
-import datetime as dt
 from decimal import Decimal
+import datetime as dt
+import uuid
 
 from sqlalchemy import Engine, UniqueConstraint
-from sqlmodel import Field, select, Session, SQLModel
+from sqlmodel import Field, Session, SQLModel, select
 
 from app.project_types import Side, TransactionSource, TransactionType
 

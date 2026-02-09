@@ -2,7 +2,7 @@ from typing import BinaryIO, Callable
 
 from app.parsers.revolut import parse_revolut_statement
 from app.parsers.swedbank import parse_swedbank_statement
-from app.project_types import StatementSource, ImportedTransaction
+from app.project_types import ImportedTransaction, StatementSource
 
 ParserFN = Callable[[BinaryIO], list[ImportedTransaction]]
 

@@ -1,18 +1,18 @@
-import logging
 from typing import Annotated
 from uuid import UUID
+import logging
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import (
-    HTTPBearer,
     HTTPAuthorizationCredentials,
+    HTTPBearer,
 )
-from supabase import Client
-from supabase_auth.errors import AuthApiError
 from sqlalchemy import Engine
+from supabase_auth.errors import AuthApiError
 
-from app.file_storage import FileStorage
 from app.config import AppConfig
+from app.file_storage import FileStorage
+from supabase import Client
 
 logger = logging.getLogger(__name__)
 jwt_auth = HTTPBearer()
