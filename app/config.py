@@ -10,6 +10,8 @@ class AppEnvironment(StrEnum):
 
 
 class AppConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env")
+
     statements_storage_bucket: str = "statements"
     test_user_id: UUID | None = None
     app_environment: AppEnvironment = AppEnvironment.PROD
@@ -17,5 +19,4 @@ class AppConfig(BaseSettings):
     supabase_url: str
     supabase_anon_key: str
     supabase_admin_key: str
-
-    model_config = SettingsConfigDict(env_file=".env")
+    V1_API_PREFIX: str = "/api/v1"

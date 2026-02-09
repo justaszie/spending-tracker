@@ -1,36 +1,26 @@
-import logging
 from contextlib import asynccontextmanager
 from typing import Annotated
-from uuid import UUID
-
+import logging
 
 from fastapi import (
-    BackgroundTasks,
+    APIRouter,
     Depends,
     FastAPI,
-    Form,
     HTTPException,
-    UploadFile,
 )
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import JSONResponse
-from sqlmodel import create_engine, SQLModel
-from supabase import create_client
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from sqlmodel import SQLModel, create_engine
 from supabase_auth.errors import AuthApiError
 
+from app.api.routes.import_jobs import router as jobs_router
 from app.config import AppConfig, AppEnvironment
 from app.dependencies import (
-    AuthDependency,
     ConfigDependency,
-    DBDependency,
-    FSDependency,
     get_authenticated_user,
 )
-from app.db.jobs import IngestJob, create_new_job, load_job
-from app.project_types import StatementSource
 from app.file_storage import FileStorage
-from app.orchestration import run_job
-
+from supabase import create_client
 
 user_creds_auth = HTTPBasic()
 
@@ -97,6 +87,9 @@ async def lifespan(app: FastAPI):  # type: ignore
 
     yield
 
+    # Shutdown
+    engine.dispose()
+
 
 def configure_logging() -> None:
     logging.basicConfig(
@@ -114,66 +107,22 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(lifespan=lifespan)
 
+# Basic routes for health check and auth
+core_router = APIRouter()
 
-@app.get("/")
+
+@core_router.get("/")
 def root() -> "str":
     return "HELLO FROM SPENDING TRACKER"
 
 
-@app.post("/auth")
+@core_router.post("/auth")
 def authenticate_user(
     jwt: Annotated[str, Depends(validate_user_creds)],
 ) -> JSONResponse:
     return JSONResponse({"access_token": jwt})
 
 
-@app.post("/ingest-jobs", status_code=202)
-def create_job(
-    user_id: AuthDependency,
-    statement_file: UploadFile,
-    statement_source: Annotated[StatementSource, Form()],
-    db: DBDependency,
-    file_storage: FSDependency,
-    app_config: ConfigDependency,
-    background_tasks: BackgroundTasks,
-) -> JSONResponse:
-    # Filename is not mandatory for API consumer to provide. In this case we generate it.
-    file_name = statement_file.filename or f"{statement_source.value}_statement"
-
-    file_path = file_storage.upload_statement(
-        statement_source=statement_source,
-        filename=file_name,
-        file=statement_file.file,
-        user_id=user_id,
-        bucket=app_config.statements_storage_bucket,
-    )
-
-    job = IngestJob(
-        user_id=user_id, statement_source=statement_source, file_path=file_path
-    )
-    db_entry = create_new_job(new_job=job, db=db)
-
-    background_tasks.add_task(
-        run_job,
-        job_id=db_entry.id,
-        user_id=user_id,
-        db=db,
-        file_storage=file_storage,
-        app_config=app_config,
-    )
-
-    return JSONResponse({"job_id": str(db_entry.id), "status": db_entry.status})
-
-
-@app.get("/ingest-jobs/{job_id}")
-def get_job(user_id: AuthDependency, job_id: UUID, db: DBDependency) -> JSONResponse:
-    job = load_job(job_id, db)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    return JSONResponse(
-        {
-            "job_id": str(job.id),
-            "status": job.status,
-        }
-    )
+api_prefix = AppConfig().V1_API_PREFIX
+app.include_router(core_router, prefix=api_prefix)
+app.include_router(jobs_router, prefix=api_prefix)
