@@ -34,7 +34,7 @@ class Transaction(SQLModel, table=True):
     refunded_eur_amount: Decimal = Field(nullable=False, default=Decimal("0"))
     dedup_key: str = Field(nullable=False)
     job_id: uuid.UUID = Field(nullable=True, default=None, foreign_key="jobs.id")
-    user_id: uuid.UUID = Field(nullable=False)
+    user_id: uuid.UUID = Field(nullable=False, index=True)
 
 
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
