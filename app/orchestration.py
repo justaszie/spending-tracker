@@ -9,7 +9,7 @@ import pandas as pd
 
 from app.category_rules import CATEGORY_RULES, CategoryData
 from app.config import AppEnvironment
-from app.db.jobs import load_job, update_job
+from app.db.statement_import_jobs import load_job, update_job
 from app.db.transactions import (
     Transaction,
     get_existing_dedup_keys,
@@ -143,7 +143,7 @@ def run_job(
     # 8. Update job status in DB.
     job.finished_at = dt.datetime.now()
     job.status = JobStatus.COMPLETED
-    job.ingested_txn_count = len(enriched)
+    job.imported_txn_count = len(enriched)
     job.duplicate_txn_count = len(duplicates)
 
     update_job(updated_job=job, db=db)
@@ -151,7 +151,7 @@ def run_job(
     logger.log(logging.INFO, f"### Completed Job: {job.id} for {job.statement_source}")
     logger.log(
         logging.INFO,
-        f"Inserted {job.ingested_txn_count} new transactions | {job.duplicate_txn_count} duplicates",
+        f"Inserted {job.imported_txn_count} new transactions | {job.duplicate_txn_count} duplicates",
     )
 
 
@@ -183,7 +183,7 @@ def convert_to_db_transaction(
         l3_category=spending_categories.get("l3_category"),
         note=transaction_note,
         meal_type=meal_type,
-        job_id=job_id,
+        import_job_id=job_id,
         user_id=user_id,
         manually_added=manually_added,
     )

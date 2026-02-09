@@ -11,8 +11,8 @@ from app.project_types import JobStatus, StatementSource
 logger = logging.getLogger(__name__)
 
 
-class IngestJob(SQLModel, table=True):
-    __tablename__ = "jobs"  # type: ignore
+class StatementImportJob(SQLModel, table=True):
+    __tablename__ = "statement_import_jobs"  # type: ignore
 
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     statement_source: StatementSource = Field(nullable=False)
@@ -22,12 +22,12 @@ class IngestJob(SQLModel, table=True):
     finished_at: dt.datetime | None = Field(default=None)
     status: JobStatus = Field(nullable=False, default=JobStatus.PENDING)
     failure_reason: str | None = Field(default=None)
-    ingested_txn_count: int | None = Field(default=None)
+    imported_txn_count: int | None = Field(default=None)
     duplicate_txn_count: int | None = Field(default=None)
     user_id: uuid.UUID | None = Field(nullable=True, default=None)
 
 
-def create_new_job(new_job: IngestJob, db: Engine) -> IngestJob:
+def create_new_job(new_job: StatementImportJob, db: Engine) -> StatementImportJob:
     with Session(db) as session:
         try:
             session.add(new_job)
@@ -43,13 +43,13 @@ def create_new_job(new_job: IngestJob, db: Engine) -> IngestJob:
             ) from e
 
 
-def load_job(job_id: uuid.UUID, db: Engine) -> IngestJob | None:
+def load_job(job_id: uuid.UUID, db: Engine) -> StatementImportJob | None:
     with Session(db) as session:
-        job = session.get(IngestJob, job_id)
+        job = session.get(StatementImportJob, job_id)
         return job
 
 
-def update_job(updated_job: IngestJob, db: Engine) -> None:
+def update_job(updated_job: StatementImportJob, db: Engine) -> None:
     with Session(db) as session:
         session.add(updated_job)
         session.commit()
