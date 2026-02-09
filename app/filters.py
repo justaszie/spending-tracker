@@ -1,10 +1,10 @@
 # Responsibility: implement filters (WHAT) and filtering logic (HOW)
-# for a set of imported transactions.
+# for a set of extracted transactions.
 from collections.abc import Callable
 import copy
 import re
 
-from app.project_types import ImportedTransaction, TransactionType
+from app.project_types import ExtractedTransaction, TransactionType
 
 OWN_ACCOUNT_NAMES = (
     r"^JUSTAS ZIEMINYKAS$",
@@ -22,10 +22,10 @@ OWN_ACCOUNT_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE) for pattern in OWN_ACCOUNT_NAMES
 )
 
-FilterFN = Callable[[ImportedTransaction], bool]
+FilterFN = Callable[[ExtractedTransaction], bool]
 
 
-def is_own_account_transfer(transaction: ImportedTransaction) -> bool:
+def is_own_account_transfer(transaction: ExtractedTransaction) -> bool:
     return transaction.type == TransactionType.TRANSFER and any(
         pattern.search(transaction.counterparty) is not None
         for pattern in OWN_ACCOUNT_PATTERNS
@@ -43,8 +43,8 @@ def get_all_filters() -> list[FilterFN]:
 
 
 def filter_transactions(
-    transactions: list[ImportedTransaction],
-) -> list[ImportedTransaction]:
+    transactions: list[ExtractedTransaction],
+) -> list[ExtractedTransaction]:
     filters = get_all_filters()
     filtered = [
         txn

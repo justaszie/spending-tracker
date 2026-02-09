@@ -17,7 +17,7 @@ from pydantic import (
 )
 
 from app.project_types import (
-    ImportedTransaction,
+    ExtractedTransaction,
     Side,
     TransactionSource,
     TransactionType,
@@ -31,7 +31,7 @@ EXCL_DESCRIPTION_PATTERNS = (
 )
 
 
-def extract_transactions(statement: BinaryIO) -> list[ImportedTransaction]:
+def extract_transactions(statement: BinaryIO) -> list[ExtractedTransaction]:
     statement_rows = get_statement_rows(statement)
     standardized = []
     rejected_count = 0
@@ -44,7 +44,7 @@ def extract_transactions(statement: BinaryIO) -> list[ImportedTransaction]:
             rejected_count += 1
 
     logger.log(logging.INFO, "### Swedbank Extractor finished")
-    logger.log(logging.INFO, f"Imported valid transactions: {len(standardized)}")
+    logger.log(logging.INFO, f"Extracted valid transactions: {len(standardized)}")
     logger.log(logging.INFO, f"Rejected rows: {rejected_count}")
 
     return standardized
@@ -127,8 +127,8 @@ def get_side(transaction: RawTransactionSwedbank) -> Side:
 
 def convert_to_standardized_transaction(
     transaction: RawTransactionSwedbank,
-) -> ImportedTransaction:
-    standardized = ImportedTransaction(
+) -> ExtractedTransaction:
+    standardized = ExtractedTransaction(
         transaction_datetime=transaction.started_at,
         type=get_transaction_type(transaction),
         counterparty=get_counterparty(transaction),

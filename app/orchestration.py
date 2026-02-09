@@ -25,7 +25,7 @@ from app.enrichment import (
 from app.file_storage import FileStorage
 from app.filters import filter_transactions
 from app.statement_extractors.registry import get_extractor
-from app.project_types import ImportedTransaction, JobStatus, Side
+from app.project_types import ExtractedTransaction, JobStatus, Side
 
 logger = logging.getLogger(__name__)
 
@@ -59,23 +59,23 @@ def run_job(
     if extractor_fn is None:
         return
 
-    # 4. Get imported transactions
-    imported_txns: list[ImportedTransaction] = extractor_fn(statement)
+    # 4. Get extracted transactions
+    extracted_txns: list[ExtractedTransaction] = extractor_fn(statement)
 
     # [DEV OBSERVABILITY]
     if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
-        df = pd.DataFrame(txn.model_dump() for txn in imported_txns)
-        df.to_csv("test_output_imported.csv")
+        df = pd.DataFrame(txn.model_dump() for txn in extracted_txns)
+        df.to_csv("test_output_extracted.csv")
 
-    filtered = filter_transactions(imported_txns)
+    filtered = filter_transactions(extracted_txns)
 
     # [DEV OBSERVABILITY]
     if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
         df = pd.DataFrame(txn.model_dump() for txn in filtered)
         df.to_csv("test_output_filtered.csv")
 
-    new: list[ImportedTransaction] = []
-    duplicates: list[ImportedTransaction] = []
+    new: list[ExtractedTransaction] = []
+    duplicates: list[ExtractedTransaction] = []
 
     # Using set for O(1) lookups
     existing_dedup_keys = set(get_existing_dedup_keys(db=db))
@@ -151,12 +151,12 @@ def run_job(
     logger.log(logging.INFO, f"### Completed Job: {job.id} for {job.statement_source}")
     logger.log(
         logging.INFO,
-        f"Inserted {job.imported_txn_count} new transactions | {job.duplicate_txn_count} duplicates",
+        f"Imported {job.imported_txn_count} new transactions | {job.duplicate_txn_count} duplicates",
     )
 
 
 def convert_to_db_transaction(
-    transaction: ImportedTransaction,
+    transaction: ExtractedTransaction,
     eur_amount: Decimal,
     spending_categories: CategoryData,
     user_id: UUID,

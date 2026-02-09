@@ -1,11 +1,11 @@
 from collections.abc import Callable
 from typing import BinaryIO
 
-from app.project_types import ImportedTransaction, StatementSource
+from app.project_types import ExtractedTransaction, StatementSource
 import app.statement_extractors.revolut as revolut_extractor
 import app.statement_extractors.swedbank as swedbank_extractor
 
-ExtractorFN = Callable[[BinaryIO], list[ImportedTransaction]]
+ExtractorFN = Callable[[BinaryIO], list[ExtractedTransaction]]
 
 # Registry of extractors
 _registry: dict[StatementSource, ExtractorFN] = {
