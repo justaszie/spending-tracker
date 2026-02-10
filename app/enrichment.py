@@ -5,7 +5,7 @@ import logging
 
 from currency_converter import CurrencyConverter, RateNotFoundError
 
-from app.category_rules import CategoryData, CategoryRuleFunction
+from app.business_rules.spending_categories import CategoryData, CategoryRuleFunction
 from app.core.project_types import ExtractedTransaction
 
 logger = logging.getLogger(__name__)

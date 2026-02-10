@@ -7,7 +7,8 @@ from currency_converter import ECB_URL, CurrencyConverter
 from sqlalchemy import Engine
 import pandas as pd
 
-from app.category_rules import CATEGORY_RULES, CategoryData
+from app.business_rules.filters import FilterFN, get_filter_rules
+from app.business_rules.spending_categories import CATEGORY_RULES, CategoryData
 from app.core.config import AppEnvironment
 from app.core.dependencies import AppConfig
 from app.core.project_types import ExtractedTransaction, JobStatus, Side
@@ -23,9 +24,8 @@ from app.enrichment import (
     get_meal_type,
     is_food_spending,
 )
-from app.storage.file_storage import FileStorage
-from app.filter_rules import FilterFN, get_filter_rules
 from app.statement_extractors.registry import get_extractor
+from app.storage.file_storage import FileStorage
 
 logger = logging.getLogger(__name__)
 
