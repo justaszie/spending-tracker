@@ -12,7 +12,7 @@ from app.business_rules.spending_categories import CATEGORY_RULES, CategoryData
 from app.core.config import AppEnvironment
 from app.core.dependencies import AppConfig
 from app.core.project_types import ExtractedTransaction, JobStatus, Side
-from app.db.statement_import_jobs import load_job, update_job
+from app.db.statement_import_jobs import StatementImportJob, load_job, update_job
 from app.db.transactions import (
     Transaction,
     get_existing_dedup_keys,
@@ -29,6 +29,8 @@ from app.storage.file_storage import FileStorage
 
 logger = logging.getLogger(__name__)
 
+class JobNotFoundError(Exception):
+    pass
 
 def run_job(
     job_id: UUID,
@@ -37,17 +39,13 @@ def run_job(
     file_storage: FileStorage,
     app_config: AppConfig,
 ) -> None:
-    # 1. Load job info
+    # Load job info
     job = load_job(job_id, db)
     if not job:
-        return
+        raise JobNotFoundError
 
+    update_job_start(job=job, db=db)
     logger.log(logging.INFO, f"### Starting Job: {job.id} for {job.statement_source}")
-    current_time = dt.datetime.now()
-    job.started_at = current_time
-    job.updated_at = current_time
-    job.status = JobStatus.RUNNING
-    update_job(updated_job=job, db=db)
 
     # Load the statement from file storage
     statement = file_storage.load_file(
@@ -56,8 +54,7 @@ def run_job(
 
     # Find the right extractor for the statement
     extractor_fn = get_extractor(job.statement_source)
-
-    # Log it and update job record status=failed, reason=technical_error
+    # TODO: Log it and fail the job
     if extractor_fn is None:
         return
 
@@ -70,11 +67,10 @@ def run_job(
         df.to_csv("test_output_extracted.csv")
 
     # Apply filtering rules to discard irrelevant transactions
-    filter_rules: list[FilterFN] = get_filter_rules()
     filtered = [
         txn
         for txn in extracted_txns
-        if all(filter_function(txn) for filter_function in filter_rules)
+        if all(filter_function(txn) for filter_function in get_filter_rules())
     ]
 
     # [DEV OBSERVABILITY]
@@ -143,14 +139,9 @@ def run_job(
     insert_transactions(transactions=enriched, db=db)
 
     # Update job status in DB.
-    current_time = dt.datetime.now()
-    job.completed_at = current_time
-    job.updated_at = current_time
-    job.status = JobStatus.COMPLETED
     job.imported_txn_count = len(enriched)
     job.duplicate_txn_count = len(duplicates)
-
-    update_job(updated_job=job, db=db)
+    update_job_completed(job=job, db=db)
 
     logger.log(logging.INFO, f"### Completed Job: {job.id} for {job.statement_source}")
     logger.log(
@@ -191,3 +182,24 @@ def convert_to_db_transaction(
         user_id=user_id,
         manually_added=manually_added,
     )
+
+
+def fail_job(job: StatementImportJob, db: Engine, failure_reason: str) -> None:
+    job.updated_at = dt.datetime.now()
+    job.status = JobStatus.FAILED
+    job.failure_reason = failure_reason
+    update_job(updated_job=job, db=db)
+
+def update_job_completed(job: StatementImportJob, db: Engine) -> None:
+    current_time = dt.datetime.now()
+    job.completed_at = current_time
+    job.updated_at = current_time
+    job.status = JobStatus.COMPLETED
+    update_job(updated_job=job, db=db)
+
+def update_job_start(job: StatementImportJob, db: Engine) -> None:
+    current_time = dt.datetime.now()
+    job.started_at = current_time
+    job.updated_at = current_time
+    job.status = JobStatus.RUNNING
+    update_job(updated_job=job, db=db)
