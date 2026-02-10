@@ -18,7 +18,7 @@ from app.core.dependencies import (
 )
 from app.core.project_types import StatementSource
 from app.db.statement_import_jobs import StatementImportJob, create_new_job, load_job
-from app.orchestration import run_job
+from app.import_job_runner import run_job
 
 router = APIRouter(prefix="/statement-imports", tags=["Importing Statements"])
 
