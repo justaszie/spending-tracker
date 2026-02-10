@@ -43,7 +43,9 @@ def run_job(
         return
 
     logger.log(logging.INFO, f"### Starting Job: {job.id} for {job.statement_source}")
-    job.started_at = dt.datetime.now()
+    current_time = dt.datetime.now()
+    job.started_at = current_time
+    job.updated_at = current_time
     job.status = JobStatus.RUNNING
     update_job(updated_job=job, db=db)
 
@@ -141,7 +143,9 @@ def run_job(
     insert_transactions(transactions=enriched, db=db)
 
     # Update job status in DB.
-    job.finished_at = dt.datetime.now()
+    current_time = dt.datetime.now()
+    job.completed_at = current_time
+    job.updated_at = current_time
     job.status = JobStatus.COMPLETED
     job.imported_txn_count = len(enriched)
     job.duplicate_txn_count = len(duplicates)
