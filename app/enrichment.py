@@ -11,7 +11,7 @@ from app.core.project_types import ExtractedTransaction
 logger = logging.getLogger(__name__)
 
 
-class EurConversionError(Exception):
+class CurrencyConversionError(Exception):
     pass
 
 
@@ -69,7 +69,7 @@ def get_eur_amount(
     # we find the rate for the closest date
     while eur_amount is None:
         if retry_attempts > max_retries:
-            raise EurConversionError(
+            raise CurrencyConversionError(
                 "EUR conversion is not working - max per-txn attempts breached"
             )
 
@@ -80,5 +80,7 @@ def get_eur_amount(
         except RateNotFoundError:
             exchange_rate_date = exchange_rate_date - dt.timedelta(days=1)
             retry_attempts += 1
+        except Exception as e:
+            raise CurrencyConversionError(f"EUR conversion is not working: {e}") from e
 
     return Decimal(eur_amount).quantize(Decimal("0.01"))

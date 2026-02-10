@@ -5,6 +5,8 @@ import datetime as dt
 
 from app.core.project_types import StatementSource
 
+class StatementDownloadError(Exception):
+    pass
 
 # Integrate with supabase file storage
 class FileStorage:
@@ -40,5 +42,8 @@ class FileStorage:
         filepath: str,
         bucket: str,
     ) -> BytesIO:
-        response = self._storage_client.storage.from_(bucket).download(filepath)
-        return BytesIO(response)
+        try:
+            response = self._storage_client.storage.from_(bucket).download(filepath)
+            return BytesIO(response)
+        except Exception as e:
+            raise StatementDownloadError(f"Failed to download statement: {e}") from e

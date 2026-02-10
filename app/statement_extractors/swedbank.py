@@ -22,6 +22,7 @@ from app.core.project_types import (
     TransactionSource,
     TransactionType,
 )
+from app.statement_extractors.errors import StatementExtractorError
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,11 @@ EXCL_DESCRIPTION_PATTERNS = (
 
 
 def extract_transactions(statement: BinaryIO) -> list[ExtractedTransaction]:
-    statement_rows = get_statement_rows(statement)
+    try:
+        statement_rows = get_statement_rows(statement)
+    except Exception as e:
+        raise StatementExtractorError("Error while reading swedbank statement data") from e
+
     standardized = []
     rejected_count = 0
 
@@ -42,6 +47,8 @@ def extract_transactions(statement: BinaryIO) -> list[ExtractedTransaction]:
             standardized.append(convert_to_standardized_transaction(transaction))
         except ValidationError:
             rejected_count += 1
+        except Exception as e:
+            raise StatementExtractorError("Error while transforming swedbank statement data") from e
 
     logger.log(logging.INFO, "### Swedbank Extractor finished")
     logger.log(logging.INFO, f"Extracted valid transactions: {len(standardized)}")
