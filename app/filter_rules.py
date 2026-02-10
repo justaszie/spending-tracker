@@ -24,14 +24,14 @@ FilterFN = Callable[[ExtractedTransaction], bool]
 
 
 def is_own_account_transfer(transaction: ExtractedTransaction) -> bool:
-    return transaction.type == TransactionType.TRANSFER and any(
+    return any(
         pattern.search(transaction.counterparty) is not None
         for pattern in OWN_ACCOUNT_PATTERNS
     )
 
 
 ACTIVE_FILTERS: list[FilterFN] = [
-    # lambda txn: txn.type != TransactionType.CASH_WITHDRAWAL,
+    lambda txn: txn.type != TransactionType.CASH_WITHDRAWAL,
     lambda txn: not is_own_account_transfer(txn),
 ]
 
