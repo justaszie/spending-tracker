@@ -52,14 +52,14 @@ def run_job(
         job.file_path, bucket=app_config.STATEMENTS_STORAGE_BUCKET
     )
 
-    # Find the right extractor
+    # Find the right extractor for the statement
     extractor_fn = get_extractor(job.statement_source)
 
     # Log it and update job record status=failed, reason=technical_error
     if extractor_fn is None:
         return
 
-    # 4. Get extracted transactions
+    # Get extracted transactions in standard format
     extracted_txns: list[ExtractedTransaction] = extractor_fn(statement)
 
     # [DEV OBSERVABILITY]
@@ -96,14 +96,8 @@ def run_job(
         df = pd.DataFrame(txn.model_dump() for txn in duplicates)
         df.to_csv("test_duplicates.csv")
 
-    # TODO - move enrichment logic here:
-    # 1. Call pure enrichment functions to get pieces of data:
-    #   eur, categories, meal_type (if food),
-    # 2. Set job and user_id context
-    # 3. Map the ImportedTransaction values and new values to target Transaction model
-
     enriched = []
-    # 5. Enhance transactions to match the DB schema (EUR, Categories, Dedup key)
+    # Enrich transactions data to match the DB schema
     ccy_converter = CurrencyConverter(ECB_URL)
     for transaction in new:
         eur_amount = get_eur_amount(
@@ -143,10 +137,10 @@ def run_job(
         df = pd.DataFrame(txn.model_dump() for txn in enriched)
         df.to_csv("test_output_enriched.csv")
 
-    # 7. Insert new transactions
+    # Insert new transactions in the DB
     insert_transactions(transactions=enriched, db=db)
 
-    # 8. Update job status in DB.
+    # Update job status in DB.
     job.finished_at = dt.datetime.now()
     job.status = JobStatus.COMPLETED
     job.imported_txn_count = len(enriched)
