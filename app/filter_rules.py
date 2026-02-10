@@ -1,5 +1,3 @@
-# Responsibility: implement filters (WHAT) and filtering logic (HOW)
-# for a set of extracted transactions.
 from collections.abc import Callable
 import copy
 import re
@@ -38,18 +36,5 @@ ACTIVE_FILTERS: list[FilterFN] = [
 ]
 
 
-def get_all_filters() -> list[FilterFN]:
+def get_filter_rules() -> list[FilterFN]:
     return list(copy.deepcopy(ACTIVE_FILTERS))
-
-
-def filter_transactions(
-    transactions: list[ExtractedTransaction],
-) -> list[ExtractedTransaction]:
-    filters = get_all_filters()
-    filtered = [
-        txn
-        for txn in transactions
-        if all(filter_function(txn) for filter_function in filters)
-    ]
-
-    return filtered

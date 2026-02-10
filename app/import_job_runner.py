@@ -24,7 +24,7 @@ from app.enrichment import (
     is_food_spending,
 )
 from app.storage.file_storage import FileStorage
-from app.filters import filter_transactions
+from app.filter_rules import FilterFN, get_filter_rules
 from app.statement_extractors.registry import get_extractor
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,13 @@ def run_job(
         df = pd.DataFrame(txn.model_dump() for txn in extracted_txns)
         df.to_csv("test_output_extracted.csv")
 
-    filtered = filter_transactions(extracted_txns)
+    # Apply filtering rules to discard irrelevant transactions
+    filter_rules: list[FilterFN] = get_filter_rules()
+    filtered = [
+        txn
+        for txn in extracted_txns
+        if all(filter_function(txn) for filter_function in filter_rules)
+    ]
 
     # [DEV OBSERVABILITY]
     if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
