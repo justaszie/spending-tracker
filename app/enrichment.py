@@ -69,7 +69,7 @@ def get_eur_amount(
     # we find the rate for the closest date
     while eur_amount is None:
         if retry_attempts > max_retries:
-            return EurConversionError(
+            raise EurConversionError(
                 "EUR conversion is not working - max per-txn attempts breached"
             )
 
