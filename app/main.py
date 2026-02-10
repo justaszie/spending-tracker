@@ -19,7 +19,7 @@ from app.core.dependencies import (
     ConfigDependency,
     get_authenticated_user,
 )
-from app.file_storage import FileStorage
+from app.storage.file_storage import FileStorage
 from supabase import create_client
 
 user_creds_auth = HTTPBasic()

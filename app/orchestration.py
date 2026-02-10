@@ -23,7 +23,7 @@ from app.enrichment import (
     get_meal_type,
     is_food_spending,
 )
-from app.file_storage import FileStorage
+from app.storage.file_storage import FileStorage
 from app.filters import filter_transactions
 from app.statement_extractors.registry import get_extractor
 
