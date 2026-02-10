@@ -4,7 +4,7 @@ from collections.abc import Callable
 import copy
 import re
 
-from app.project_types import ExtractedTransaction, TransactionType
+from app.core.project_types import ExtractedTransaction, TransactionType
 
 OWN_ACCOUNT_NAMES = (
     r"^JUSTAS ZIEMINYKAS$",

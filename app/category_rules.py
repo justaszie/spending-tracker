@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import NotRequired, TypedDict
 import re
 
-from app.project_types import ExtractedTransaction
+from app.core.project_types import ExtractedTransaction
 
 
 class CategoryData(TypedDict):

@@ -3,7 +3,7 @@ from typing import Any, BinaryIO
 from uuid import UUID
 import datetime as dt
 
-from app.project_types import StatementSource
+from app.core.project_types import StatementSource
 
 
 # Integrate with supabase file storage

@@ -14,8 +14,8 @@ from sqlmodel import SQLModel, create_engine
 from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
-from app.config import AppConfig, AppEnvironment
-from app.dependencies import (
+from app.core.config import AppConfig, AppEnvironment
+from app.core.dependencies import (
     ConfigDependency,
     get_authenticated_user,
 )

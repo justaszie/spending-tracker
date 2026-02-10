@@ -10,7 +10,7 @@ from fastapi.security import (
 from sqlalchemy import Engine
 from supabase_auth.errors import AuthApiError
 
-from app.config import AppConfig
+from app.core.config import AppConfig
 from app.file_storage import FileStorage
 from supabase import Client
 

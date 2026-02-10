@@ -6,7 +6,7 @@ from sqlalchemy import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Field, Session, SQLModel
 
-from app.project_types import JobStatus, StatementSource
+from app.core.project_types import JobStatus, StatementSource
 
 logger = logging.getLogger(__name__)
 

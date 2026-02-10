@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import BinaryIO
 
-from app.project_types import ExtractedTransaction, StatementSource
+from app.core.project_types import ExtractedTransaction, StatementSource
 import app.statement_extractors.revolut as revolut_extractor
 import app.statement_extractors.swedbank as swedbank_extractor
 

@@ -8,14 +8,15 @@ from sqlalchemy import Engine
 import pandas as pd
 
 from app.category_rules import CATEGORY_RULES, CategoryData
-from app.config import AppEnvironment
+from app.core.config import AppEnvironment
+from app.core.dependencies import AppConfig
+from app.core.project_types import ExtractedTransaction, JobStatus, Side
 from app.db.statement_import_jobs import load_job, update_job
 from app.db.transactions import (
     Transaction,
     get_existing_dedup_keys,
     insert_transactions,
 )
-from app.dependencies import AppConfig
 from app.enrichment import (
     get_category_data,
     get_eur_amount,
@@ -24,7 +25,6 @@ from app.enrichment import (
 )
 from app.file_storage import FileStorage
 from app.filters import filter_transactions
-from app.project_types import ExtractedTransaction, JobStatus, Side
 from app.statement_extractors.registry import get_extractor
 
 logger = logging.getLogger(__name__)

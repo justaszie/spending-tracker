@@ -10,15 +10,15 @@ from fastapi import (
 )
 from fastapi.responses import JSONResponse
 
-from app.db.statement_import_jobs import StatementImportJob, create_new_job, load_job
-from app.dependencies import (
+from app.core.dependencies import (
     AuthDependency,
     ConfigDependency,
     DBDependency,
     FSDependency,
 )
+from app.core.project_types import StatementSource
+from app.db.statement_import_jobs import StatementImportJob, create_new_job, load_job
 from app.orchestration import run_job
-from app.project_types import StatementSource
 
 router = APIRouter(prefix="/statement-imports", tags=["Importing Statements"])
 

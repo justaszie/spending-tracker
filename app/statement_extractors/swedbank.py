@@ -16,7 +16,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.project_types import (
+from app.core.project_types import (
     ExtractedTransaction,
     Side,
     TransactionSource,
