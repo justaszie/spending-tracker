@@ -9,6 +9,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from app.core.dependencies import (
     AuthDependency,
@@ -16,7 +17,7 @@ from app.core.dependencies import (
     DBDependency,
     FSDependency,
 )
-from app.core.project_types import StatementSource
+from app.core.project_types import JobStatus, StatementSource
 from app.db.statement_import_jobs import StatementImportJob, create_new_job, load_job
 from app.import_job_runner import run_job
 
@@ -24,10 +25,13 @@ router = APIRouter(prefix="/statement-imports", tags=["Importing Statements"])
 
 
 ### API Request - Response Models
+class StatementImportResponse(BaseModel):
+    import_job_id: UUID
+    import_job_status: JobStatus
 
 
 ### Routes
-@router.post("", status_code=202)
+@router.post("", status_code=202, response_model=StatementImportResponse)
 def create_import_job(
     user_id: AuthDependency,
     statement_file: UploadFile,
@@ -36,7 +40,7 @@ def create_import_job(
     file_storage: FSDependency,
     app_config: ConfigDependency,
     background_tasks: BackgroundTasks,
-) -> JSONResponse:
+) -> StatementImportResponse:
     # Filename is not mandatory for API consumer to provide. In this case we generate it.
     file_name = statement_file.filename or f"{statement_source.value}_statement"
 
@@ -67,17 +71,12 @@ def create_import_job(
     )
 
 
-@router.get("/{import_job_id}")
+@router.get("/{import_job_id}", response_model=StatementImportResponse)
 def get_import_job(
     user_id: AuthDependency, import_job_id: UUID, db: DBDependency
-) -> JSONResponse:
+) -> StatementImportResponse:
     job = load_job(import_job_id, db)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    return JSONResponse(
-        {
-            "import_job_id": str(job.id),
-            "import_job_status": job.status,
-        }
-    )
+    return StatementImportResponse(import_job_id=job.id, import_job_status=job.status)
