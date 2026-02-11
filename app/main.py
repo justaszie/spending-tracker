@@ -1,12 +1,15 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 import logging
+import time
+import uuid
 
 from fastapi import (
     APIRouter,
     Depends,
     FastAPI,
     HTTPException,
+    Request,
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -106,6 +109,33 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(lifespan=lifespan)
+
+
+# Middleware to log processed requests
+@app.middleware("http")
+async def log_request_processed(request: Request, call_next):
+    start_time = time.perf_counter()
+    request_id = uuid.uuid4()
+    method = request.method
+    path = request.url.path
+    # Make request available in the route functions to link it with other events
+    request.state.request_id = request_id
+
+    response = await call_next(request)
+
+    status_code = response.status_code
+    process_time_ms = (time.perf_counter() - start_time) * 1000
+
+    # Log the processed request
+    logger.info(
+        f"### Request {request_id} processed. {method} | {path} | {status_code} | Duration: {process_time_ms:.2f}ms"
+    )
+
+    # Add request id to response header for debugging
+    response.headers["X-Request-Id"] = str(request_id)
+
+    return response
+
 
 # Basic routes for health check and auth
 core_router = APIRouter()
