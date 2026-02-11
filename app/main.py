@@ -42,7 +42,7 @@ def validate_user_creds(
             }
         )
     except AuthApiError as e:
-        logger.log(logging.WARNING, f"Failed to validate user credentials: {e}")
+        logger.warning(f"Failed to validate user credentials: {e}")
         raise HTTPException(status_code=401, detail="User credentials invalid")
     if not response.session:
         raise HTTPException(status_code=401, detail="User credentials invalid")
@@ -67,6 +67,7 @@ async def lifespan(app: FastAPI):  # type: ignore
     engine = create_engine(connection_string)
     SQLModel.metadata.create_all(engine)
     app.state.db_engine = engine
+    logger.info("Database Connection Established")
 
     # 3. Initialize service role supabase client
     supabase_url = app_config.SUPABASE_URL
@@ -84,6 +85,7 @@ async def lifespan(app: FastAPI):  # type: ignore
         app.dependency_overrides[get_authenticated_user] = (
             lambda: app_config.TEST_USER_ID
         )
+    logger.info("App Configuration Initialized")
 
     yield
 
@@ -98,8 +100,6 @@ def configure_logging() -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
         level=logging.INFO,
     )
-
-    logging.getLogger("googleapiclient").setLevel(logging.ERROR)
 
 
 configure_logging()

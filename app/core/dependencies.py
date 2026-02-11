@@ -54,10 +54,10 @@ def get_authenticated_user(
     try:
         result = supabase_admin.auth.get_user(token)
     except AuthApiError as e:
-        logger.log(logging.WARNING, f"Could not validate Bearer token: {e}")
+        logger.warning(f"Could not validate Bearer token: {e}")
         raise HTTPException(status_code=401, detail="User Authentication Failed")
     if not result:
-        logger.log(logging.WARNING, "User matching Bearer token not found")
+        logger.warning("User matching Bearer token not found")
         raise HTTPException(status_code=401, detail="User Authentication Failed")
 
     return UUID(result.user.id)

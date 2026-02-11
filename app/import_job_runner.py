@@ -75,7 +75,7 @@ def run_job(
         raise JobNotFoundError(f"Job not found for id: {job_id}")
 
     update_job_start(job=job, db=db)
-    logger.log(logging.INFO, f"### Starting Job: {job.id} for {job.statement_source}")
+    logger.info(f"### Starting Job: {job.id} for {job.statement_source}")
 
     try:
         # Load the statement from file storage
@@ -174,11 +174,8 @@ def run_job(
         job.duplicate_txn_count = len(existing)
         update_job_completed(job=job, db=db)
 
-        logger.log(
-            logging.INFO, f"### Completed Job: {job.id} for {job.statement_source}"
-        )
-        logger.log(
-            logging.INFO,
+        logger.info(f"### Completed Job: {job.id} for {job.statement_source}")
+        logger.info(
             f"Imported {job.imported_txn_count} new transactions | {job.duplicate_txn_count} duplicates",
         )
 

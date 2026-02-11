@@ -50,9 +50,9 @@ def extract_transactions(statement: BinaryIO) -> list[ExtractedTransaction]:
         except Exception as e:
             raise StatementExtractorError("Error while transforming swedbank statement data") from e
 
-    logger.log(logging.INFO, "### Swedbank Extractor finished")
-    logger.log(logging.INFO, f"Extracted valid transactions: {len(standardized)}")
-    logger.log(logging.INFO, f"Rejected rows: {rejected_count}")
+    logger.info("### Swedbank Extractor finished")
+    logger.info(f"Extracted valid transactions: {len(standardized)}")
+    logger.info(f"Rejected rows: {rejected_count}")
 
     return standardized
 
