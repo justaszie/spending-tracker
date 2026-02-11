@@ -197,7 +197,7 @@ def filter_existing(
     new, existing = [], []
     try:
         # Using set for O(1) lookups
-        existing_dedup_keys = set(get_existing_dedup_keys(user_id=user_id, db=db))
+        existing_dedup_keys = get_existing_dedup_keys(user_id=user_id, db=db)
         for transaction in transactions:
             if transaction.dedup_key not in existing_dedup_keys:
                 new.append(transaction)

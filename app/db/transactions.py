@@ -53,8 +53,8 @@ def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
         ) from e
 
 
-def get_existing_dedup_keys(user_id: uuid.UUID, db: Engine) -> list[str]:
+def get_existing_dedup_keys(user_id: uuid.UUID, db: Engine) -> set[str]:
     with Session(db) as session:
         statement = select(Transaction.dedup_key).where(Transaction.user_id == user_id)
         result = session.exec(statement).all()
-        return list(result)
+        return set(result)
