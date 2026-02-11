@@ -95,20 +95,36 @@ async def lifespan(app: FastAPI):  # type: ignore
     # Shutdown
     engine.dispose()
 
-
-def configure_logging() -> None:
-    logging.basicConfig(
-        format="[{levelname}] - {asctime} - {name}: {message}",
-        style="{",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.INFO,
-    )
-
-
-configure_logging()
+# Configure logger format
+logging.basicConfig(
+    format="[{levelname}] - {asctime} - {name}: {message}",
+    style="{",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    level=logging.INFO,
+)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(lifespan=lifespan)
+
+# Basic routes for health check and auth
+core_router = APIRouter()
+
+
+@core_router.get("/")
+def root() -> "str":
+    return "HELLO FROM SPENDING TRACKER"
+
+
+@core_router.post("/auth")
+def authenticate_user(
+    jwt: Annotated[str, Depends(validate_user_creds)],
+) -> JSONResponse:
+    return JSONResponse({"access_token": jwt})
+
+
+api_prefix = AppConfig().V1_API_PREFIX
+app.include_router(core_router, prefix=api_prefix)
+app.include_router(imports_router, prefix=api_prefix)
 
 
 # Middleware to log processed requests
@@ -136,23 +152,3 @@ async def log_request_processed(request: Request, call_next):
 
     return response
 
-
-# Basic routes for health check and auth
-core_router = APIRouter()
-
-
-@core_router.get("/")
-def root() -> "str":
-    return "HELLO FROM SPENDING TRACKER"
-
-
-@core_router.post("/auth")
-def authenticate_user(
-    jwt: Annotated[str, Depends(validate_user_creds)],
-) -> JSONResponse:
-    return JSONResponse({"access_token": jwt})
-
-
-api_prefix = AppConfig().V1_API_PREFIX
-app.include_router(core_router, prefix=api_prefix)
-app.include_router(imports_router, prefix=api_prefix)
