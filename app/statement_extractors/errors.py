@@ -1,0 +1,2 @@
+class StatementExtractorError(Exception):
+    pass

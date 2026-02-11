@@ -8,6 +8,10 @@ from sqlmodel import Field, Session, SQLModel, select
 from app.core.project_types import Side, TransactionSource, TransactionType
 
 
+class TransactionInsertError(Exception):
+    pass
+
+
 class Transaction(SQLModel, table=True):
     __tablename__ = "transactions"  # type: ignore
     __table_args__ = (
@@ -39,9 +43,14 @@ class Transaction(SQLModel, table=True):
 
 
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
-    with Session(db) as session:
-        session.add_all(transactions)
-        session.commit()
+    try:
+        with Session(db) as session:
+            session.add_all(transactions)
+            session.commit()
+    except Exception as e:
+        raise TransactionInsertError(
+            "Error while inserting transactions into database"
+        ) from e
 
 
 def get_existing_dedup_keys(db: Engine) -> list[str]:
