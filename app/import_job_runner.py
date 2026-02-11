@@ -82,6 +82,7 @@ def run_job(
         statement = file_storage.load_file(
             job.file_path, bucket=app_config.STATEMENTS_STORAGE_BUCKET
         )
+        logger.info(f"### Downloaded statement from: {job.file_path}")
 
         # Find the right extractor for the statement
         extractor_fn = get_extractor(job.statement_source)
@@ -100,11 +101,16 @@ def run_job(
 
         # Apply filtering rules to discard irrelevant transactions
         try:
+            count_before = len(extracted_txns)
             filtered = [
                 txn
                 for txn in extracted_txns
                 if all(filter_function(txn) for filter_function in get_filter_rules())
             ]
+            count_after = len(filtered)
+            logger.info(
+                f"### Completed business rules filtering. Before filtering: {count_before} | After filtering: {count_after}"
+            )
         except Exception as e:
             raise BusinessRuleFilterError from e
 
@@ -118,6 +124,12 @@ def run_job(
         )
         new = existing_filter_results["new"]
         existing = existing_filter_results["existing"]
+        logger.info(
+            f"### Completed existing transactions filtering. "
+            f"Before filtering: {len(filtered)} | "
+            f"After filtering: {len(new)} | "
+            f"Existing: {len(existing)}"
+        )
 
         # [DEV OBSERVABILITY]
         if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
@@ -161,6 +173,8 @@ def run_job(
                 )
             )
 
+        logger.info("### Completed transaction data enrichment.")
+
         # [DEV OBSERVABILITY]
         if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
             df = pd.DataFrame(txn.model_dump() for txn in enriched)
@@ -174,9 +188,10 @@ def run_job(
         job.duplicate_txn_count = len(existing)
         update_job_completed(job=job, db=db)
 
-        logger.info(f"### Completed Job: {job.id} for {job.statement_source}")
         logger.info(
-            f"Imported {job.imported_txn_count} new transactions | {job.duplicate_txn_count} duplicates",
+            f"### Completed import job {job.id} for {job.statement_source}. "
+            f"Imported {job.imported_txn_count} new transactions | "
+            f"{job.duplicate_txn_count} were duplicates"
         )
 
     except Exception as e:
@@ -184,7 +199,7 @@ def run_job(
         failure_reason = failure_details["job_failure_reason"]
         error_message = failure_details["error_message"]
         # logger.exception will output full traceback for debugging
-        logger.exception(f"Job {job.id} failed. Reason: {error_message}")
+        logger.exception(f"### Job {job.id} failed. Reason: {error_message}")
         update_job_failed(job=job, db=db, failure_reason=failure_reason)
 
 

@@ -1,5 +1,6 @@
 from typing import Annotated
 from uuid import UUID
+import logging
 
 from fastapi import (
     APIRouter,
@@ -7,6 +8,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Request,
     UploadFile,
 )
 from fastapi.responses import JSONResponse
@@ -23,6 +25,8 @@ from app.db.statement_import_jobs import StatementImportJob, create_new_job, loa
 from app.import_job_runner import run_job
 
 router = APIRouter(prefix="/statement-imports", tags=["Importing Statements"])
+
+logger = logging.getLogger(__name__)
 
 
 ### API Request - Response Models
@@ -41,7 +45,11 @@ def create_import_job(
     file_storage: FSDependency,
     app_config: ConfigDependency,
     background_tasks: BackgroundTasks,
+    request: Request,
 ) -> StatementImportResponse:
+    logger.info(
+        f"### Creating statement import job. {user_id=} | request_id={request.state.request_id} | {statement_source=} | file_name={statement_file.filename or 'N/A'}"
+    )
     # Filename is not mandatory for API consumer to provide. In this case we generate it.
     file_name = statement_file.filename or f"{statement_source.value}_statement"
 
@@ -52,6 +60,7 @@ def create_import_job(
         user_id=user_id,
         bucket=app_config.STATEMENTS_STORAGE_BUCKET,
     )
+    logger.info(f"### Statement file uploaded. {file_path=}")
 
     job = StatementImportJob(
         user_id=user_id, statement_source=statement_source, file_path=file_path
@@ -65,6 +74,9 @@ def create_import_job(
         db=db,
         file_storage=file_storage,
         app_config=app_config,
+    )
+    logger.info(
+        f"### Statement import job scheduled. job_id={db_entry.id} | {statement_source=} | {file_path=}"
     )
 
     return JSONResponse(

@@ -36,7 +36,9 @@ def extract_transactions(statement: BinaryIO) -> list[ExtractedTransaction]:
     try:
         statement_rows = get_statement_rows(statement)
     except Exception as e:
-        raise StatementExtractorError("Error while reading swedbank statement data") from e
+        raise StatementExtractorError(
+            "Error while reading swedbank statement data"
+        ) from e
 
     standardized = []
     rejected_count = 0
@@ -48,11 +50,16 @@ def extract_transactions(statement: BinaryIO) -> list[ExtractedTransaction]:
         except ValidationError:
             rejected_count += 1
         except Exception as e:
-            raise StatementExtractorError("Error while transforming swedbank statement data") from e
+            raise StatementExtractorError(
+                "Error while transforming swedbank statement data"
+            ) from e
 
-    logger.info("### Swedbank Extractor finished")
-    logger.info(f"Extracted valid transactions: {len(standardized)}")
-    logger.info(f"Rejected rows: {rejected_count}")
+    logger.info(
+        f"### Swedbank Extractor finished. "
+        f"Total rows: {len(statement_rows)} | "
+        f"Extracted valid transactions: {len(standardized)} | "
+        f"Rejected rows: {rejected_count}"
+    )
 
     return standardized
 

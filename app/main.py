@@ -134,6 +134,7 @@ async def log_request_processed(request: Request, call_next):
     request_id = uuid.uuid4()
     method = request.method
     path = request.url.path
+    logger.info(f"### Processing request {request_id}. {method} | {path}" )
     # Make request available in the route functions to link it with other events
     request.state.request_id = request_id
 
