@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import (
     APIRouter,
     BackgroundTasks,
+    File,
     Form,
     HTTPException,
     UploadFile,
@@ -17,7 +18,7 @@ from app.core.dependencies import (
     DBDependency,
     FSDependency,
 )
-from app.core.project_types import JobStatus, StatementSource
+from app.core.project_types import ImportJobStatus, StatementSource
 from app.db.statement_import_jobs import StatementImportJob, create_new_job, load_job
 from app.import_job_runner import run_job
 
@@ -27,14 +28,14 @@ router = APIRouter(prefix="/statement-imports", tags=["Importing Statements"])
 ### API Request - Response Models
 class StatementImportResponse(BaseModel):
     import_job_id: UUID
-    import_job_status: JobStatus
+    import_job_status: ImportJobStatus
 
 
 ### Routes
 @router.post("", status_code=202, response_model=StatementImportResponse)
 def create_import_job(
     user_id: AuthDependency,
-    statement_file: UploadFile,
+    statement_file: Annotated[UploadFile, File()],
     statement_source: Annotated[StatementSource, Form()],
     db: DBDependency,
     file_storage: FSDependency,

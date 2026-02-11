@@ -6,7 +6,7 @@ from sqlalchemy import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Field, Session, SQLModel
 
-from app.core.project_types import JobStatus, StatementSource
+from app.core.project_types import ImportJobStatus, StatementSource
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class StatementImportJob(SQLModel, table=True):
     updated_at: dt.datetime = Field(nullable=True, default_factory=dt.datetime.now)
     started_at: dt.datetime | None = Field(default=None)
     completed_at: dt.datetime | None = Field(default=None)
-    status: JobStatus = Field(nullable=False, default=JobStatus.PENDING)
+    status: ImportJobStatus = Field(nullable=False, default=ImportJobStatus.PENDING)
     failure_reason: str | None = Field(default=None)
     imported_txn_count: int | None = Field(default=None)
     duplicate_txn_count: int | None = Field(default=None)

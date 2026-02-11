@@ -13,7 +13,7 @@ from app.business_rules.filters import get_filter_rules
 from app.business_rules.spending_categories import CATEGORY_RULES, CategoryData
 from app.core.config import AppEnvironment
 from app.core.dependencies import AppConfig
-from app.core.project_types import ExtractedTransaction, JobStatus, Side
+from app.core.project_types import ExtractedTransaction, ImportJobStatus, Side
 from app.db.statement_import_jobs import StatementImportJob, load_job, update_job
 from app.db.transactions import (
     Transaction,
@@ -247,7 +247,7 @@ def convert_to_db_transaction(
 
 def update_job_failed(job: StatementImportJob, db: Engine, failure_reason: str) -> None:
     job.updated_at = dt.datetime.now()
-    job.status = JobStatus.FAILED
+    job.status = ImportJobStatus.FAILED
     job.failure_reason = failure_reason
     update_job(updated_job=job, db=db)
 
@@ -256,7 +256,7 @@ def update_job_completed(job: StatementImportJob, db: Engine) -> None:
     current_time = dt.datetime.now()
     job.completed_at = current_time
     job.updated_at = current_time
-    job.status = JobStatus.COMPLETED
+    job.status = ImportJobStatus.COMPLETED
     update_job(updated_job=job, db=db)
 
 
@@ -264,7 +264,7 @@ def update_job_start(job: StatementImportJob, db: Engine) -> None:
     current_time = dt.datetime.now()
     job.started_at = current_time
     job.updated_at = current_time
-    job.status = JobStatus.RUNNING
+    job.status = ImportJobStatus.RUNNING
     update_job(updated_job=job, db=db)
 
 

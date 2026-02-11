@@ -10,7 +10,7 @@ class StatementSource(StrEnum):
     REVOLUT = "revolut"
 
 
-class JobStatus(StrEnum):
+class ImportJobStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
