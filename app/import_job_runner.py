@@ -113,7 +113,9 @@ def run_job(
             df = pd.DataFrame(txn.model_dump() for txn in filtered)
             df.to_csv("test_output_filtered.csv")
 
-        existing_filter_results = filter_existing(transactions=filtered, db=db)
+        existing_filter_results = filter_existing(
+            transactions=filtered, user_id=user_id, db=db
+        )
         new = existing_filter_results["new"]
         existing = existing_filter_results["existing"]
 
@@ -190,12 +192,12 @@ def run_job(
 
 
 def filter_existing(
-    transactions: Iterable[ExtractedTransaction], db: Engine
+    transactions: Iterable[ExtractedTransaction], user_id: UUID, db: Engine
 ) -> ExistingFilterResults:
     new, existing = [], []
     try:
         # Using set for O(1) lookups
-        existing_dedup_keys = set(get_existing_dedup_keys(db=db))
+        existing_dedup_keys = set(get_existing_dedup_keys(user_id=user_id, db=db))
         for transaction in transactions:
             if transaction.dedup_key not in existing_dedup_keys:
                 new.append(transaction)
