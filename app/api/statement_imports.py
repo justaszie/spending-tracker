@@ -12,8 +12,9 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
+from app.core.config import AppConfig
 from app.core.dependencies import (
     AuthDependency,
     ConfigDependency,
@@ -28,11 +29,26 @@ router = APIRouter(prefix="/statement-imports", tags=["Importing Statements"])
 
 logger = logging.getLogger(__name__)
 
+app_config = AppConfig()
 
 ### API Request - Response Models
 class StatementImportResponse(BaseModel):
     import_job_id: UUID
     import_job_status: ImportJobStatus
+
+
+class StatementMetadata(BaseModel):
+    file_name: str | None = None
+    file_size: int
+    content_type: str
+
+    @field_validator("file_size")
+    def valid_file_size
+    # app_config.MAX_STATEMENT_SIZE
+
+    # model validator: allowed-type. uses multple fields :name for extension, content type for type
+    # field validator: file_size
+    # computed field: file_name
 
 
 ### Routes
@@ -50,6 +66,7 @@ def create_import_job(
     logger.info(
         f"Creating statement import job. {user_id=} | request_id={request.state.request_id} | {statement_source=} | file_name={statement_file.filename or 'N/A'}"
     )
+
     # Filename is not mandatory for API consumer to provide. In this case we generate it.
     file_name = statement_file.filename or f"{statement_source.value}_statement"
 

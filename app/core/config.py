@@ -19,4 +19,5 @@ class AppConfig(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_ANON_KEY: str
     SUPABASE_ADMIN_KEY: str
+    MAX_STATEMENT_SIZE: int = 2 * 1024**2 # 2MB based on the current samples
     V1_API_PREFIX: str = "/api/v1"

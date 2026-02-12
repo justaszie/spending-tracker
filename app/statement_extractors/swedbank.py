@@ -106,7 +106,7 @@ class RawTransactionSwedbank(BaseModel):
 
     @field_validator("amount", mode="after")
     @classmethod
-    def standaridze_amount(cls, value: Decimal) -> Decimal:
+    def standardize_amount(cls, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.01"))
 
 
