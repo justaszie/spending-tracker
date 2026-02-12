@@ -137,7 +137,7 @@ async def log_request_processed(request: Request, call_next):
     request_id = uuid.uuid4()
     method = request.method
     path = request.url.path
-    logger.info(f"### Processing request {request_id}. {method} | {path}" )
+    logger.info(f"Processing request {request_id}. {method} | {path}" )
     # Make request available in the route functions to link it with other events
     request.state.request_id = request_id
 
@@ -148,7 +148,7 @@ async def log_request_processed(request: Request, call_next):
 
     # Log the processed request
     logger.info(
-        f"### Request {request_id} processed. {method} | {path} | {status_code} | Duration: {process_time_ms:.2f}ms"
+        f"Request {request_id} processed. {method} | {path} | {status_code} | Duration: {process_time_ms:.2f}ms"
     )
 
     # Add request id to response header for debugging

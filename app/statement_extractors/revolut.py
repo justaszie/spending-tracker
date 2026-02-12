@@ -47,7 +47,7 @@ def extract_transactions(statement: BinaryIO) -> list[ExtractedTransaction]:
             ) from e
 
     logger.info(
-        f"### Revolut Extractor finished. "
+        f"Revolut Extractor finished. "
         f"Total rows: {len(statement_rows)} | "
         f"Extracted valid transactions: {len(standardized)} | "
         f"Rejected rows: {rejected_count}"

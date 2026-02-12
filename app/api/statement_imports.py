@@ -48,7 +48,7 @@ def create_import_job(
     request: Request,
 ) -> StatementImportResponse:
     logger.info(
-        f"### Creating statement import job. {user_id=} | request_id={request.state.request_id} | {statement_source=} | file_name={statement_file.filename or 'N/A'}"
+        f"Creating statement import job. {user_id=} | request_id={request.state.request_id} | {statement_source=} | file_name={statement_file.filename or 'N/A'}"
     )
     # Filename is not mandatory for API consumer to provide. In this case we generate it.
     file_name = statement_file.filename or f"{statement_source.value}_statement"
@@ -60,7 +60,7 @@ def create_import_job(
         user_id=user_id,
         bucket=app_config.STATEMENTS_STORAGE_BUCKET,
     )
-    logger.info(f"### Statement file uploaded. {file_path=}")
+    logger.info(f"Statement file uploaded. {file_path=}")
 
     job = StatementImportJob(
         user_id=user_id, statement_source=statement_source, file_path=file_path
@@ -76,7 +76,7 @@ def create_import_job(
         app_config=app_config,
     )
     logger.info(
-        f"### Statement import job scheduled. job_id={db_entry.id} | {statement_source=} | {file_path=}"
+        f"Statement import job scheduled. job_id={db_entry.id} | {statement_source=} | {file_path=}"
     )
 
     return StatementImportResponse(import_job_id=job.id, import_job_status=job.status)
