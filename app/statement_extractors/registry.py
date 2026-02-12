@@ -36,8 +36,7 @@ def get_extractor_config(statement_source: StatementSource) -> ExtractorConfig |
     return _registry.get(statement_source)
 
 
-# TODO: replace to get_extractor_fn since the registry contains more than just functions
-def get_extractor(statement_source: StatementSource) -> ExtractorFN | None:
+def get_extractor_fn(statement_source: StatementSource) -> ExtractorFN | None:
     extractor_config = _registry.get(statement_source)
     if extractor_config is None:
         return None

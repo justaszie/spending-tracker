@@ -29,7 +29,7 @@ from app.enrichment import (
     is_food_spending,
 )
 from app.statement_extractors.errors import StatementExtractorError
-from app.statement_extractors.registry import get_extractor
+from app.statement_extractors.registry import get_extractor_fn
 from app.storage.file_storage import FileStorage, StatementDownloadError
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ def run_job(
         logger.info(f"Downloaded statement from: {job.file_path}")
 
         # Find the right extractor for the statement
-        extractor_fn = get_extractor(job.statement_source)
+        extractor_fn = get_extractor_fn(job.statement_source)
         if extractor_fn is None:
             raise ExtractorNotFoundError(
                 f'Exractor not found for statement source: "{job.statement_source}"'
