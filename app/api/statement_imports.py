@@ -79,9 +79,7 @@ def create_import_job(
         f"### Statement import job scheduled. job_id={db_entry.id} | {statement_source=} | {file_path=}"
     )
 
-    return JSONResponse(
-        {"import_job_id": str(db_entry.id), "import_job_status": db_entry.status}
-    )
+    return StatementImportResponse(import_job_id=job.id, import_job_status=job.status)
 
 
 @router.get("/{import_job_id}", response_model=StatementImportResponse)
