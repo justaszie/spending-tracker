@@ -46,7 +46,7 @@ def validate_user_creds(
         )
     except AuthApiError as e:
         logger.warning(f"Failed to validate user credentials: {e}")
-        raise HTTPException(status_code=401, detail="User credentials invalid")
+        raise HTTPException(status_code=401, detail="User credentials invalid") from e
     if not response.session:
         raise HTTPException(status_code=401, detail="User credentials invalid")
 
@@ -102,6 +102,9 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     level=logging.INFO,
 )
+# Custom logging is done to cover the external service calls
+logging.getLogger('httpx').disabled = True
+
 logger = logging.getLogger(__name__)
 
 app = FastAPI(lifespan=lifespan)
@@ -112,7 +115,7 @@ core_router = APIRouter()
 
 @core_router.get("/")
 def root() -> "str":
-    return "HELLO FROM SPENDING TRACKER"
+    return "Status OK"
 
 
 @core_router.post("/auth")
