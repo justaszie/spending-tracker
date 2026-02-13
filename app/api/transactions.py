@@ -9,7 +9,7 @@ router = APIRouter(prefix="/transactions", tags=["Transactions"])
 logger = logging.getLogger(__name__)
 
 
-@router.get("/", response_model=list[Transaction])
+@router.get("", response_model=list[Transaction])
 def get_all_transactions(
     user_id: AuthDependency, db: DBDependency
 ) -> list[Transaction]:

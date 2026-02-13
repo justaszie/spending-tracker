@@ -1,83 +1,20 @@
 // API service with placeholder functions
 // TODO: Replace placeholder functions with actual fetch() calls to your backend
 
+// The quickest way to get user's access token is from supabase directly
+import { supabase  } from "../supabaseClient";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 
 // Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("access_token");
+const getAuthHeaders = async () => {
+  const {data: {session}} = await supabase.auth.getSession();
+  const token = session.access_token
   return {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
   };
-};
-
-// Helper function for Basic Auth headers
-const getBasicAuthHeaders = (username, password) => {
-  const credentials = btoa(`${username}:${password}`);
-  return {
-    Authorization: `Basic ${credentials}`,
-  };
-};
-
-// Authentication API
-export const authAPI = {
-
-  getUserSession: async () => {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      throw error
-    } else {
-      return data?.session ?? null;
-    }
-
-  },
-
-  login: async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-
-    if (error) {
-      throw error
-    } else {
-      return data;
-    }
-    // PLACEHOLDER: Replace this with actual fetch call
-    // Example:
-    // const response = await fetch(`${API_BASE_URL}/auth`, {
-    //   method: 'POST',
-    //   headers: getBasicAuthHeaders(email, password),
-    // });
-    // if (!response.ok) throw new Error('Login failed');
-    // const data = await response.json();
-    // return data;
-  },
-
-  // TODO: Implement signup endpoint when backend is ready
-  // POST /api/v1/auth/signup (or similar)
-  signup: async (email, password) => {
-    // PLACEHOLDER: Replace this with actual fetch call
-    // Example:
-    // const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ email, password }),
-    // });
-    // if (!response.ok) throw new Error('Signup failed');
-    // const data = await response.json();
-    // return data;
-
-    // Static placeholder
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ access_token: "placeholder_token_" + Date.now() });
-      }, 500);
-    });
-  },
 };
 
 // Transactions API
@@ -92,6 +29,7 @@ export const transactionsAPI = {
       sortBy = "transaction_datetime",
       sortOrder = "desc",
     } = params;
+
 
     // PLACEHOLDER: Replace this with actual fetch call
     // Example:
@@ -109,6 +47,14 @@ export const transactionsAPI = {
     // if (!response.ok) throw new Error('Failed to fetch transactions');
     // const data = await response.json();
     // return data;
+
+    const response = await fetch(`${API_BASE_URL}/transactions`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to fetch transactions');
+    const data = await response.json();
+    return data;
 
     // Static placeholder data
     const mockTransactions = [
