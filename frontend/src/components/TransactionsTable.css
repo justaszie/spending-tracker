@@ -1,0 +1,220 @@
+.transactions-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.transactions-header {
+  margin-bottom: 24px;
+}
+
+.transactions-header h1 {
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.transactions-subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.transactions-search {
+  margin-bottom: 24px;
+}
+
+.search-input {
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  max-width: 400px;
+  transition: all 0.2s ease;
+  background: var(--background-white);
+  color: var(--text-primary);
+}
+
+.search-input:hover {
+  border-color: #cbd5e1;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.filter-select {
+  padding: 12px 16px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--background-white);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.filter-select:hover {
+  border-color: var(--secondary-gray);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  background: var(--background-white);
+  border-radius: 8px;
+}
+
+.transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--background-white);
+}
+
+.transactions-table thead {
+  background: var(--background-white);
+}
+
+.transactions-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.transactions-table th.checkbox-column {
+  width: 48px;
+  padding: 12px 16px;
+}
+
+.transactions-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.transactions-table th.sortable:hover {
+  background-color: #f9fafb;
+}
+
+.transactions-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.transactions-table tbody tr {
+  transition: background-color 0.1s ease;
+}
+
+.transactions-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.transactions-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.checkbox-column {
+  width: 48px;
+  text-align: center;
+}
+
+.checkbox-column input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.id-cell {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.actions-column {
+  width: 48px;
+  text-align: center;
+}
+
+.actions-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  line-height: 1;
+  font-weight: 300;
+}
+
+.actions-button:hover {
+  background-color: #f3f4f6;
+  color: var(--text-primary);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-debit {
+  background: #fce7f3;
+  color: #be185d;
+}
+
+.badge-credit {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.amount-debit {
+  color: #dc2626;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+  font-size: 14px;
+}
+
+.amount-credit {
+  color: #059669;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+  font-size: 14px;
+}
+
+.loading,
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  background: var(--background-white);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
