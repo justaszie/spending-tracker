@@ -2,6 +2,7 @@ from decimal import Decimal
 import datetime as dt
 import uuid
 
+from pydantic import model_validator
 from sqlalchemy import Engine, UniqueConstraint
 from sqlmodel import Field, Session, SQLModel, select
 
@@ -41,6 +42,12 @@ class Transaction(SQLModel, table=True):
     )
     user_id: uuid.UUID = Field(nullable=False, index=True)
 
+    @model_validator(mode="after")
+    def standardize_amounts_format(self) -> "Transaction":
+        self.orig_amount = self.orig_amount.quantize(Decimal("0.01"))
+        self.eur_amount = self.eur_amount.quantize(Decimal("0.01"))
+        return self
+
 
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
     try:
@@ -58,3 +65,16 @@ def get_existing_dedup_keys(user_id: uuid.UUID, db: Engine) -> set[str]:
         statement = select(Transaction.dedup_key).where(Transaction.user_id == user_id)
         result = session.exec(statement).all()
         return set(result)
+
+
+def get_transactions(user_id: uuid.UUID, db: Engine) -> list[Transaction]:
+    with Session(db) as session:
+        statement = (
+            select(Transaction)
+            .where(Transaction.user_id == user_id)
+            .order_by(Transaction.transaction_datetime.desc())
+            # TODO - replace sample with pagination
+            .limit(50)
+        )
+        result = session.exec(statement).all()
+        return list(result)
