@@ -17,6 +17,7 @@ from sqlmodel import SQLModel, create_engine
 from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
+from app.api.transactions import router as transactions_router
 from app.core.config import AppConfig, AppEnvironment
 from app.core.dependencies import (
     ConfigDependency,
@@ -128,6 +129,7 @@ def authenticate_user(
 api_prefix = AppConfig().V1_API_PREFIX
 app.include_router(core_router, prefix=api_prefix)
 app.include_router(imports_router, prefix=api_prefix)
+app.include_router(transactions_router, prefix=api_prefix)
 
 
 # Middleware to log processed requests
