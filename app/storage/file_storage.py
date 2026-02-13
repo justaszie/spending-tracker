@@ -3,10 +3,12 @@ from typing import Any, BinaryIO
 from uuid import UUID
 import datetime as dt
 
-from app.core.project_types import StatementSource
+from app.statement_validation import StatementMetadata
+
 
 class StatementDownloadError(Exception):
     pass
+
 
 # Integrate with supabase file storage
 class FileStorage:
@@ -16,20 +18,22 @@ class FileStorage:
     # Make this more generic. The caller will provide the specific bucket and file_path
     def upload_statement(
         self,
-        statement_source: StatementSource,
-        filename: str,
-        file: BinaryIO,
-        bucket: str,
         user_id: UUID,
+        file: BinaryIO,
+        statement_metadata: StatementMetadata,
+        storage_bucket: str,
     ) -> str:
         timestamp = dt.datetime.now().isoformat()
-        file_path = f"{user_id}/{statement_source.value}/{timestamp}_{filename}"
+        file_path = (
+            f"{user_id}/{statement_metadata.source.value}/"
+            f"{timestamp}_{statement_metadata.file_name}"
+        )
 
         file_data: bytes = file.read()
         if not file_data:
             raise ValueError("No content in the file provided")
 
-        response = self._storage_client.storage.from_(bucket).upload(
+        response = self._storage_client.storage.from_(storage_bucket).upload(
             file=file_data,
             path=file_path,
             file_options={"cache-control": "3600", "upsert": "true"},
