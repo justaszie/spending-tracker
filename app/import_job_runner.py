@@ -138,7 +138,6 @@ def run_job(
 
         enriched = []
         # Enrich transactions data to match the DB schema
-        # TODO - potential failure already when getting converter
         ccy_converter = CurrencyConverter(ECB_URL)
         for transaction in new:
             eur_amount = get_eur_amount(
