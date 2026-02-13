@@ -19,13 +19,13 @@ export default function TransactionsTable() {
   const loadTransactions = async () => {
     setLoading(true);
     try {
-      const data = await transactionsAPI.getTransactions({
+      const transactions = await transactionsAPI.getTransactions({
         search: searchTerm,
         sortBy,
         sortOrder,
       });
 
-      let filtered = data.transactions;
+      let filtered = transactions;
 
       if (filterSource !== 'all') {
         filtered = filtered.filter(t => t.source === filterSource);
@@ -34,7 +34,7 @@ export default function TransactionsTable() {
       if (filterSide !== 'all') {
         filtered = filtered.filter(t => t.side === filterSide);
       }
-
+      // console.log(transactions);
       setTransactions(filtered);
     } catch (error) {
       console.error('Failed to load transactions:', error);

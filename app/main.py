@@ -14,6 +14,7 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlmodel import SQLModel, create_engine
+from starlette.middleware.cors import CORSMiddleware
 from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
@@ -28,6 +29,7 @@ from supabase import create_client
 
 user_creds_auth = HTTPBasic()
 
+app_config = AppConfig()
 
 # Validate username (email) and password, sign user in and return a JWT token if successful
 def validate_user_creds(
@@ -125,6 +127,19 @@ def authenticate_user(
 ) -> JSONResponse:
     return JSONResponse({"access_token": jwt})
 
+# CORS Setup: allow all client domains
+cors_origins: list[str] = []
+frontend_domain: str | None = app_config.FRONTEND_URL
+if frontend_domain:
+    cors_origins.append(frontend_domain)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=False,
+)
 
 api_prefix = AppConfig().V1_API_PREFIX
 app.include_router(core_router, prefix=api_prefix)
