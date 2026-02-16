@@ -1,19 +1,23 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import './Layout.css';
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import './Layout.css'
 
-export default function Layout({ children }) {
-  const { session, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+interface LayoutProps {
+  children: React.ReactNode
+}
+
+export default function Layout({ children }: LayoutProps) {
+  const { session, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+    logout()
+    navigate('/login')
+  }
 
   if (!session) {
-    return children;
+    return <>{children}</>
   }
 
   return (
@@ -36,7 +40,7 @@ export default function Layout({ children }) {
             >
               Upload Statement
             </Link>
-            <button onClick={handleLogout} className="logout-button">
+            <button type="button" onClick={handleLogout} className="logout-button">
               Logout
             </button>
           </div>
@@ -44,5 +48,5 @@ export default function Layout({ children }) {
       </nav>
       <main className="main-content">{children}</main>
     </div>
-  );
+  )
 }

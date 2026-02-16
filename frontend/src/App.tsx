@@ -1,12 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute';
-import Login from './components/Login';
-import Signup from './components/Signup';
-import TransactionsTable from './components/TransactionsTable';
-import StatementUpload from './components/StatementUpload';
-import './App.css';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import Layout from './components/Layout'
+import ProtectedRoute from './components/ProtectedRoute'
+import Login from './components/Login'
+import Signup from './components/Signup'
+import TransactionsTable from './components/TransactionsTable'
+import StatementUpload from './components/StatementUpload'
+import './App.css'
 
 function App() {
   return (
@@ -37,7 +37,7 @@ function App() {
         </Layout>
       </BrowserRouter>
     </AuthProvider>
-  );
+  )
 }
 
-export default App;
+export default App
