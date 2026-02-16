@@ -95,6 +95,8 @@
 .file-size {
   color: var(--text-tertiary);
   font-size: 13px;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
 }
 
 .upload-button {
@@ -155,6 +157,11 @@
   font-weight: 500;
 }
 
+.result-info .result-value {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
 .result-info p strong {
   color: var(--text-secondary);
   font-weight: 600;
@@ -199,6 +206,8 @@
   font-size: 13px;
   color: var(--text-tertiary);
   font-weight: 500;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
 }
 
 .transaction-details {
@@ -217,7 +226,8 @@
 .transaction-amount {
   font-size: 17px;
   font-weight: 700;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.2px;
 }
 

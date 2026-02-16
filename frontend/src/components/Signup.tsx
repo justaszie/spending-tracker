@@ -1,43 +1,43 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import './Auth.css';
+import { useState, FormEvent } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import './Auth.css'
 
 export default function Signup() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
-  const navigate = useNavigate();
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const { signup } = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError('')
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+      setError('Passwords do not match')
+      return
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
+      setError('Password must be at least 6 characters')
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
 
-    const result = await signup(email, password);
+    const result = await signup(email, password)
 
     if (result.success) {
-      navigate('/transactions');
+      navigate('/transactions')
     } else {
-      setError(result.error || 'Signup failed. Please try again.');
+      setError(result.error ?? 'Signup failed. Please try again.')
     }
 
-    setLoading(false);
-  };
+    setLoading(false)
+  }
 
   return (
     <div className="auth-container">
@@ -69,7 +69,6 @@ export default function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              // minLength={6}
             />
           </div>
 
@@ -95,5 +94,5 @@ export default function Signup() {
         </p>
       </div>
     </div>
-  );
+  )
 }
