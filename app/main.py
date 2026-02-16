@@ -127,7 +127,7 @@ def authenticate_user(
 ) -> JSONResponse:
     return JSONResponse({"access_token": jwt})
 
-# CORS Setup: allow all client domains
+# CORS Setup: allow all known client domains
 cors_origins: list[str] = []
 frontend_domain: str | None = app_config.FRONTEND_URL
 if frontend_domain:

@@ -19,6 +19,6 @@ class AppConfig(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_ANON_KEY: str
     SUPABASE_ADMIN_KEY: str
-    MAX_STATEMENT_SIZE: int = 2 * 1024**2 # 2MB based on the current samples
+    MAX_STATEMENT_SIZE: int = 2 * 1024**2 # 2MB based on the available samples
     V1_API_PREFIX: str = "/api/v1"
-    FRONTEND_URL: str = "http://localhost:5173"
+    FRONTEND_URL: str | None
