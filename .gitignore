@@ -23,6 +23,7 @@ historical.py
 run
 scripts
 docs
+.coverage
 
 # Frontend (React/Vite)
 frontend/node_modules/
