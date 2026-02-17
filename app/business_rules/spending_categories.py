@@ -185,7 +185,7 @@ def hot_drinks(
     counterparty = transaction.counterparty.lower().strip()
     if (
         any(counterparty == merchant.lower() for merchant in COFFESHOP_MERCHANTS)
-        and standard_ccy_amount < 5
+        and standard_ccy_amount <= 5
     ):
         return {
             "l1_category": "Food & Drinks",
