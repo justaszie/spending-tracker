@@ -46,6 +46,7 @@ BUSINESS_LUNCH_MERCHANTS = {
     "Ministerija Dienos pietūs",
     "A. Taraškienės firma 3515",
     "Senolių tradicija",
+    "Senolių kepyklėlė",
 }
 
 STREAMING_MERCHANTS = ("disney", "netflix", "spotify", "youtube")
