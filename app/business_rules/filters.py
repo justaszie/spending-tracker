@@ -13,7 +13,6 @@ OWN_ACCOUNT_NAMES = (
     r"^TO JUSTAS ZIEMINYKAS$",
     r"^TO USD$",
     r"^TO INVESTMENT ACCOUNT$",
-    r"^Revolut\*\*6494\* E14 4HD London$",  # Top up using Google Play with Swedbank card
 )
 
 OWN_ACCOUNT_PATTERNS = tuple(
