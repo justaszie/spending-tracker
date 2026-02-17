@@ -41,19 +41,19 @@ class StatementMetadata(BaseModel):
     def is_valid_type(self) -> "StatementMetadata":
         allowed_extensions = allowed_file_extensions(self.source)
 
-        # If file contains a supported extension, allow it
-        file_name_parts = self.file_name.split(".")
-        if file_name_parts:
-            file_extension = file_name_parts[-1].lower()
-            if file_extension in allowed_extensions:
-                return self
-
         if self.file_type and (
             self.file_type.lower() in allowed_content_types(self.source)
             # Default content type is allowed since we can't predict what values clients can set
             or self.file_type.lower() == "application/octet-stream"
         ):
             return self
+
+        # If file contains a supported extension, allow it
+        file_name_parts = self.file_name.split(".")
+        if file_name_parts:
+            file_extension = file_name_parts[-1].lower()
+            if file_extension in allowed_extensions:
+                return self
 
         raise ValueError(
             f"Statement file type is not valid for {self.source.value}. "
