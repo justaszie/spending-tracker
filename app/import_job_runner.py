@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from decimal import Decimal
+from pathlib import Path
 from typing import TypedDict
 from uuid import UUID
 import datetime as dt
@@ -9,11 +9,15 @@ from currency_converter import ECB_URL, CurrencyConverter
 from sqlalchemy import Engine
 import pandas as pd
 
-from app.business_rules.filters import get_filter_rules
-from app.business_rules.spending_categories import CATEGORY_RULES, CategoryData
+from app.business_rules.filter_rules import FilterRuleFN, get_filter_rules
 from app.core.config import AppEnvironment
 from app.core.dependencies import AppConfig
-from app.core.project_types import ExtractedTransaction, ImportJobStatus, Side
+from app.core.project_types import (
+    ExtractedTransaction,
+    ImportableTransaction,
+    ImportJobStatus,
+    Side,
+)
 from app.db.statement_import_jobs import StatementImportJob, load_job, update_job
 from app.db.transactions import (
     Transaction,
@@ -26,7 +30,6 @@ from app.enrichment import (
     get_category_data,
     get_eur_amount,
     get_meal_type,
-    is_food_spending,
 )
 from app.statement_extractors.errors import StatementExtractorError
 from app.statement_extractors.registry import get_extractor_fn
@@ -47,7 +50,7 @@ class BusinessRuleFilterError(Exception):
     pass
 
 
-class ExistingTransactionFilterError(Exception):
+class ExistingTransactionSeparationError(Exception):
     pass
 
 
@@ -56,7 +59,7 @@ class JobFailureDetails(TypedDict):
     error_message: str
 
 
-class ExistingFilterResults(TypedDict):
+class NewExistingSeparation(TypedDict):
     new: list[ExtractedTransaction]
     existing: list[ExtractedTransaction]
 
@@ -92,98 +95,38 @@ def run_job(
             )
 
         # Get extracted transactions in standard format
-        extracted_txns: list[ExtractedTransaction] = extractor_fn(statement)
+        extracted: list[ExtractedTransaction] = extractor_fn(statement)
 
-        # [DEV OBSERVABILITY]
-        if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
-            df = pd.DataFrame(txn.model_dump() for txn in extracted_txns)
-            df.to_csv("test_output_extracted.csv")
-
-        # Apply filtering rules to discard irrelevant transactions
-        try:
-            count_before = len(extracted_txns)
-            filtered = [
-                txn
-                for txn in extracted_txns
-                if all(filter_function(txn) for filter_function in get_filter_rules())
-            ]
-            count_after = len(filtered)
-            logger.info(
-                f"Completed business rules filtering. Before filtering: {count_before} | After filtering: {count_after}"
-            )
-        except Exception as e:
-            raise BusinessRuleFilterError from e
-
-        # [DEV OBSERVABILITY]
-        if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
-            df = pd.DataFrame(txn.model_dump() for txn in filtered)
-            df.to_csv("test_output_filtered.csv")
-
-        existing_filter_results = filter_existing(
-            transactions=filtered, user_id=user_id, db=db
-        )
-        new = existing_filter_results["new"]
-        existing = existing_filter_results["existing"]
+        # Apply filtering rules to exclude irrelevant transactions
+        filtered = apply_business_filter(extracted)
         logger.info(
-            f"Completed existing transactions filtering. "
-            f"Before filtering: {len(filtered)} | "
-            f"After filtering: {len(new)} | "
+            f"Completed business rules filtering. Before filtering: {len(extracted)} | After filtering: {len(filtered)}"
+        )
+
+        separated = separate_new_existing(transactions=filtered, user_id=user_id, db=db)
+        new = separated["new"]
+        existing = separated["existing"]
+        logger.info(
+            f"Completed new-existing transactions separation. "
+            f"Total: {len(filtered)} | "
+            f"New: {len(new)} | "
             f"Existing: {len(existing)}"
         )
 
-        # [DEV OBSERVABILITY]
-        if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
-            df = pd.DataFrame(txn.model_dump() for txn in existing)
-            df.to_csv("test_duplicates.csv")
+        prepared = add_eur_amount(new)
+        enriched = enrich_transactions(prepared)
 
-        enriched = []
-        # Enrich transactions data to match the DB schema
-        ccy_converter = CurrencyConverter(ECB_URL)
-        for transaction in new:
-            eur_amount = get_eur_amount(
-                converter=ccy_converter,
-                txn_date=transaction.transaction_datetime,
-                orig_currency=transaction.orig_currency,
-                orig_amount=transaction.orig_amount,
-            )
-
-            # Spending categories only relevant for debit transactions
-            spending_categories = (
-                get_category_data(transaction, eur_amount, CATEGORY_RULES)
-                if transaction.side == Side.DEBIT
-                else {}
-            )
-
-            # Calculating meal type for food transactions only
-            meal_type = (
-                get_meal_type(transaction, spending_categories)
-                if is_food_spending(spending_categories)
-                else None
-            )
-
-            enriched.append(
-                convert_to_db_transaction(
-                    transaction=transaction,
-                    eur_amount=eur_amount,
-                    spending_categories=spending_categories,
-                    meal_type=meal_type,
-                    user_id=user_id,
-                    job_id=job_id,
-                )
-            )
+        imported = import_transactions(
+            transactions=enriched,
+            user_id=user_id,
+            job_id=job_id,
+            db=db,
+        )
 
         logger.info("Completed transaction data enrichment.")
 
-        # [DEV OBSERVABILITY]
-        if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
-            df = pd.DataFrame(txn.model_dump() for txn in enriched)
-            df.to_csv("test_output_enriched.csv")
-
-        # Insert new transactions in the DB
-        insert_transactions(transactions=enriched, db=db)
-
         # Update job status in DB.
-        job.imported_txn_count = len(enriched)
+        job.imported_txn_count = len(imported)
         job.duplicate_txn_count = len(existing)
         update_job_completed(job=job, db=db)
 
@@ -192,6 +135,16 @@ def run_job(
             f"Imported {job.imported_txn_count} new transactions | "
             f"{job.duplicate_txn_count} were duplicates"
         )
+
+        # [DEV OBSERVABILITY]
+        if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
+            _transactions_dump(extracted, "test_extracted")
+            _transactions_dump(filtered, "filtered")
+            _transactions_dump(new, "new")
+            _transactions_dump(existing, "existing")
+            _transactions_dump(prepared, "prepared")
+            _transactions_dump(enriched, "enriched")
+            _transactions_dump(imported, "imported")
 
     except Exception as e:
         failure_details: JobFailureDetails = get_failure_details(e)
@@ -202,12 +155,26 @@ def run_job(
         update_job_failed(job=job, db=db, failure_reason=failure_reason)
 
 
-def filter_existing(
+def apply_business_filter(
+    transactions: Iterable[ExtractedTransaction],
+    filter_rules: Iterable[FilterRuleFN] | None = None,
+) -> list[ExtractedTransaction]:
+    try:
+        filter_rules = filter_rules or get_filter_rules()
+        return [
+            txn
+            for txn in transactions
+            if all(filter_function(txn) for filter_function in filter_rules)
+        ]
+    except Exception as e:
+        raise BusinessRuleFilterError from e
+
+
+def separate_new_existing(
     transactions: Iterable[ExtractedTransaction], user_id: UUID, db: Engine
-) -> ExistingFilterResults:
+) -> NewExistingSeparation:
     new, existing = [], []
     try:
-        # Using set for O(1) lookups
         existing_dedup_keys = get_existing_dedup_keys(user_id=user_id, db=db)
         for transaction in transactions:
             if transaction.dedup_key not in existing_dedup_keys:
@@ -219,37 +186,88 @@ def filter_existing(
             "existing": existing,
         }
     except Exception as e:
-        raise ExistingTransactionFilterError from e
+        raise ExistingTransactionSeparationError from e
+
+
+def add_eur_amount(
+    transactions: Iterable[ExtractedTransaction],
+    currency_converter: CurrencyConverter | None = None,
+) -> list[ImportableTransaction]:
+    result = []
+    try:
+        converter = currency_converter or CurrencyConverter(ECB_URL)
+    except Exception as e:
+        raise CurrencyConversionError("Could not initialize currency converter") from e
+
+    for txn in transactions:
+        eur_amount = get_eur_amount(
+            converter=converter,
+            txn_date=txn.transaction_datetime,
+            orig_currency=txn.orig_currency,
+            orig_amount=txn.orig_amount,
+        )
+        importable = ImportableTransaction(
+            **txn.model_dump(),
+            eur_amount=eur_amount,
+        )
+        result.append(importable)
+
+    return result
+
+
+def enrich_transactions(
+    transactions: Iterable[ImportableTransaction],
+) -> list[ImportableTransaction]:
+    # Add spending categories and meal type to importable transactions
+    for txn in transactions:
+        # Spending categories only relevant for debit transactions
+        if txn.side != Side.DEBIT:
+            continue
+
+        spending_categories = get_category_data(txn, txn.eur_amount)
+        txn.l1_category = spending_categories.get("l1_category", None)
+        txn.l2_category = spending_categories.get("l2_category", None)
+        txn.l3_category = spending_categories.get("l3_category", None)
+
+        # We prefer the value from extraction source, as it's closer to truth and has richer information
+        txn.note = txn.note or spending_categories.get("note")
+
+        txn.meal_type = get_meal_type(txn, spending_categories)
+
+    return transactions
+
+
+def import_transactions(
+    transactions: Iterable[ImportableTransaction],
+    user_id: UUID,
+    job_id: UUID,
+    db: Engine,
+) -> list[Transaction]:
+    # Input: importable transactions, job context and DB dependency
+    # Output: imported transactions in the shape of DB data model
+    # Insert new transactions in the DB
+    ready_to_insert = [
+        convert_to_db_transaction(
+            transaction=txn,
+            user_id=user_id,
+            job_id=job_id,
+        )
+        for txn in transactions
+    ]
+
+    insert_transactions(transactions=ready_to_insert, db=db)
+
+    return ready_to_insert
 
 
 def convert_to_db_transaction(
-    transaction: ExtractedTransaction,
-    eur_amount: Decimal,
-    spending_categories: CategoryData,
+    transaction: ImportableTransaction,
     user_id: UUID,
-    meal_type: str | None = None,
     job_id: UUID | None = None,
     manually_added: bool = False,
 ) -> Transaction:
-    # free textn notes can be either populated from the source or by categorization logic.
-    # We prefer the source value as it's closer to truth and has richer information
-    transaction_note = transaction.note or spending_categories.get("note")
-
     return Transaction(
-        transaction_datetime=transaction.transaction_datetime,
-        type=transaction.type,
-        counterparty=transaction.counterparty,
-        orig_amount=transaction.orig_amount,
-        orig_currency=transaction.orig_currency,
-        side=transaction.side,
-        source=transaction.source,
-        dedup_key=transaction.dedup_key,
-        eur_amount=eur_amount,
-        l1_category=spending_categories.get("l1_category"),
-        l2_category=spending_categories.get("l2_category"),
-        l3_category=spending_categories.get("l3_category"),
-        note=transaction_note,
-        meal_type=meal_type,
+        **transaction.model_dump(),
         import_job_id=job_id,
         user_id=user_id,
         manually_added=manually_added,
@@ -283,7 +301,7 @@ def get_failure_details(exc: Exception) -> JobFailureDetails:
     exception_mapping = {
         CurrencyConversionError: (
             "CURRENCY_CONVERSION_ERROR",
-            "Errorw hile converting a transaction to standard currency",
+            "Error while converting a transaction to standard currency",
         ),
         StatementDownloadError: (
             "STATEMENT_LOAD_ERROR",
@@ -301,7 +319,7 @@ def get_failure_details(exc: Exception) -> JobFailureDetails:
             "BUSINESS_RULE_FILTER_ERROR",
             "Error while applying business rule filters on the transactions",
         ),
-        ExistingTransactionFilterError: (
+        ExistingTransactionSeparationError: (
             "EXISTING_TRANSACTIONS_FILTER_ERROR",
             "Error while filtering transactions that already exist",
         ),
@@ -322,3 +340,8 @@ def get_failure_details(exc: Exception) -> JobFailureDetails:
         "job_failure_reason": "OTHER_ERROR",
         "error_message": "Unexpected error",
     }
+
+def _transactions_dump(transactions, filename):
+    df = pd.DataFrame(txn.model_dump() for txn in transactions)
+    logs_dir = Path.absolute(Path(__name__).parent.parent) / "throwaway" / "import_logs"
+    df.to_csv(f"{logs_dir}/{filename}.csv")

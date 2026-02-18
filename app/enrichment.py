@@ -5,7 +5,11 @@ import logging
 
 from currency_converter import CurrencyConverter, RateNotFoundError
 
-from app.business_rules.spending_categories import CategoryData, CategoryRuleFunction
+from app.business_rules.spending_categories import (
+    CategoryData,
+    CategoryRuleFunction,
+    get_category_rules,
+)
 from app.core.project_types import ExtractedTransaction
 
 logger = logging.getLogger(__name__)
@@ -14,18 +18,19 @@ logger = logging.getLogger(__name__)
 class CurrencyConversionError(Exception):
     pass
 
-
+# TODO - refactor to use ImportableTransaction and get rid of extra eur_amount param
 def get_category_data(
     transaction: ExtractedTransaction,
     eur_amount: Decimal,
-    rules: Sequence[CategoryRuleFunction],
+    category_rules: Sequence[CategoryRuleFunction] | None = None,
 ) -> CategoryData:
     # Input: standardized transaction object
-    # Ouput: category data dictionary. Empty dictionary if no data to return (no rule aplies)
+    # Ouput: category data dictionary. Empty dictionary if no rule applies
 
     # Rule selection policy:
     # We take the results of the first category rule that returns value
-    for rule_fn in rules:
+    category_rules = category_rules or get_category_rules()
+    for rule_fn in category_rules:
         category_values = rule_fn(transaction, eur_amount)
         if category_values:
             return category_values
@@ -40,6 +45,9 @@ def is_food_spending(category_values: CategoryData) -> bool:
 def get_meal_type(
     transaction: ExtractedTransaction, category_values: CategoryData
 ) -> str | None:
+    if not is_food_spending(category_values=category_values):
+        return None
+
     if category_values.get("l3_category") == "Hot Drinks & Snacks":
         return "Snacks"
 

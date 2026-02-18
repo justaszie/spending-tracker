@@ -18,7 +18,7 @@ OWN_ACCOUNT_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE) for pattern in OWN_ACCOUNT_NAMES
 )
 
-FilterFN = Callable[[ExtractedTransaction], bool]
+FilterRuleFN = Callable[[ExtractedTransaction], bool]
 
 
 def is_own_account_transfer(transaction: ExtractedTransaction) -> bool:
@@ -28,11 +28,11 @@ def is_own_account_transfer(transaction: ExtractedTransaction) -> bool:
     )
 
 
-ACTIVE_FILTERS: list[FilterFN] = [
+ACTIVE_RULES: list[FilterRuleFN] = [
     lambda txn: txn.type != TransactionType.CASH_WITHDRAWAL,
     lambda txn: not is_own_account_transfer(txn),
 ]
 
 
-def get_filter_rules() -> list[FilterFN]:
-    return list(ACTIVE_FILTERS)
+def get_filter_rules() -> list[FilterRuleFN]:
+    return list(ACTIVE_RULES)

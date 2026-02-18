@@ -277,3 +277,6 @@ CATEGORY_RULES: list[CategoryRuleFunction] = [
     shopping_other,
     gym_membership,
 ]
+
+def get_category_rules() -> list[CategoryRuleFunction]:
+    return list(CATEGORY_RULES)

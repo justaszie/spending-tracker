@@ -47,3 +47,13 @@ class ExtractedTransaction(BaseModel):
     source: TransactionSource
     note: str | None = None
     dedup_key: str
+
+class ImportableTransaction(ExtractedTransaction):
+    # Standardized currency amount is mandatory
+    eur_amount: Decimal
+
+    # Optional business data
+    l1_category: str | None = None
+    l2_category: str | None = None
+    l3_category: str | None = None
+    meal_type: str | None = None
