@@ -1,5 +1,4 @@
 from collections.abc import Callable
-import copy
 import re
 
 from app.core.project_types import ExtractedTransaction, TransactionType
@@ -36,4 +35,4 @@ ACTIVE_FILTERS: list[FilterFN] = [
 
 
 def get_filter_rules() -> list[FilterFN]:
-    return list(copy.deepcopy(ACTIVE_FILTERS))
+    return list(ACTIVE_FILTERS)
