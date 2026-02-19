@@ -52,6 +52,10 @@ def load_job(job_id: uuid.UUID, db: Engine) -> StatementImportJob | None:
 
 def update_job(updated_job: StatementImportJob, db: Engine) -> None:
     with Session(db) as session:
+        existing = session.get(StatementImportJob, updated_job.id)
+        if existing is None:
+            raise ValueError(f"Job not found: id = {updated_job.id}")
+
         session.add(updated_job)
         session.commit()
         session.refresh(updated_job)
