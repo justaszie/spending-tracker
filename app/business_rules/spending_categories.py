@@ -16,9 +16,7 @@ class CategoryData(TypedDict):
 # Design of category rule functions:
 # Input: standardized transaction object with eur_amount field
 # Output: Category data dictionary if rule definition matches transaction. None if it doesn't match
-type CategoryRuleFunction = Callable[
-    [ImportableTransaction], CategoryData | None
-]
+type CategoryRuleFunction = Callable[[ImportableTransaction], CategoryData | None]
 
 # These don't need to be in lowercase anymore. Matching logic is case insensitive now
 SUPERMARKET_MERCHANTS = {"barbora", "iki", "lidl", "maxima", "rimi", "narvesen"}
@@ -38,38 +36,35 @@ COFFESHOP_MERCHANTS = {
     "Totorių gatvė",  # Huracan totoriu
 }
 
-BUSINESS_LUNCH_MERCHANTS = {
-    "aloha",
-    "berneliu uzeiga",
-    "bernelių užeiga",
-    "Ministerija Dienos pietūs",
-    "A. Taraškienės firma 3515",
-    "Senolių tradicija",
-    "Senolių kepyklėlė",
-}
-
 STREAMING_MERCHANTS = ("disney", "netflix", "spotify", "youtube")
 STREAMING_PATTERNS = tuple(
     re.compile(f"^.*{pattern}.*$", re.IGNORECASE) for pattern in STREAMING_MERCHANTS
 )
 FOOD_DELIVERY_MERCHANTS = {"bolt food", "wolt"}
 RESTAURANT_MERCHANTS = {
-    "Greet.menu",
-    "Globaltips",
-    "Grill London",
-    "ilunch",
-    "No Forks Mexican Grill",
-    "Spirgis",
-    "Wokbusters",
-    "Flying Tomato Pizza",
-    "JAMMI",
-    "Houdini",
-    "Holy Donut",
-    "Burna House",
+    "A. Taraškienės firma 3515",
+    "aloha",
     "Asaki",
     "Beigelistai",
+    "berneliu uzeiga",
+    "bernelių užeiga",
+    "Burna House",
     "Desertas Islandijos G3",
+    "Flying Tomato Pizza",
+    "Globaltips",
+    "Greet.menu",
+    "Grill London",
+    "Holy Donut",
+    "Houdini",
+    "ilunch",
+    "JAMMI",
     "Jūsų Šnekutis",
+    "Ministerija Dienos pietūs",
+    "No Forks Mexican Grill",
+    "Senolių kepyklėlė",
+    "Senolių tradicija",
+    "Spirgis",
+    "Wokbusters",
 }
 
 ECOM_MERCHANTS = (
@@ -92,9 +87,7 @@ GYM_MEMBERSHIP_PATTERNS = tuple(
 
 
 ### RULE DEFINITIONS
-def eating_out(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def eating_out(transaction: ImportableTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(merchant.lower() in counterparty for merchant in RESTAURANT_MERCHANTS):
         return {
@@ -105,9 +98,7 @@ def eating_out(
     return None
 
 
-def food_delivery(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def food_delivery(transaction: ImportableTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(counterparty == merchant.lower() for merchant in FOOD_DELIVERY_MERCHANTS):
         return {
@@ -118,27 +109,7 @@ def food_delivery(
     return None
 
 
-def business_lunch(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
-    counterparty = transaction.counterparty.lower().strip()
-    if (
-        any(counterparty == merchant.lower() for merchant in BUSINESS_LUNCH_MERCHANTS)
-        and transaction.transaction_datetime.isoweekday() in range(1, 6)  # Weekday
-        and 11 <= transaction.transaction_datetime.hour < 15
-    ):
-        return {
-            "l1_category": "Food & Drinks",
-            "l2_category": "Food",
-            "l3_category": "Eating Out",
-            "note": "Business Lunch",
-        }
-    return None
-
-
-def streaming_services(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def streaming_services(transaction: ImportableTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(pattern.search(counterparty) is not None for pattern in STREAMING_PATTERNS):
         return {
@@ -149,9 +120,7 @@ def streaming_services(
     return None
 
 
-def groceries(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def groceries(transaction: ImportableTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(counterparty == merchant.lower() for merchant in SUPERMARKET_MERCHANTS):
         return {
@@ -162,9 +131,7 @@ def groceries(
     return None
 
 
-def breakfast(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def breakfast(transaction: ImportableTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if (
         counterparty in COFFESHOP_MERCHANTS
@@ -179,9 +146,7 @@ def breakfast(
     return None
 
 
-def hot_drinks(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def hot_drinks(transaction: ImportableTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if (
         any(counterparty == merchant.lower() for merchant in COFFESHOP_MERCHANTS)
@@ -195,9 +160,7 @@ def hot_drinks(
     return None
 
 
-def landlord_payment(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def landlord_payment(transaction: ImportableTransaction) -> CategoryData | None:
     to_landlord = transaction.counterparty.upper() == "AUŠRA ADELĖ VAIŠVILĖ"
     if not to_landlord:
         return None
@@ -216,9 +179,7 @@ def landlord_payment(
     }
 
 
-def shopping_clothes(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def shopping_clothes(transaction: ImportableTransaction) -> CategoryData | None:
     if any(
         pattern.search(transaction.counterparty) is not None
         for pattern in CLOTHES_SHOPPING_PATTERNS
@@ -232,9 +193,7 @@ def shopping_clothes(
     return None
 
 
-def shopping_other(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def shopping_other(transaction: ImportableTransaction) -> CategoryData | None:
     if any(
         pattern.search(transaction.counterparty) is not None
         for pattern in ECOM_MERCHANT_PATTERNS
@@ -246,9 +205,7 @@ def shopping_other(
     return None
 
 
-def gym_membership(
-    transaction: ImportableTransaction
-) -> CategoryData | None:
+def gym_membership(transaction: ImportableTransaction) -> CategoryData | None:
     if any(
         pattern.search(transaction.counterparty) is not None
         for pattern in GYM_MEMBERSHIP_PATTERNS
@@ -268,7 +225,6 @@ CATEGORY_RULES: list[CategoryRuleFunction] = [
     groceries,
     breakfast,
     hot_drinks,
-    business_lunch,
     eating_out,
     food_delivery,
     landlord_payment,
@@ -276,6 +232,7 @@ CATEGORY_RULES: list[CategoryRuleFunction] = [
     shopping_other,
     gym_membership,
 ]
+
 
 def get_category_rules() -> list[CategoryRuleFunction]:
     return list(CATEGORY_RULES)
