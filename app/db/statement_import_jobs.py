@@ -50,15 +50,19 @@ def load_job(job_id: uuid.UUID, db: Engine) -> StatementImportJob | None:
         return job
 
 
-def update_job(updated_job: StatementImportJob, db: Engine) -> None:
+def update_job(updated_job: StatementImportJob, db: Engine) -> StatementImportJob:
     with Session(db) as session:
-        existing = session.get(StatementImportJob, updated_job.id)
-        if existing is None:
+        existing_job = session.get(StatementImportJob, updated_job.id)
+        if existing_job is None:
             raise ValueError(f"Job not found: id = {updated_job.id}")
 
-        session.add(updated_job)
+        update_dict = updated_job.model_dump(exclude_unset=True, exclude={"id"})
+        existing_job.sqlmodel_update(update_dict)
+        session.add(existing_job)
         session.commit()
-        session.refresh(updated_job)
+        session.refresh(existing_job)
+
+        return existing_job
 
 
 class DuplicateEntryError(ValueError):

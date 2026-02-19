@@ -77,7 +77,7 @@ def run_job(
         # If we get wrong job_id, it's the responsibility of the caller
         raise JobNotFoundError(f"Job not found for id: {job_id}")
 
-    update_job_start(job=job, db=db)
+    job = update_job_start(job=job, db=db)
     logger.info(f"Starting Job: {job.id} for {job.statement_source}")
 
     try:
@@ -126,9 +126,14 @@ def run_job(
         logger.info("Completed transaction data enrichment.")
 
         # Update job status in DB.
-        job.imported_txn_count = len(imported)
-        job.duplicate_txn_count = len(existing)
-        update_job_completed(job=job, db=db)
+        imported_txn_count = len(imported)
+        duplicate_txn_count = len(existing)
+        job = update_job_completed(
+            job=job,
+            imported_txn_count=imported_txn_count,
+            duplicate_txn_count=duplicate_txn_count,
+            db=db,
+        )
 
         logger.info(
             f"Completed import job {job.id} for {job.statement_source}. "
@@ -152,7 +157,11 @@ def run_job(
         error_message = failure_details["error_message"]
         # logger.exception will output full traceback for debugging
         logger.exception(f"Job {job.id} failed. Reason: {error_message}")
-        update_job_failed(job=job, db=db, failure_reason=failure_reason)
+        update_job_failed(
+            job=job,
+            failure_reason=failure_reason,
+            db=db,
+        )
 
 
 def apply_business_filter(
@@ -274,27 +283,34 @@ def convert_to_db_transaction(
     )
 
 
-def update_job_failed(job: StatementImportJob, db: Engine, failure_reason: str) -> None:
+def update_job_failed(job: StatementImportJob, failure_reason: str, db: Engine) -> StatementImportJob:
     job.updated_at = dt.datetime.now()
     job.status = ImportJobStatus.FAILED
     job.failure_reason = failure_reason
-    update_job(updated_job=job, db=db)
+    return update_job(updated_job=job, db=db)
 
 
-def update_job_completed(job: StatementImportJob, db: Engine) -> None:
+def update_job_completed(
+    job: StatementImportJob,
+    imported_txn_count: int,
+    duplicate_txn_count: int,
+    db: Engine,
+) -> StatementImportJob:
     current_time = dt.datetime.now()
     job.completed_at = current_time
     job.updated_at = current_time
     job.status = ImportJobStatus.COMPLETED
-    update_job(updated_job=job, db=db)
+    job.imported_txn_count = imported_txn_count
+    job.duplicate_txn_count = duplicate_txn_count
+    return update_job(updated_job=job, db=db)
 
 
-def update_job_start(job: StatementImportJob, db: Engine) -> None:
+def update_job_start(job: StatementImportJob, db: Engine) -> StatementImportJob:
     current_time = dt.datetime.now()
     job.started_at = current_time
     job.updated_at = current_time
     job.status = ImportJobStatus.RUNNING
-    update_job(updated_job=job, db=db)
+    return update_job(updated_job=job, db=db)
 
 
 def get_failure_details(exc: Exception) -> JobFailureDetails:
@@ -340,6 +356,7 @@ def get_failure_details(exc: Exception) -> JobFailureDetails:
         "job_failure_reason": "OTHER_ERROR",
         "error_message": "Unexpected error",
     }
+
 
 def _transactions_dump(transactions, filename):
     df = pd.DataFrame(txn.model_dump() for txn in transactions)
