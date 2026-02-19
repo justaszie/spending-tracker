@@ -224,7 +224,7 @@ def enrich_transactions(
         if txn.side != Side.DEBIT:
             continue
 
-        spending_categories = get_category_data(txn, txn.eur_amount)
+        spending_categories = get_category_data(txn)
         txn.l1_category = spending_categories.get("l1_category", None)
         txn.l2_category = spending_categories.get("l2_category", None)
         txn.l3_category = spending_categories.get("l3_category", None)

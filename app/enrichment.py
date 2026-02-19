@@ -10,7 +10,7 @@ from app.business_rules.spending_categories import (
     CategoryRuleFunction,
     get_category_rules,
 )
-from app.core.project_types import ExtractedTransaction
+from app.core.project_types import ImportableTransaction
 
 logger = logging.getLogger(__name__)
 
@@ -18,20 +18,18 @@ logger = logging.getLogger(__name__)
 class CurrencyConversionError(Exception):
     pass
 
-# TODO - refactor to use ImportableTransaction and get rid of extra eur_amount param
 def get_category_data(
-    transaction: ExtractedTransaction,
-    eur_amount: Decimal,
+    transaction: ImportableTransaction,
     category_rules: Sequence[CategoryRuleFunction] | None = None,
 ) -> CategoryData:
-    # Input: standardized transaction object
+    # Input: standardized transaction object with eur_amount
     # Ouput: category data dictionary. Empty dictionary if no rule applies
 
     # Rule selection policy:
     # We take the results of the first category rule that returns value
     category_rules = category_rules or get_category_rules()
     for rule_fn in category_rules:
-        category_values = rule_fn(transaction, eur_amount)
+        category_values = rule_fn(transaction)
         if category_values:
             return category_values
 
@@ -43,7 +41,7 @@ def is_food_spending(category_values: CategoryData) -> bool:
 
 
 def get_meal_type(
-    transaction: ExtractedTransaction, category_values: CategoryData
+    transaction: ImportableTransaction, category_values: CategoryData
 ) -> str | None:
     if not is_food_spending(category_values=category_values):
         return None

@@ -1,10 +1,9 @@
 # This module contains definition of categorization rules
 from collections.abc import Callable
-from decimal import Decimal
 from typing import NotRequired, TypedDict
 import re
 
-from app.core.project_types import ExtractedTransaction
+from app.core.project_types import ImportableTransaction
 
 
 class CategoryData(TypedDict):
@@ -15,10 +14,10 @@ class CategoryData(TypedDict):
 
 
 # Design of category rule functions:
-# Input: standardized transaction object, standard_ccy_amount (e.g. EUR) for amount-based rules
+# Input: standardized transaction object with eur_amount field
 # Output: Category data dictionary if rule definition matches transaction. None if it doesn't match
 type CategoryRuleFunction = Callable[
-    [ExtractedTransaction, Decimal], CategoryData | None
+    [ImportableTransaction], CategoryData | None
 ]
 
 # These don't need to be in lowercase anymore. Matching logic is case insensitive now
@@ -94,7 +93,7 @@ GYM_MEMBERSHIP_PATTERNS = tuple(
 
 ### RULE DEFINITIONS
 def eating_out(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(merchant.lower() in counterparty for merchant in RESTAURANT_MERCHANTS):
@@ -107,7 +106,7 @@ def eating_out(
 
 
 def food_delivery(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(counterparty == merchant.lower() for merchant in FOOD_DELIVERY_MERCHANTS):
@@ -120,7 +119,7 @@ def food_delivery(
 
 
 def business_lunch(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if (
@@ -138,7 +137,7 @@ def business_lunch(
 
 
 def streaming_services(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(pattern.search(counterparty) is not None for pattern in STREAMING_PATTERNS):
@@ -151,7 +150,7 @@ def streaming_services(
 
 
 def groceries(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(counterparty == merchant.lower() for merchant in SUPERMARKET_MERCHANTS):
@@ -164,13 +163,13 @@ def groceries(
 
 
 def breakfast(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if (
         counterparty in COFFESHOP_MERCHANTS
         and transaction.transaction_datetime.hour < 11
-        and standard_ccy_amount > 5
+        and transaction.eur_amount > 5
     ):
         return {
             "l1_category": "Food & Drinks",
@@ -181,12 +180,12 @@ def breakfast(
 
 
 def hot_drinks(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if (
         any(counterparty == merchant.lower() for merchant in COFFESHOP_MERCHANTS)
-        and standard_ccy_amount <= 5
+        and transaction.eur_amount <= 5
     ):
         return {
             "l1_category": "Food & Drinks",
@@ -197,13 +196,13 @@ def hot_drinks(
 
 
 def landlord_payment(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     to_landlord = transaction.counterparty.upper() == "AUŠRA ADELĖ VAIŠVILĖ"
     if not to_landlord:
         return None
 
-    if standard_ccy_amount >= 400:
+    if transaction.eur_amount >= 400:
         return {
             "l1_category": "Rent",
             "l2_category": "Rent",
@@ -218,7 +217,7 @@ def landlord_payment(
 
 
 def shopping_clothes(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     if any(
         pattern.search(transaction.counterparty) is not None
@@ -234,7 +233,7 @@ def shopping_clothes(
 
 
 def shopping_other(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     if any(
         pattern.search(transaction.counterparty) is not None
@@ -248,7 +247,7 @@ def shopping_other(
 
 
 def gym_membership(
-    transaction: ExtractedTransaction, standard_ccy_amount: Decimal
+    transaction: ImportableTransaction
 ) -> CategoryData | None:
     if any(
         pattern.search(transaction.counterparty) is not None
