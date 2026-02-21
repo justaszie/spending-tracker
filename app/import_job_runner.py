@@ -241,7 +241,7 @@ def enrich_transactions(
         # We prefer the value from extraction source, as it's closer to truth and has richer information
         txn.note = txn.note or spending_categories.get("note")
 
-        txn.meal_type = get_meal_type(txn, spending_categories)
+        txn.meal_type = get_meal_type(txn)
 
     return transactions
 

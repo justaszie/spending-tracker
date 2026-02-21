@@ -36,17 +36,15 @@ def get_category_data(
     return {}
 
 
-def is_food_spending(category_values: CategoryData) -> bool:
-    return category_values.get("l2_category") == "Food"
+def is_food_spending(transaction: ImportableTransaction) -> bool:
+    return transaction.l2_category == "Food"
 
 
-def get_meal_type(
-    transaction: ImportableTransaction, category_values: CategoryData
-) -> str | None:
-    if not is_food_spending(category_values=category_values):
+def get_meal_type(transaction: ImportableTransaction) -> str | None:
+    if not is_food_spending(transaction):
         return None
 
-    if category_values.get("l3_category") == "Hot Drinks & Snacks":
+    if transaction.l3_category == "Hot Drinks & Snacks":
         return "Snacks"
 
     hour = transaction.transaction_datetime.hour
