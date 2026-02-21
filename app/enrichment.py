@@ -27,7 +27,7 @@ def get_category_data(
 
     # Rule selection policy:
     # We take the results of the first category rule that returns value
-    category_rules = category_rules or get_category_rules()
+    category_rules = get_category_rules() if category_rules is None else category_rules
     for rule_fn in category_rules:
         category_values = rule_fn(transaction)
         if category_values:
