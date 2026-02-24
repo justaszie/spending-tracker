@@ -21,7 +21,7 @@ class StatementMetadata(BaseModel):
     source: StatementSource
     file_name: str
     file_size: int
-    file_type: str
+    file_type: str | None
 
     @field_validator("file_size")
     @classmethod
