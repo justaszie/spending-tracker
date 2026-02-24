@@ -1,8 +1,12 @@
 from enum import StrEnum
+from pathlib import Path
 from uuid import UUID
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# The .env file is at the project root (../../../ relative to this file)
+PROJECT_ROOT = Path.resolve(Path(__file__).parent.parent.parent)
+ENV_FILE = PROJECT_ROOT / ".env"
 
 class AppEnvironment(StrEnum):
     DEV = "DEV"
@@ -10,7 +14,7 @@ class AppEnvironment(StrEnum):
 
 
 class AppConfig(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(env_file=ENV_FILE)
 
     STATEMENTS_STORAGE_BUCKET: str = "statements"
     TEST_USER_ID: UUID | None = None
