@@ -47,3 +47,4 @@ frontend/*.sln
 frontend/*.sw?
 frontend/.vite/
 frontend/dev_notes.md
+design/
