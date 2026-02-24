@@ -27,7 +27,7 @@ def is_own_account_transfer(transaction: ExtractedTransaction) -> bool:
         for pattern in OWN_ACCOUNT_PATTERNS
     )
 
-
+# Transaction passes filter (is kept) if the rule returns True
 ACTIVE_RULES: list[FilterRuleFN] = [
     lambda txn: txn.type != TransactionType.CASH_WITHDRAWAL,
     lambda txn: not is_own_account_transfer(txn),
