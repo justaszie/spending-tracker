@@ -31,10 +31,12 @@ def no_allowed_content_types():
 
 def test_right_config_returned(monkeypatch):
     source = StatementSource.REVOLUT
+
     def extractor_fn():
         pass
-    test_content_types = {'text/plain'}
-    test_extensions = {'.csv', '.pdf'}
+
+    test_content_types = {"text/plain"}
+    test_extensions = {".csv", ".pdf"}
     test_registry_config = {
         source: {
             "extractor_fn": extractor_fn,
@@ -42,7 +44,9 @@ def test_right_config_returned(monkeypatch):
             "allowed_content_types": test_content_types,
         }
     }
-    monkeypatch.setattr("app.statement_extractors.registry._registry", test_registry_config)
+    monkeypatch.setattr(
+        "app.statement_extractors.registry._registry", test_registry_config
+    )
 
     assert get_extractor_fn(source) == extractor_fn
     assert allowed_content_types(source) == test_content_types

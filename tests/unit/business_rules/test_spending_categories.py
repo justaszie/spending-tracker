@@ -220,13 +220,17 @@ class TestGymMembership:
 
 class TestLandlordPayment:
     def test_wrong_counterparty(self, importable_transaction):
-        transaction = importable_transaction(counterparty="Jonas Johnsson", eur_amount=Decimal("15.00"))
+        transaction = importable_transaction(
+            counterparty="Jonas Johnsson", eur_amount=Decimal("15.00")
+        )
         result = landlord_payment(transaction)
 
         assert result is None
 
     def test_rent_payment_amount(self, importable_transaction):
-        transaction = importable_transaction(counterparty="Aušra Adelė Vaišvilė", eur_amount=Decimal("100.50"))
+        transaction = importable_transaction(
+            counterparty="Aušra Adelė Vaišvilė", eur_amount=Decimal("100.50")
+        )
         result = landlord_payment(transaction)
 
         assert result["l1_category"] == "Rent"
@@ -234,7 +238,9 @@ class TestLandlordPayment:
         assert result["l3_category"] == "Utilities"
 
     def test_utilities_payment_amount(self, importable_transaction):
-        transaction = importable_transaction(counterparty="Aušra Adelė Vaišvilė", eur_amount=Decimal("550.12"))
+        transaction = importable_transaction(
+            counterparty="Aušra Adelė Vaišvilė", eur_amount=Decimal("550.12")
+        )
         result = landlord_payment(transaction)
 
         assert result["l1_category"] == "Rent"
@@ -253,7 +259,9 @@ class TestHotDrinks:
     )
     def test_positive_matches(self, importable_transaction, counterparty):
         eligible_amount = Decimal("3.50")
-        transaction = importable_transaction(counterparty=counterparty, eur_amount=eligible_amount)
+        transaction = importable_transaction(
+            counterparty=counterparty, eur_amount=eligible_amount
+        )
         result = hot_drinks(transaction)
 
         assert result["l1_category"] == "Food & Drinks"
@@ -261,7 +269,9 @@ class TestHotDrinks:
         assert result["l3_category"] == "Hot Drinks & Snacks"
 
     def test_wrong_counterparty(self, importable_transaction):
-        transaction = importable_transaction(counterparty="Maxima", eur_amount=Decimal("3.50"))
+        transaction = importable_transaction(
+            counterparty="Maxima", eur_amount=Decimal("3.50")
+        )
         result = hot_drinks(transaction)
 
         assert result is None
@@ -287,7 +297,9 @@ class TestBreakfast:
         eligible_amount = Decimal("6.50")
         timestamp = dt.datetime.fromisoformat("2026-01-10T10:30:10")
         transaction = importable_transaction(
-            counterparty=counterparty, transaction_datetime=timestamp, eur_amount=eligible_amount
+            counterparty=counterparty,
+            transaction_datetime=timestamp,
+            eur_amount=eligible_amount,
         )
         result = breakfast(transaction)
 
@@ -296,7 +308,9 @@ class TestBreakfast:
         assert result["l3_category"] == "Eating Out"
 
     def test_wrong_counterparty(self, importable_transaction):
-        transaction = importable_transaction(counterparty="Maxima", eur_amount=Decimal("3.50"))
+        transaction = importable_transaction(
+            counterparty="Maxima", eur_amount=Decimal("3.50")
+        )
         result = breakfast(transaction)
 
         assert result is None

@@ -10,22 +10,22 @@ class TestRevolutFileTypeValidation:
     def valid_size(self):
         return int(0.5 * 1024**2)
 
-    @pytest.mark.parametrize("content_type",
+    @pytest.mark.parametrize(
+        "content_type",
         [
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "application/vnd.ms-excel",
             "application/octet-stream",
-        ]
+        ],
     )
     def test_allows_file_with_valid_type(self, valid_size, content_type):
         validated = StatementMetadata(
             source=StatementSource.REVOLUT,
             file_name="whatever",
             file_size=valid_size,
-            file_type=content_type
+            file_type=content_type,
         )
         assert isinstance(validated, StatementMetadata)
-
 
     @pytest.mark.parametrize("file_extension", ["xlsx", "xls"])
     def test_allows_file_with_valid_extension(self, valid_size, file_extension):
@@ -34,7 +34,7 @@ class TestRevolutFileTypeValidation:
             source=StatementSource.REVOLUT,
             file_name=file_name,
             file_size=valid_size,
-            file_type="any/content-type"
+            file_type="any/content-type",
         )
         assert isinstance(validated, StatementMetadata)
 
@@ -45,7 +45,7 @@ class TestRevolutFileTypeValidation:
             ("txt", "text/plain"),
             ("", "text/plain"),
             ("pdf", None),
-        ]
+        ],
     )
     def test_rejects_invalid_types(self, valid_size, file_extension, content_type):
         file_name = f"revolut_statement_2025-02-02.{file_extension}"
@@ -54,7 +54,7 @@ class TestRevolutFileTypeValidation:
                 source=StatementSource.REVOLUT,
                 file_name=file_name,
                 file_size=valid_size,
-                file_type=content_type
+                file_type=content_type,
             )
         validation_exc = exc_info.value
         assert "file type is not valid" in validation_exc.errors()[0]["msg"]
@@ -65,19 +65,20 @@ class TestSwedbankFileTypeValidation:
     def valid_size(self):
         return int(0.5 * 1024**2)
 
-    @pytest.mark.parametrize("content_type",
+    @pytest.mark.parametrize(
+        "content_type",
         [
             "text/csv",
             "text/plain",
             "application/octet-stream",
-        ]
+        ],
     )
     def test_allows_file_with_valid_type(self, valid_size, content_type):
         validated = StatementMetadata(
             source=StatementSource.SWEDBANK,
             file_name="whatever",
             file_size=valid_size,
-            file_type=content_type
+            file_type=content_type,
         )
         assert isinstance(validated, StatementMetadata)
 
@@ -88,7 +89,7 @@ class TestSwedbankFileTypeValidation:
             source=StatementSource.SWEDBANK,
             file_name=file_name,
             file_size=valid_size,
-            file_type="any/content-type"
+            file_type="any/content-type",
         )
         assert isinstance(validated, StatementMetadata)
 
@@ -99,7 +100,7 @@ class TestSwedbankFileTypeValidation:
             ("xlsx", "application/vnd.ms-excel"),
             ("", "application/pdf"),
             ("pdf", None),
-        ]
+        ],
     )
     def test_rejects_invalid_types(self, valid_size, file_extension, content_type):
         file_name = f"swedbank_statement_2025-02-02.{file_extension}"
@@ -108,7 +109,7 @@ class TestSwedbankFileTypeValidation:
                 source=StatementSource.SWEDBANK,
                 file_name=file_name,
                 file_size=valid_size,
-                file_type=content_type
+                file_type=content_type,
             )
         validation_exc = exc_info.value
         assert "file type is not valid" in validation_exc.errors()[0]["msg"]
@@ -153,4 +154,3 @@ class TestFileSizeValidation:
             )
         validation_exc = exc_info.value
         assert "can't exceed" in validation_exc.errors()[0]["msg"]
-

@@ -30,6 +30,7 @@ class TestOWnAccountTranfer:
         transaction = extracted_transaction(counterparty=counterparty)
         assert not is_own_account_transfer(transaction)
 
+
 class TestAllRulesCovered:
     @pytest.fixture(scope="class")
     def active_rules(self):

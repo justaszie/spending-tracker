@@ -97,11 +97,11 @@ class TestFileUpload:
         )
         upload_method.assert_called()
 
-    def test_rejects_empty_file(self, mocker, supabase_with_bucket, statement_meta):
+    def test_rejects_empty_file(self, supabase_with_bucket, statement_meta):
         storage = FileStorage(supabase_with_bucket)
 
         empty_file = BytesIO(b"")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="No content"):
             storage.upload_statement(
                 user_id=TEST_USER_ID,
                 file=empty_file,

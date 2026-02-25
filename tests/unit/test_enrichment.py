@@ -10,7 +10,6 @@ from app.enrichment import (
     get_category_data,
     get_eur_amount,
     get_meal_type,
-    is_food_spending,
 )
 
 
@@ -86,7 +85,7 @@ class TestGetEurAmount:
         assert converter.convert.call_count == 1 + max_retries
 
     def test_tries_fallback_dates(self, converter):
-        def fail_first_two_dates(*args, **kwargs):
+        def fail_first_two_dates(*_args, **kwargs):
             if kwargs["date"] in [txn_date, txn_date - dt.timedelta(days=1)]:
                 raise RateNotFoundError()
 
