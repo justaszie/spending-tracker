@@ -143,11 +143,11 @@ def convert_to_standardized_transaction(
 def get_transaction_type(transaction: RawTransactionRevolut) -> TransactionType:
     mapping = {
         "ATM": TransactionType.CASH_WITHDRAWAL,
-        "Card Payment": TransactionType.CARD_PAYMENT,
-        "Transfer": TransactionType.TRANSFER,
-        "Card Refund": TransactionType.CARD_REFUND,
+        "CARD PAYMENT": TransactionType.CARD_PAYMENT,
+        "TRANSFER": TransactionType.TRANSFER,
+        "CARD REFUND": TransactionType.CARD_REFUND,
     }
-    return mapping.get(transaction.type, TransactionType.OTHER)
+    return mapping.get(transaction.type.upper(), TransactionType.OTHER)
 
 
 def get_note(transaction: RawTransactionRevolut) -> str | None:
