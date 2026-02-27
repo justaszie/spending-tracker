@@ -2,7 +2,7 @@ from decimal import Decimal
 from enum import StrEnum
 import datetime as dt
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class StatementSource(StrEnum):
@@ -57,3 +57,9 @@ class ImportableTransaction(ExtractedTransaction):
     l2_category: str | None = None
     l3_category: str | None = None
     meal_type: str | None = None
+
+    @model_validator(mode="after")
+    def standardize_amounts_format(self) -> "ImportableTransaction":
+        self.orig_amount = self.orig_amount.quantize(Decimal("0.01"))
+        self.eur_amount = self.eur_amount.quantize(Decimal("0.01"))
+        return self
