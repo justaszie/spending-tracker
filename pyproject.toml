@@ -89,5 +89,6 @@ max-complexity = 10
 [tool.coverage.run]
 omit = [
     "tests/*",
-    "app/throwaway/*",
+    "throwaway/*",
+    "app/**/__init__.py",
 ]
