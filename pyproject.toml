@@ -38,6 +38,10 @@ dev = [
 
 [tool.pytest]
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore::pyparsing.PyparsingDeprecationWarning:pyiceberg.*",
+    "ignore::DeprecationWarning:pyiceberg.*",
+]
 
 [tool.ruff]
 # Set line length (matches Black's default)
