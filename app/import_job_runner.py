@@ -91,7 +91,7 @@ def run_job(
         extractor_fn = get_extractor_fn(job.statement_source)
         if extractor_fn is None:
             raise ExtractorNotFoundError(
-                f'Exractor not found for statement source: "{job.statement_source}"'
+                f'Extractor not found for statement source: "{job.statement_source}"'
             )
 
         # Get extracted transactions in standard format
@@ -152,16 +152,8 @@ def run_job(
             _transactions_dump(imported, "imported")
 
     except Exception as e:
-        failure_details: JobFailureDetails = get_failure_details(e)
-        failure_reason = failure_details["job_failure_reason"]
-        error_message = failure_details["error_message"]
-        # logger.exception will output full traceback for debugging
-        logger.exception(f"Job {job.id} failed. Reason: {error_message}")
-        update_job_failed(
-            job=job,
-            failure_reason=failure_reason,
-            db=db,
-        )
+        record_job_failure(job=job, e=e, db=db)
+
 
 
 def apply_business_filter(
@@ -312,6 +304,17 @@ def update_job_start(job: StatementImportJob, db: Engine) -> StatementImportJob:
     job.status = ImportJobStatus.RUNNING
     return update_job(updated_job=job, db=db)
 
+def record_job_failure(job: StatementImportJob, e: Exception, db: Engine):
+    failure_details: JobFailureDetails = get_failure_details(e)
+    failure_reason = failure_details["job_failure_reason"]
+    error_message = failure_details["error_message"]
+    # logger.exception will output full traceback for debugging
+    logger.exception(f"Job {job.id} failed. Reason: {error_message}")
+    update_job_failed(
+        job=job,
+        failure_reason=failure_reason,
+        db=db,
+    )
 
 def get_failure_details(exc: Exception) -> JobFailureDetails:
     exception_mapping = {
@@ -336,8 +339,8 @@ def get_failure_details(exc: Exception) -> JobFailureDetails:
             "Error while applying business rule filters on the transactions",
         ),
         ExistingTransactionSeparationError: (
-            "EXISTING_TRANSACTIONS_FILTER_ERROR",
-            "Error while filtering transactions that already exist",
+            "NEW_EXISTING_SEPARATION_ERROR",
+            "Error while separating new transactions from the existing ones",
         ),
         TransactionInsertError: (
             "TRANSACTION_INSERT_ERROR",
