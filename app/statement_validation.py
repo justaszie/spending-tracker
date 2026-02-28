@@ -1,3 +1,5 @@
+from typing import Self
+
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -38,7 +40,7 @@ class StatementMetadata(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def is_valid_type(self) -> "StatementMetadata":
+    def is_valid_type(self) -> Self:
         allowed_extensions = allowed_file_extensions(self.source)
 
         # If file contains a supported extension, allow it

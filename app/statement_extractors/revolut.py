@@ -1,6 +1,6 @@
 from decimal import Decimal
 from hashlib import sha256
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Self
 import datetime as dt
 import logging
 
@@ -91,7 +91,7 @@ class RawTransactionRevolut(BaseModel):
 
     # Filtering out unsupported transactions
     @model_validator(mode="after")
-    def is_valid_transaction(self) -> "RawTransactionRevolut":
+    def is_valid_transaction(self) -> Self:
         # Only use current account transactions (excl. saving, trading, etc.)
         if self.account_type.upper() != "CURRENT":
             raise ValueError(
@@ -115,7 +115,7 @@ class RawTransactionRevolut(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def standardize_amounts_format(self) -> "RawTransactionRevolut":
+    def standardize_amounts_format(self) -> Self:
         self.amount = self.amount.quantize(Decimal("0.01"))
         self.balance_after = self.balance_after.quantize(Decimal("0.01"))
         return self

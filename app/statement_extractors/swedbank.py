@@ -2,7 +2,7 @@ from csv import DictReader
 from decimal import Decimal
 from hashlib import sha256
 from io import TextIOWrapper
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Self
 import datetime as dt
 import logging
 import re
@@ -93,7 +93,7 @@ class RawTransactionSwedbank(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def is_valid_transaction(self) -> "RawTransactionSwedbank":
+    def is_valid_transaction(self) -> Self:
         # Exclude entries such as total amount spent during period.
         # Such transactions contain patterns like "apyvarta..." in description field
         for pattern in EXCL_DESCRIPTION_PATTERNS:

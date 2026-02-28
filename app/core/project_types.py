@@ -1,6 +1,7 @@
 from decimal import Decimal
 from enum import StrEnum
 import datetime as dt
+from typing import Self
 
 from pydantic import BaseModel, model_validator
 
@@ -59,7 +60,7 @@ class ImportableTransaction(ExtractedTransaction):
     meal_type: str | None = None
 
     @model_validator(mode="after")
-    def standardize_amounts_format(self) -> "ImportableTransaction":
+    def standardize_amounts_format(self) -> Self:
         self.orig_amount = self.orig_amount.quantize(Decimal("0.01"))
         self.eur_amount = self.eur_amount.quantize(Decimal("0.01"))
         return self
