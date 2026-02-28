@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TypedDict
+from typing import BinaryIO, TypedDict
 from uuid import UUID
 import datetime as dt
 import logging
@@ -17,6 +17,7 @@ from app.core.project_types import (
     ImportableTransaction,
     ImportJobStatus,
     Side,
+    StatementSource,
 )
 from app.db.statement_import_jobs import StatementImportJob, load_job, update_job
 from app.db.transactions import (
@@ -82,20 +83,12 @@ def run_job(
 
     try:
         # Load the statement from file storage
-        statement = file_storage.load_file(
+        statement_data = file_storage.load_file(
             job.file_path, bucket=app_config.STATEMENTS_STORAGE_BUCKET
         )
         logger.info(f"Downloaded statement from: {job.file_path}")
 
-        # Find the right extractor for the statement
-        extractor_fn = get_extractor_fn(job.statement_source)
-        if extractor_fn is None:
-            raise ExtractorNotFoundError(
-                f'Extractor not found for statement source: "{job.statement_source}"'
-            )
-
-        # Get extracted transactions in standard format
-        extracted: list[ExtractedTransaction] = extractor_fn(statement)
+        extracted = get_extracted_transactions(statement_data, job.statement_source)
 
         # Apply filtering rules to exclude irrelevant transactions
         filtered = apply_business_filter(extracted)
@@ -154,6 +147,19 @@ def run_job(
     except Exception as e:
         record_job_failure(job=job, e=e, db=db)
 
+
+def get_extracted_transactions(
+    statement_data: BinaryIO, statement_source: StatementSource
+) -> list[ExtractedTransaction]:
+    """Load extractor for the given source and extract transactions from statement.
+    Raises ExtractorNotFoundError if no extractor is registered for the source.
+    """
+    extractor_fn = get_extractor_fn(statement_source)
+    if extractor_fn is None:
+        raise ExtractorNotFoundError(
+            f'Extractor not found for statement source: "{statement_source}"'
+        )
+    return extractor_fn(statement_data)
 
 
 def apply_business_filter(
