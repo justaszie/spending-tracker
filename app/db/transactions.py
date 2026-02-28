@@ -44,7 +44,9 @@ class Transaction(SQLModel, table=True):
 
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
     try:
-        with Session(db) as session:
+        with Session(db, expire_on_commit = False) as session:
+            # setting expire_on_commit=False allows to reuse
+            # the Transaction instances in the client code (import job runner)
             session.add_all(transactions)
             session.commit()
     except Exception as e:
