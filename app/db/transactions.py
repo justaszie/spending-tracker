@@ -31,6 +31,7 @@ class Transaction(SQLModel, table=True):
     eur_amount: Decimal = Field(nullable=False)
     manually_added: bool = Field(nullable=False, default=False)
     note: str | None = Field(default=None)
+    spending_category: str | None = Field(default=None)
     l1_category: str | None = Field(default=None)
     l2_category: str | None = Field(default=None)
     l3_category: str | None = Field(default=None)
