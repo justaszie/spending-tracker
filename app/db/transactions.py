@@ -32,9 +32,6 @@ class Transaction(SQLModel, table=True):
     manually_added: bool = Field(nullable=False, default=False)
     note: str | None = Field(default=None)
     spending_category: str | None = Field(default=None)
-    l1_category: str | None = Field(default=None)
-    l2_category: str | None = Field(default=None)
-    l3_category: str | None = Field(default=None)
     meal_type: str | None = Field(default=None)
     dedup_key: str = Field(nullable=False)
     import_job_id: uuid.UUID = Field(
