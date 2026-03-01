@@ -135,6 +135,15 @@ def eating_out(transaction: ImportableTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(merchant.lower() in counterparty for merchant in RESTAURANT_MERCHANTS):
         return {"spending_category": "EATING_OUT"}
+
+    # Breakfast pattern
+    if (
+        counterparty in COFFESHOP_MERCHANTS
+        and transaction.transaction_datetime.hour < 11
+        and transaction.eur_amount > 5
+    ):
+        return {"spending_category": "EATING_OUT"}
+
     return None
 
 
@@ -156,17 +165,6 @@ def groceries(transaction: ImportableTransaction) -> CategoryData | None:
     counterparty = transaction.counterparty.lower().strip()
     if any(counterparty == merchant.lower() for merchant in SUPERMARKET_MERCHANTS):
         return {"spending_category": "GROCERIES"}
-    return None
-
-
-def breakfast(transaction: ImportableTransaction) -> CategoryData | None:
-    counterparty = transaction.counterparty.lower().strip()
-    if (
-        counterparty in COFFESHOP_MERCHANTS
-        and transaction.transaction_datetime.hour < 11
-        and transaction.eur_amount > 5
-    ):
-        return {"spending_category": "EATING_OUT"}
     return None
 
 
@@ -225,7 +223,6 @@ def gym_membership(transaction: ImportableTransaction) -> CategoryData | None:
 CATEGORY_RULES: list[CategoryRuleFunction] = [
     streaming_services,
     groceries,
-    breakfast,
     hot_drinks,
     eating_out,
     food_delivery,

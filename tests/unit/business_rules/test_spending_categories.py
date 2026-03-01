@@ -4,7 +4,6 @@ import datetime as dt
 import pytest
 
 from app.business_rules.spending_categories import (
-    breakfast,
     eating_out,
     food_delivery,
     groceries,
@@ -27,14 +26,49 @@ class TestEatingOut:
             "Wokbusters",
         ],
     )
-    def test_positive_matches(self, importable_transaction, counterparty):
+    def test_restaurant_matches(self, importable_transaction, counterparty):
         transaction = importable_transaction(counterparty=counterparty)
         result = eating_out(transaction)
 
         assert result is not None
         assert result["spending_category"] == "EATING_OUT"
 
-    def test_no_match(self, importable_transaction):
+    @pytest.mark.parametrize(
+        "counterparty",
+        [
+            "Caffeine",
+            "Kavos Era",
+            "backstage cafe",
+        ],
+    )
+    def test_coffeeshop_breakfast_matches(self, importable_transaction, counterparty):
+        transaction = importable_transaction(
+            counterparty=counterparty,
+            transaction_datetime=dt.datetime(2026, 1, 2, 9, 15, 1),
+            eur_amount=7.5,
+        )
+        result = eating_out(transaction)
+        assert result is not None
+        assert result["spending_category"] == "EATING_OUT"
+
+    def test_amount_too_low_for_breakfast(self, importable_transaction):
+        amount = Decimal("5.00")
+        transaction = importable_transaction(counterparty="Caffeine", eur_amount=amount)
+        result = eating_out(transaction)
+
+        assert result is None
+
+    def test_timestamp_too_late_for_breakfast(self, importable_transaction):
+        amount = Decimal("8.00")
+        timestamp = dt.datetime.fromisoformat("2026-01-10T11:25:10")
+        transaction = importable_transaction(
+            counterparty="Caffeine", transaction_datetime=timestamp, eur_amount=amount
+        )
+        result = eating_out(transaction)
+
+        assert result is None
+
+    def test_no_counterparty_match(self, importable_transaction):
         transaction = importable_transaction(counterparty="Lemon Gym")
         result = eating_out(transaction)
 
@@ -215,20 +249,22 @@ class TestLandlordPayment:
 
         assert result is None
 
-    def test_rent_payment_amount(self, importable_transaction):
+    def test_utilities_payment_amount(self, importable_transaction):
         transaction = importable_transaction(
             counterparty="Aušra Adelė Vaišvilė", eur_amount=Decimal("100.50")
         )
         result = landlord_payment(transaction)
 
+        assert result is not None
         assert result["spending_category"] == "RENT_UTILITIES"
 
-    def test_utilities_payment_amount(self, importable_transaction):
+    def test_rent_payment_amount(self, importable_transaction):
         transaction = importable_transaction(
             counterparty="Aušra Adelė Vaišvilė", eur_amount=Decimal("550.12")
         )
         result = landlord_payment(transaction)
 
+        assert result is not None
         assert result["spending_category"] == "RENT"
 
 
@@ -248,6 +284,7 @@ class TestHotDrinks:
         )
         result = hot_drinks(transaction)
 
+        assert result is not None
         assert result["spending_category"] == "CAFE_SNACKS"
 
     def test_wrong_counterparty(self, importable_transaction):
@@ -262,52 +299,5 @@ class TestHotDrinks:
         amount = Decimal("5.50")
         transaction = importable_transaction(counterparty="Caffeine", eur_amount=amount)
         result = hot_drinks(transaction)
-
-        assert result is None
-
-
-class TestBreakfast:
-    @pytest.mark.parametrize(
-        "counterparty",
-        [
-            "Caffeine",
-            "Kavos Era",
-            "backstage cafe",
-        ],
-    )
-    def test_positive_matches(self, importable_transaction, counterparty):
-        eligible_amount = Decimal("6.50")
-        timestamp = dt.datetime.fromisoformat("2026-01-10T10:30:10")
-        transaction = importable_transaction(
-            counterparty=counterparty,
-            transaction_datetime=timestamp,
-            eur_amount=eligible_amount,
-        )
-        result = breakfast(transaction)
-
-        assert result["spending_category"] == "EATING_OUT"
-
-    def test_wrong_counterparty(self, importable_transaction):
-        transaction = importable_transaction(
-            counterparty="Maxima", eur_amount=Decimal("3.50")
-        )
-        result = breakfast(transaction)
-
-        assert result is None
-
-    def test_amount_too_low(self, importable_transaction):
-        amount = Decimal("5.00")
-        transaction = importable_transaction(counterparty="Caffeine", eur_amount=amount)
-        result = breakfast(transaction)
-
-        assert result is None
-
-    def test_timestamp_too_late(self, importable_transaction):
-        amount = Decimal("8.00")
-        timestamp = dt.datetime.fromisoformat("2026-01-10T11:25:10")
-        transaction = importable_transaction(
-            counterparty="Caffeine", transaction_datetime=timestamp, eur_amount=amount
-        )
-        result = breakfast(transaction)
 
         assert result is None
