@@ -4,7 +4,7 @@ import datetime as dt
 from currency_converter import RateNotFoundError
 import pytest
 
-from app.business_rules.spending_categories import breakfast, groceries, hot_drinks
+from app.business_rules.spending_categories import groceries, hot_drinks
 from app.enrichment import (
     CurrencyConversionError,
     get_category_data,
@@ -102,7 +102,7 @@ class TestGetEurAmount:
 class TestGetCategories:
     def test_uses_first_matching_rule(self, importable_transaction):
         # 3 active rules, 2nd one applies (hot_drinks for Caffeine, eur_amount=5)
-        test_rules = [groceries, hot_drinks, breakfast]
+        test_rules = [groceries, hot_drinks]
         transaction = importable_transaction(counterparty="Caffeine", eur_amount=5)
         result = get_category_data(transaction, test_rules)
         assert result is not None

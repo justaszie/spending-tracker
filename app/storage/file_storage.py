@@ -45,7 +45,7 @@ class FileStorage:
                     "public": False,
                 },
             )
-        logger.info(f"Storage bucket created: {storage_bucket}")
+            logger.info(f"Storage bucket created: {storage_bucket}")
 
         response = self._supabase_client.storage.from_(storage_bucket).upload(
             file=file_data,
