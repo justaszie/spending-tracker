@@ -15,45 +15,37 @@ from app.enrichment import (
 
 class TestMealType:
     def test_matches_snacks(self, importable_transaction):
-        transaction = importable_transaction(
-            l2_category="Food", l3_category="Hot Drinks & Snacks"
-        )
+        transaction = importable_transaction(spending_category="CAFE_SNACKS")
         assert get_meal_type(transaction) == "Snacks"
 
     def test_returns_breakfast_for_morning(self, importable_transaction):
         transaction = importable_transaction(
-            l2_category="Food",
-            l3_category="Eating Out",
+            spending_category="EATING_OUT",
             transaction_datetime=dt.datetime(2026, 1, 10, 10, 0, 0),
         )
         assert get_meal_type(transaction) == "Breakfast"
 
     def test_returns_lunch_for_lunch_period(self, importable_transaction):
         transaction = importable_transaction(
-            l2_category="Food",
-            l3_category="Eating Out",
+            spending_category="EATING_OUT",
             transaction_datetime=dt.datetime(2026, 1, 10, 11, 0, 0),
         )
         assert get_meal_type(transaction) == "Lunch"
         transaction_16 = importable_transaction(
-            l2_category="Food",
-            l3_category="Eating Out",
+            spending_category="EATING_OUT",
             transaction_datetime=dt.datetime(2026, 1, 10, 16, 59, 0),
         )
         assert get_meal_type(transaction_16) == "Lunch"
 
     def test_returns_dinner_for_evening(self, importable_transaction):
         transaction = importable_transaction(
-            l2_category="Food",
-            l3_category="Eating Out",
+            spending_category="EATING_OUT",
             transaction_datetime=dt.datetime(2026, 1, 10, 17, 0, 0),
         )
         assert get_meal_type(transaction) == "Dinner"
 
     def test_returns_none_when_not_food(self, importable_transaction):
-        transaction = importable_transaction(
-            l2_category="Groceries", l3_category="Groceries"
-        )
+        transaction = importable_transaction(spending_category="GROCERIES")
         assert get_meal_type(transaction) is None
 
 
@@ -109,46 +101,45 @@ class TestGetEurAmount:
 
 class TestGetCategories:
     def test_uses_first_matching_rule(self, importable_transaction):
-        # 3 active rules, 2nd one applies
+        # 3 active rules, 2nd one applies (hot_drinks for Caffeine, eur_amount=5)
         test_rules = [groceries, hot_drinks, breakfast]
         transaction = importable_transaction(counterparty="Caffeine", eur_amount=5)
         result = get_category_data(transaction, test_rules)
-        assert result["l1_category"] == "Food & Drinks"
-        assert result["l2_category"] == "Food"
-        assert result["l3_category"] == "Hot Drinks & Snacks"
+        assert result is not None
+        assert result["spending_category"] == "CAFE_SNACKS"
 
     def test_first_rule_wins_when_multiple_match(self, importable_transaction):
         def first_rule(_):
-            return {"l1_category": "First"}
+            return {"spending_category": "EATING_OUT"}
 
         def second_rule(_):
-            return {"l1_category": "Second"}
+            return {"spending_category": "FOOD_DELIVERY"}
 
         transaction = importable_transaction()
         result = get_category_data(
             transaction, category_rules=[first_rule, second_rule]
         )
-        assert result == {"l1_category": "First"}
+        assert result == {"spending_category": "EATING_OUT"}
 
-    def test_returns_empty_when_no_rule_applies(self, importable_transaction):
+    def test_returns_none_when_no_rule_applies(self, importable_transaction):
         transaction = importable_transaction(
             counterparty="Unknown Merchant", eur_amount=10
         )
         result = get_category_data(transaction, category_rules=[groceries, hot_drinks])
-        assert result == {}
+        assert result is None
 
     def test_uses_default_rules_when_none_provided(
         self, importable_transaction, mocker
     ):
         def stub_rule(_):
-            return {"l1_category": "X"}
+            return {"spending_category": "GYM"}
 
         mocker.patch("app.enrichment.get_category_rules", return_value=[stub_rule])
         transaction = importable_transaction()
         result = get_category_data(transaction)
-        assert result == {"l1_category": "X"}
+        assert result == {"spending_category": "GYM"}
 
-    def test_returns_empty_when_rules_empty_list(self, importable_transaction):
+    def test_returns_none_when_rules_list_empty(self, importable_transaction):
         transaction = importable_transaction()
         result = get_category_data(transaction, category_rules=[])
-        assert result == {}
+        assert result is None

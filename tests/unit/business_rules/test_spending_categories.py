@@ -32,9 +32,7 @@ class TestEatingOut:
         result = eating_out(transaction)
 
         assert result is not None
-        assert result["l1_category"] == "Food & Drinks"
-        assert result["l2_category"] == "Food"
-        assert result["l3_category"] == "Eating Out"
+        assert result["spending_category"] == "EATING_OUT"
 
     def test_no_match(self, importable_transaction):
         transaction = importable_transaction(counterparty="Lemon Gym")
@@ -57,9 +55,7 @@ class TestFoodDelivery:
         result = food_delivery(transaction)
 
         assert result is not None
-        assert result["l1_category"] == "Food & Drinks"
-        assert result["l2_category"] == "Food"
-        assert result["l3_category"] == "Food Delivery"
+        assert result["spending_category"] == "FOOD_DELIVERY"
 
     @pytest.mark.parametrize(
         "counterparty",
@@ -90,9 +86,7 @@ class TestStreamingServices:
         result = streaming_services(transaction)
 
         assert result is not None
-        assert result["l1_category"] == "Entertainment"
-        assert result["l2_category"] == "Streaming Services"
-        assert result["l3_category"] == f"{counterparty} subscription"
+        assert result["spending_category"] == "STREAMING_SERVICES"
 
     def test_no_match(self, importable_transaction):
         transaction = importable_transaction(counterparty="Lidl")
@@ -116,9 +110,7 @@ class TestGroceries:
         result = groceries(transaction)
 
         assert result is not None
-        assert result["l1_category"] == "Groceries"
-        assert result["l2_category"] == "Groceries"
-        assert result["l3_category"] == "Groceries"
+        assert result["spending_category"] == "GROCERIES"
 
     def test_no_match(
         self,
@@ -145,9 +137,7 @@ class TestShoppingClothes:
         result = shopping_clothes(transaction)
 
         assert result is not None
-        assert result["l1_category"] == "Shopping"
-        assert result["l2_category"] == "Clothes"
-        assert result["l3_category"] == "Clothes"
+        assert result["spending_category"] == "SHOPPING_CLOTHES"
 
     @pytest.mark.parametrize(
         "counterparty",
@@ -178,7 +168,7 @@ class TestShoppingOther:
         result = shopping_other(transaction)
 
         assert result is not None
-        assert result["l1_category"] == "Shopping"
+        assert result["spending_category"] == "SHOPPING_OTHER"
 
     @pytest.mark.parametrize(
         "counterparty",
@@ -207,9 +197,7 @@ class TestGymMembership:
         result = gym_membership(transaction)
 
         assert result is not None
-        assert result["l1_category"] == "Health"
-        assert result["l2_category"] == "Gym"
-        assert result["l3_category"] == "Gym"
+        assert result["spending_category"] == "GYM"
 
     def test_no_match(self, importable_transaction):
         transaction = importable_transaction(counterparty="Other value")
@@ -233,9 +221,7 @@ class TestLandlordPayment:
         )
         result = landlord_payment(transaction)
 
-        assert result["l1_category"] == "Rent"
-        assert result["l2_category"] == "Utilities"
-        assert result["l3_category"] == "Utilities"
+        assert result["spending_category"] == "RENT_UTILITIES"
 
     def test_utilities_payment_amount(self, importable_transaction):
         transaction = importable_transaction(
@@ -243,9 +229,7 @@ class TestLandlordPayment:
         )
         result = landlord_payment(transaction)
 
-        assert result["l1_category"] == "Rent"
-        assert result["l2_category"] == "Rent"
-        assert result["l3_category"] == "Rent"
+        assert result["spending_category"] == "RENT"
 
 
 class TestHotDrinks:
@@ -264,9 +248,7 @@ class TestHotDrinks:
         )
         result = hot_drinks(transaction)
 
-        assert result["l1_category"] == "Food & Drinks"
-        assert result["l2_category"] == "Food"
-        assert result["l3_category"] == "Hot Drinks & Snacks"
+        assert result["spending_category"] == "CAFE_SNACKS"
 
     def test_wrong_counterparty(self, importable_transaction):
         transaction = importable_transaction(
@@ -303,9 +285,7 @@ class TestBreakfast:
         )
         result = breakfast(transaction)
 
-        assert result["l1_category"] == "Food & Drinks"
-        assert result["l2_category"] == "Food"
-        assert result["l3_category"] == "Eating Out"
+        assert result["spending_category"] == "EATING_OUT"
 
     def test_wrong_counterparty(self, importable_transaction):
         transaction = importable_transaction(

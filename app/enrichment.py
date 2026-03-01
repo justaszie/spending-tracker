@@ -6,6 +6,7 @@ import logging
 from currency_converter import CurrencyConverter, RateNotFoundError
 
 from app.business_rules.spending_categories import (
+    FOOD_CATEGORIES,
     CategoryData,
     CategoryRuleFunction,
     get_category_rules,
@@ -18,12 +19,13 @@ logger = logging.getLogger(__name__)
 class CurrencyConversionError(Exception):
     pass
 
+
 def get_category_data(
     transaction: ImportableTransaction,
     category_rules: Sequence[CategoryRuleFunction] | None = None,
-) -> CategoryData:
+) -> CategoryData | None:
     # Input: standardized transaction object with eur_amount
-    # Ouput: category data dictionary. Empty dictionary if no rule applies
+    # Output: category data dict when a rule matches, None when no rule applies
 
     # Rule selection policy:
     # We take the results of the first category rule that returns value
@@ -33,18 +35,18 @@ def get_category_data(
         if category_values:
             return category_values
 
-    return {}
+    return None
 
 
 def is_food_spending(transaction: ImportableTransaction) -> bool:
-    return transaction.l2_category == "Food"
+    return transaction.spending_category in FOOD_CATEGORIES
 
 
 def get_meal_type(transaction: ImportableTransaction) -> str | None:
     if not is_food_spending(transaction):
         return None
 
-    if transaction.l3_category == "Hot Drinks & Snacks":
+    if transaction.spending_category == "CAFE_SNACKS":
         return "Snacks"
 
     hour = transaction.transaction_datetime.hour

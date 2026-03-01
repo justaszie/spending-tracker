@@ -232,14 +232,11 @@ def enrich_transactions(
             continue
 
         spending_categories = get_category_data(txn)
-        txn.l1_category = spending_categories.get("l1_category", None)
-        txn.l2_category = spending_categories.get("l2_category", None)
-        txn.l3_category = spending_categories.get("l3_category", None)
+        if spending_categories is not None:
+            txn.spending_category = spending_categories.get("spending_category")
+            txn.note = txn.note or spending_categories.get("note")
 
-        # We prefer the value from extraction source, as it's closer to truth and has richer information
-        txn.note = txn.note or spending_categories.get("note")
-
-        txn.meal_type = get_meal_type(txn)
+            txn.meal_type = get_meal_type(txn)
 
     return transactions
 
@@ -281,7 +278,9 @@ def convert_to_db_transaction(
     )
 
 
-def update_job_failed(job: StatementImportJob, failure_reason: str, db: Engine) -> StatementImportJob:
+def update_job_failed(
+    job: StatementImportJob, failure_reason: str, db: Engine
+) -> StatementImportJob:
     job.updated_at = dt.datetime.now()
     job.status = ImportJobStatus.FAILED
     job.failure_reason = failure_reason
@@ -310,6 +309,7 @@ def update_job_start(job: StatementImportJob, db: Engine) -> StatementImportJob:
     job.status = ImportJobStatus.RUNNING
     return update_job(updated_job=job, db=db)
 
+
 def record_job_failure(job: StatementImportJob, e: Exception, db: Engine):
     failure_details: JobFailureDetails = get_failure_details(e)
     failure_reason = failure_details["job_failure_reason"]
@@ -321,6 +321,7 @@ def record_job_failure(job: StatementImportJob, e: Exception, db: Engine):
         failure_reason=failure_reason,
         db=db,
     )
+
 
 def get_failure_details(exc: Exception) -> JobFailureDetails:
     exception_mapping = {

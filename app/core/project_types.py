@@ -1,7 +1,7 @@
 from decimal import Decimal
 from enum import StrEnum
-import datetime as dt
 from typing import Self
+import datetime as dt
 
 from pydantic import BaseModel, model_validator
 
@@ -49,14 +49,13 @@ class ExtractedTransaction(BaseModel):
     note: str | None = None
     dedup_key: str
 
+
 class ImportableTransaction(ExtractedTransaction):
     # Standardized currency amount is mandatory
     eur_amount: Decimal
 
     # Optional business data
-    l1_category: str | None = None
-    l2_category: str | None = None
-    l3_category: str | None = None
+    spending_category: str | None = None
     meal_type: str | None = None
 
     @model_validator(mode="after")

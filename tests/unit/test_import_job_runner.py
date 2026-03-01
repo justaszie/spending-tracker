@@ -176,8 +176,10 @@ class TestApplyBusinessFilter:
 
     def test_nothing_filtered(self, extracted_transaction):
         """When the rule passes for all transactions, all are returned."""
+
         def keep_all(_txn):
             return True
+
         txn_a = extracted_transaction(dedup_key="key-a")
         txn_b = extracted_transaction(dedup_key="key-b")
         result = apply_business_filter([txn_a, txn_b], filter_rules=[keep_all])
@@ -185,8 +187,10 @@ class TestApplyBusinessFilter:
 
     def test_everything_filtered_out(self, extracted_transaction):
         """When the rule fails for all transactions, result is empty."""
+
         def keep_none(_txn):
             return False
+
         txn_a = extracted_transaction(dedup_key="key-a")
         txn_b = extracted_transaction(dedup_key="key-b")
         result = apply_business_filter([txn_a, txn_b], filter_rules=[keep_none])
@@ -194,8 +198,10 @@ class TestApplyBusinessFilter:
 
     def test_some_filtered_out(self, extracted_transaction):
         """When the rule fails for some transactions, only passing ones are returned."""
+
         def keep_if_not_excluded(txn):
             return txn.counterparty != "EXCLUDE"
+
         txn_keep = extracted_transaction(dedup_key="key-1", counterparty="BrewDog Pub")
         txn_drop = extracted_transaction(dedup_key="key-2", counterparty="EXCLUDE")
         result = apply_business_filter(
@@ -218,13 +224,18 @@ class TestSeparateNewExisting:
         assert result["new"] == [txn_a, txn_b]
         assert result["existing"] == []
 
-    def test_separates_all_existing(self, test_db, db_transaction, extracted_transaction):
+    def test_separates_all_existing(
+        self, test_db, db_transaction, extracted_transaction
+    ):
         """When every transaction dedup_key is in existing keys, all go to existing."""
         user_id = uuid.uuid4()
-        insert_transactions([
-            db_transaction(user_id=user_id, dedup_key="key-a"),
-            db_transaction(user_id=user_id, dedup_key="key-b"),
-        ], db=test_db)
+        insert_transactions(
+            [
+                db_transaction(user_id=user_id, dedup_key="key-a"),
+                db_transaction(user_id=user_id, dedup_key="key-b"),
+            ],
+            db=test_db,
+        )
         txn_a = extracted_transaction(dedup_key="key-a")
         txn_b = extracted_transaction(dedup_key="key-b")
         result = separate_new_existing(
@@ -235,13 +246,18 @@ class TestSeparateNewExisting:
         assert result["new"] == []
         assert result["existing"] == [txn_a, txn_b]
 
-    def test_separates_new_from_existing(self, test_db, db_transaction, extracted_transaction):
+    def test_separates_new_from_existing(
+        self, test_db, db_transaction, extracted_transaction
+    ):
         """When some dedup_keys are in existing keys, they go to existing; rest to new."""
         user_id = uuid.uuid4()
-        insert_transactions([
-            db_transaction(user_id=user_id, dedup_key="key-existing-1"),
-            db_transaction(user_id=user_id, dedup_key="key-existing-2"),
-        ], db=test_db)
+        insert_transactions(
+            [
+                db_transaction(user_id=user_id, dedup_key="key-existing-1"),
+                db_transaction(user_id=user_id, dedup_key="key-existing-2"),
+            ],
+            db=test_db,
+        )
         txn_new = extracted_transaction(dedup_key="key-new")
         txn_existing = extracted_transaction(dedup_key="key-existing-1")
         result = separate_new_existing(
@@ -252,7 +268,9 @@ class TestSeparateNewExisting:
         assert result["new"] == [txn_new]
         assert result["existing"] == [txn_existing]
 
-    def test_considers_new_when_dedup_key_exists_different_user(self, test_db, db_transaction, extracted_transaction):
+    def test_considers_new_when_dedup_key_exists_different_user(
+        self, test_db, db_transaction, extracted_transaction
+    ):
         """Transaction with dedup_key that exists only for another user is considered new."""
         other_user_id = uuid.uuid4()
         current_user_id = uuid.uuid4()
@@ -270,7 +288,9 @@ class TestSeparateNewExisting:
         assert result["existing"] == []
 
     def test_returns_empty_lists_when_empty_input(self, test_db):
-        result = separate_new_existing(transactions=[], user_id=uuid.uuid4(), db=test_db)
+        result = separate_new_existing(
+            transactions=[], user_id=uuid.uuid4(), db=test_db
+        )
         assert result["new"] == []
         assert result["existing"] == []
 
@@ -341,9 +361,7 @@ class TestAddEurAmount:
 
 
 class TestEnrichTransactions:
-    def test_gets_categories_for_debit_txns(
-        self, mocker, importable_transaction
-    ):
+    def test_gets_categories_for_debit_txns(self, mocker, importable_transaction):
         """Input batch: some get category data, some don't. Output same length, correct values."""
         with_category_1 = importable_transaction(
             dedup_key="a", side=Side.DEBIT, note=None
@@ -356,16 +374,14 @@ class TestEnrichTransactions:
 
         mocker.patch(
             "app.import_job_runner.get_category_data",
-            return_value = {
-                "l1_category": "Food & Drinks",
-                "l2_category": "Food",
-                "l3_category": "Eating Out",
+            return_value={
+                "spending_category": "EATING_OUT",
                 "note": "some note about spending",
-            }
+            },
         )
         mocker.patch(
             "app.import_job_runner.get_meal_type",
-            return_value="Lunch"
+            return_value="Lunch",
         )
 
         result = enrich_transactions(batch)
@@ -373,24 +389,16 @@ class TestEnrichTransactions:
         assert len(result) == len(batch)
         expected_category = (result[0], result[2])
         for txn in expected_category:
-            assert txn.l1_category == "Food & Drinks"
-            assert txn.l2_category == "Food"
-            assert txn.l3_category == "Eating Out"
+            assert txn.spending_category == "EATING_OUT"
             assert txn.meal_type == "Lunch"
 
         expected_no_category = result[1]
-        assert expected_no_category.l1_category is None
-        assert expected_no_category.l2_category is None
-        assert expected_no_category.l3_category is None
+        assert expected_no_category.spending_category is None
         assert expected_no_category.meal_type is None
 
-    def test_note_updated_only_when_empty(
-        self, mocker, importable_transaction
-    ):
+    def test_note_updated_only_when_empty(self, mocker, importable_transaction):
         """Note is set from category when empty; existing note is kept otherwise."""
-        empty_note = importable_transaction(
-            dedup_key="e", side=Side.DEBIT, note=None
-        )
+        empty_note = importable_transaction(dedup_key="e", side=Side.DEBIT, note=None)
         has_note = importable_transaction(
             dedup_key="h", side=Side.DEBIT, note="present before categorization"
         )
@@ -399,6 +407,7 @@ class TestEnrichTransactions:
         mocker.patch(
             "app.import_job_runner.get_category_data",
             return_value={
+                "spending_category": "EATING_OUT",
                 "note": "note set by categorization",
             },
         )
@@ -435,10 +444,7 @@ class TestImportTransactions:
             assert t.id is not None
             assert t.dedup_key in {"import-key-a", "import-key-b"}
 
-
-    def test_amounts_quantized_to_2_decimals(
-        self, test_db, importable_transaction
-    ):
+    def test_amounts_quantized_to_2_decimals(self, test_db, importable_transaction):
         """ImportableTransaction enforces 2-decimal quantization; inserted Transaction has quantized amounts."""
         job = insert_sample_job(test_db)
         user_id = uuid.uuid4()
@@ -464,16 +470,14 @@ class TestImportTransactions:
     def test_imported_transaction_has_all_required(
         self, test_db, importable_transaction
     ):
-        """One inserted Transaction contains all fields from ImportableTransaction (categories, meal_type, etc.)."""
+        """One inserted Transaction contains all fields from ImportableTransaction (spending_category, meal_type, etc.)."""
         job = insert_sample_job(test_db)
         user_id = uuid.uuid4()
         txn = importable_transaction(
             dedup_key="full-fields-key",
             counterparty="Cafe",
             note="lunch",
-            l1_category="L1",
-            l2_category="Food",
-            l3_category="L3",
+            spending_category="EATING_OUT",
             meal_type="Lunch",
         )
 
@@ -494,9 +498,7 @@ class TestImportTransactions:
         assert inserted.source == txn.source
         assert inserted.eur_amount == txn.eur_amount
         assert inserted.note == "lunch"
-        assert inserted.l1_category == "L1"
-        assert inserted.l2_category == "Food"
-        assert inserted.l3_category == "L3"
+        assert inserted.spending_category == "EATING_OUT"
         assert inserted.meal_type == "Lunch"
         assert inserted.dedup_key == "full-fields-key"
         assert inserted.user_id == user_id
