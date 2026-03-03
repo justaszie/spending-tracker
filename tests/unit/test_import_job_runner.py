@@ -132,7 +132,6 @@ class TestRecordJobFailure:
 
 
 class TestRunJob:
-    # TODO: Add happy path
     def test_raises_custom_exc_when_job_not_found(self, test_db, mocker):
         """When the job doesn't exist, the job runner must propagate a custom error."""
 
@@ -143,7 +142,7 @@ class TestRunJob:
                 user_id=uuid.uuid4(),
                 db=test_db,
                 file_storage=mocker.Mock(),
-                app_config=mocker.Mock(),
+                statements_bucket="statements"
             )
 
 

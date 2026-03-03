@@ -10,11 +10,12 @@ from fastapi.security import (
 from sqlalchemy import Engine
 from supabase_auth.errors import AuthApiError
 
+from app.core.config import AppEnvironment, app_config
 from app.storage.file_storage import FileStorage
 from supabase import Client
 
 logger = logging.getLogger(__name__)
-jwt_auth = HTTPBearer()
+jwt_auth = HTTPBearer(auto_error=False)
 
 
 def get_db_engine(request: Request):
@@ -40,14 +41,23 @@ SupabaseAdminDependency = Annotated[Client, Depends(get_supabase_admin)]
 
 def get_authenticated_user(
     supabase_admin: SupabaseAdminDependency,
-    header: Annotated[HTTPAuthorizationCredentials, Depends(jwt_auth)],
+    header: Annotated[HTTPAuthorizationCredentials | None, Depends(jwt_auth)],
 ) -> UUID:
+    # Skip jwt validation in DEV environment
+    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
+        return app_config.TEST_USER_ID
+
+    if not header:
+        logger.warning("Invalid Authorization header")
+        raise HTTPException(status_code=401, detail="User Authentication Failed")
+
     token = header.credentials
     try:
         result = supabase_admin.auth.get_user(token)
     except AuthApiError as e:
         logger.warning(f"Could not validate Bearer token: {e}")
-        raise HTTPException(status_code=401, detail="User Authentication Failed")
+        raise HTTPException(status_code=401, detail="User Authentication Failed") from e
+
     if not result:
         logger.warning("User matching Bearer token not found")
         raise HTTPException(status_code=401, detail="User Authentication Failed")
