@@ -1,6 +1,8 @@
 # Spending Tracker
 
-A personal spending tracker backend: a REST API that ingests bank statement files, normalises transactions, and exposes them for querying. Built with **FastAPI**, **SQLModel**, and **Supabase** (auth + object storage). The project is still **work in progress** and not yet set up for one-click clone-and-run.
+A personal spending tracker backend: a REST API that ingests bank statement files, normalises transactions, and exposes them for querying. Built with **FastAPI**, **SQLModel**, and **Supabase** (auth + object storage). The statement import endpoint and the workflow are fully operational and covered with tests. But the overall project is still **work in progress** and not yet set up for one-click clone-and-run.
+
+`frontend/` contains React frontend - that is still **work in progress**.
 
 ## Features
 
