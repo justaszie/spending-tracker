@@ -89,7 +89,7 @@ def create_import_job(
         user_id=user_id,
         db=db,
         file_storage=file_storage,
-        app_config=app_config,
+        statements_bucket=app_config.STATEMENTS_STORAGE_BUCKET,
     )
     logger.info(
         f"Statement import job scheduled. job_id={db_entry.id}"

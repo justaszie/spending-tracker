@@ -69,7 +69,7 @@ def run_job(
     user_id: UUID,
     db: Engine,
     file_storage: FileStorage,
-    app_config: AppConfig,
+    statements_bucket: str,
 ) -> None:
     # Load job info
     job = load_job(job_id, db)
@@ -82,9 +82,7 @@ def run_job(
 
     try:
         # Load the statement from file storage
-        statement_data = file_storage.load_file(
-            job.file_path, bucket=app_config.STATEMENTS_STORAGE_BUCKET
-        )
+        statement_data = file_storage.load_file(job.file_path, bucket=statements_bucket)
         logger.info(f"Downloaded statement from: {job.file_path}")
 
         extracted = get_extracted_transactions(statement_data, job.statement_source)
@@ -132,16 +130,6 @@ def run_job(
             f"Imported {job.imported_txn_count} new transactions | "
             f"{job.duplicate_txn_count} were duplicates"
         )
-
-        # [DEV OBSERVABILITY]
-        if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
-            _transactions_dump(extracted, "test_extracted")
-            _transactions_dump(filtered, "filtered")
-            _transactions_dump(new, "new")
-            _transactions_dump(existing, "existing")
-            _transactions_dump(prepared, "prepared")
-            _transactions_dump(enriched, "enriched")
-            _transactions_dump(imported, "imported")
 
     except Exception as e:
         record_job_failure(job=job, e=e, db=db)

@@ -19,7 +19,7 @@ from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
 from app.api.transactions import router as transactions_router
-from app.core.config import app_config, AppEnvironment
+from app.core.config import AppEnvironment, app_config
 from app.core.dependencies import get_authenticated_user
 from app.storage.file_storage import FileStorage
 from supabase import create_client
@@ -54,7 +54,7 @@ def validate_user_creds(
 # Instantiating auth service, storage and logging config as part of app startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore
-    # 1. Initialize database client (app_config is global singleton from config)
+    # 1. Initialize database clien
     connection_string = app_config.DB_CONNECTION_STRING
     if not connection_string:
         logger.error("Missing database connection string in environment")
