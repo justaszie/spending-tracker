@@ -17,9 +17,9 @@ from pydantic import (
     ValidationError,
 )
 
+from app.core.config import app_config
 from app.core.dependencies import (
     AuthDependency,
-    ConfigDependency,
     DBDependency,
     FSDependency,
 )
@@ -47,7 +47,6 @@ def create_import_job(
     statement_source: Annotated[StatementSource, Form()],
     db: DBDependency,
     file_storage: FSDependency,
-    app_config: ConfigDependency,
     background_tasks: BackgroundTasks,
     request: Request,
 ) -> StatementImportResponse:

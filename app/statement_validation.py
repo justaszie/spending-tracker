@@ -7,14 +7,12 @@ from pydantic import (
     model_validator,
 )
 
-from app.core.config import AppConfig
+from app.core.config import app_config
 from app.core.project_types import StatementSource
 from app.statement_extractors.registry import (
     allowed_content_types,
     allowed_file_extensions,
 )
-
-app_config = AppConfig()
 
 
 class StatementMetadata(BaseModel):

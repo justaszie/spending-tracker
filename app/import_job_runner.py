@@ -10,8 +10,7 @@ from sqlalchemy import Engine
 import pandas as pd
 
 from app.business_rules.filter_rules import FilterRuleFN, get_filter_rules
-from app.core.config import AppEnvironment
-from app.core.dependencies import AppConfig
+from app.core.config import AppConfig, AppEnvironment
 from app.core.project_types import (
     ExtractedTransaction,
     ImportableTransaction,

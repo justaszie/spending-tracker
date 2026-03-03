@@ -10,19 +10,11 @@ from fastapi.security import (
 from sqlalchemy import Engine
 from supabase_auth.errors import AuthApiError
 
-from app.core.config import AppConfig
 from app.storage.file_storage import FileStorage
 from supabase import Client
 
 logger = logging.getLogger(__name__)
 jwt_auth = HTTPBearer()
-
-
-def get_app_config(request: Request) -> AppConfig:
-    return request.app.state.app_config
-
-
-ConfigDependency = Annotated[AppConfig, Depends(get_app_config)]
 
 
 def get_db_engine(request: Request):

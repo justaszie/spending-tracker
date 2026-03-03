@@ -19,21 +19,16 @@ from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
 from app.api.transactions import router as transactions_router
-from app.core.config import AppConfig, AppEnvironment
-from app.core.dependencies import (
-    ConfigDependency,
-    get_authenticated_user,
-)
+from app.core.config import app_config, AppEnvironment
+from app.core.dependencies import get_authenticated_user
 from app.storage.file_storage import FileStorage
 from supabase import create_client
 
 user_creds_auth = HTTPBasic()
 
-app_config = AppConfig()
 
 # Validate username (email) and password, sign user in and return a JWT token if successful
 def validate_user_creds(
-    app_config: ConfigDependency,
     creds: Annotated[HTTPBasicCredentials, Depends(user_creds_auth)],
 ) -> str:
     # Create a supabase client separate from global admin client that uses storage
@@ -59,13 +54,7 @@ def validate_user_creds(
 # Instantiating auth service, storage and logging config as part of app startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore
-    # 1. Initialize app config
-    # Ignoring type checking. Type checker expects config variables passed as args
-    # but they are being read from environment.
-    app_config = AppConfig()  # type: ignore
-    app.state.app_config = app_config
-
-    # 2. Initialize database client
+    # 1. Initialize database client (app_config is global singleton from config)
     connection_string = app_config.DB_CONNECTION_STRING
     if not connection_string:
         logger.error("Missing database connection string in environment")
@@ -75,18 +64,18 @@ async def lifespan(app: FastAPI):  # type: ignore
     app.state.db_engine = engine
     logger.info("Database Connection Established")
 
-    # 3. Initialize service role supabase client
+    # 2. Initialize service role supabase client
     supabase_url = app_config.SUPABASE_URL
     supabase_admin_key = app_config.SUPABASE_ADMIN_KEY
     supabase_admin = create_client(supabase_url, supabase_admin_key)
     app.state.supabase_admin = supabase_admin
     logger.info("Supabase Admin Client Initialized")
 
-    # 4. Initialize file storage client
+    # 3. Initialize file storage client
     app.state.file_storage = FileStorage(supabase_admin)
     logger.info("File Storage Initialized")
 
-    # 5. Auth feature flag - skip jwt validation in DEV environment
+    # 4. Auth feature flag - skip jwt validation in DEV environment
     if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
         app.dependency_overrides[get_authenticated_user] = (
             lambda: app_config.TEST_USER_ID
@@ -141,7 +130,7 @@ app.add_middleware(
     allow_credentials=False,
 )
 
-api_prefix = AppConfig().V1_API_PREFIX
+api_prefix = app_config.V1_API_PREFIX
 app.include_router(core_router, prefix=api_prefix)
 app.include_router(imports_router, prefix=api_prefix)
 app.include_router(transactions_router, prefix=api_prefix)

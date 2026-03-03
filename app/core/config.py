@@ -26,3 +26,6 @@ class AppConfig(BaseSettings):
     MAX_STATEMENT_SIZE: int = 2 * 1024**2 # 2MB based on the available samples
     V1_API_PREFIX: str = "/api/v1"
     FRONTEND_URL: str | None = None
+
+
+app_config = AppConfig()
