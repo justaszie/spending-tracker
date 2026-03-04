@@ -178,17 +178,6 @@ def hot_drinks(transaction: ImportableTransaction) -> CategoryData | None:
     return None
 
 
-def landlord_payment(transaction: ImportableTransaction) -> CategoryData | None:
-    to_landlord = transaction.counterparty.upper() == "AUŠRA ADELĖ VAIŠVILĖ"
-    if not to_landlord:
-        return None
-
-    if transaction.eur_amount >= 400:
-        return {"spending_category": "RENT"}
-
-    return {"spending_category": "RENT_UTILITIES"}
-
-
 def shopping_clothes(transaction: ImportableTransaction) -> CategoryData | None:
     if any(
         pattern.search(transaction.counterparty) is not None
@@ -226,7 +215,6 @@ CATEGORY_RULES: list[CategoryRuleFunction] = [
     hot_drinks,
     eating_out,
     food_delivery,
-    landlord_payment,
     shopping_clothes,
     shopping_other,
     gym_membership,

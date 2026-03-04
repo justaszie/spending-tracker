@@ -9,7 +9,6 @@ from app.business_rules.spending_categories import (
     groceries,
     gym_membership,
     hot_drinks,
-    landlord_payment,
     shopping_clothes,
     shopping_other,
     streaming_services,
@@ -238,34 +237,6 @@ class TestGymMembership:
         result = gym_membership(transaction)
 
         assert result is None
-
-
-class TestLandlordPayment:
-    def test_wrong_counterparty(self, importable_transaction):
-        transaction = importable_transaction(
-            counterparty="Jonas Johnsson", eur_amount=Decimal("15.00")
-        )
-        result = landlord_payment(transaction)
-
-        assert result is None
-
-    def test_utilities_payment_amount(self, importable_transaction):
-        transaction = importable_transaction(
-            counterparty="Aušra Adelė Vaišvilė", eur_amount=Decimal("100.50")
-        )
-        result = landlord_payment(transaction)
-
-        assert result is not None
-        assert result["spending_category"] == "RENT_UTILITIES"
-
-    def test_rent_payment_amount(self, importable_transaction):
-        transaction = importable_transaction(
-            counterparty="Aušra Adelė Vaišvilė", eur_amount=Decimal("550.12")
-        )
-        result = landlord_payment(transaction)
-
-        assert result is not None
-        assert result["spending_category"] == "RENT"
 
 
 class TestHotDrinks:
