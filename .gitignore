@@ -16,7 +16,6 @@ wheels/
 supabase
 
 data/
-*.csv
 throwaway/
 .vscode
 historical.py
