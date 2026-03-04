@@ -9,6 +9,7 @@ from app.business_rules.spending_categories import (
     groceries,
     gym_membership,
     hot_drinks,
+    monthly_software_subscriptions,
     shopping_clothes,
     shopping_other,
     streaming_services,
@@ -270,5 +271,54 @@ class TestHotDrinks:
         amount = Decimal("5.50")
         transaction = importable_transaction(counterparty="Caffeine", eur_amount=amount)
         result = hot_drinks(transaction)
+
+        assert result is None
+
+
+class TestMonthlySoftwareSubscriptions:
+    @pytest.mark.parametrize(
+        "counterparty",
+        [
+            "Anthropic",
+            "cursor",
+            "GitHub",
+            "JetBrains",
+            "koyeb",
+            "openai",
+        ],
+    )
+    def test_positive_matches(self, importable_transaction, counterparty):
+        transaction = importable_transaction(counterparty=counterparty)
+        result = monthly_software_subscriptions(transaction)
+
+        assert result is not None
+        assert result["spending_category"] == "SOFTWARE_MONTHLY"
+
+    def test_chat_gpt_amount_matches(self, importable_transaction):
+        transaction = importable_transaction(
+            counterparty="Google Play", eur_amount=Decimal("21.99")
+        )
+        result = monthly_software_subscriptions(transaction)
+
+        assert result is not None
+        assert result["spending_category"] == "SOFTWARE_MONTHLY"
+
+    @pytest.mark.parametrize(
+        "eur_amount",
+        [Decimal("21.98"), Decimal("22.00"), Decimal("10.00"), Decimal("0.00")],
+    )
+    def test_google_play_other_amount_no_match(
+        self, importable_transaction, eur_amount
+    ):
+        transaction = importable_transaction(
+            counterparty="Google Play", eur_amount=eur_amount
+        )
+        result = monthly_software_subscriptions(transaction)
+
+        assert result is None
+
+    def test_no_match(self, importable_transaction):
+        transaction = importable_transaction(counterparty="Maxima")
+        result = monthly_software_subscriptions(transaction)
 
         assert result is None

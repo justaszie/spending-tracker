@@ -1,5 +1,6 @@
 # This module contains definition of categorization rules
 from collections.abc import Callable
+from decimal import Decimal
 from typing import Literal, NotRequired, TypedDict
 import re
 
@@ -129,6 +130,20 @@ GYM_MEMBERSHIP_PATTERNS = tuple(
     re.compile(pattern, re.IGNORECASE) for pattern in (r"lemon gym",)
 )
 
+SOFTWARE_SUB_MERCHANTS = (
+    "anthropic",
+    "cursor",
+    "github",
+    "google play",
+    "jetbrains",
+    "koyeb",
+    "openai",
+)
+SOFTWARE_SUB_PATTERNS = tuple(
+    re.compile(rf"^.*{re.escape(m)}.*$", re.IGNORECASE) for m in SOFTWARE_SUB_MERCHANTS
+)
+CHAT_GPT_AMOUNT = Decimal("21.99")
+
 
 ### RULE DEFINITIONS
 def eating_out(transaction: ImportableTransaction) -> CategoryData | None:
@@ -208,6 +223,24 @@ def gym_membership(transaction: ImportableTransaction) -> CategoryData | None:
     return None
 
 
+def monthly_software_subscriptions(
+    transaction: ImportableTransaction,
+) -> CategoryData | None:
+    counterparty = transaction.counterparty.lower().strip()
+    if "google play" in counterparty:
+        if transaction.eur_amount == CHAT_GPT_AMOUNT:
+            return {"spending_category": "SOFTWARE_MONTHLY"}
+        return None
+
+    if any(
+        pattern.search(transaction.counterparty) is not None
+        for pattern in SOFTWARE_SUB_PATTERNS
+    ):
+        return {"spending_category": "SOFTWARE_MONTHLY"}
+
+    return None
+
+
 # For now, the list of specific categorization rules is setup manually
 CATEGORY_RULES: list[CategoryRuleFunction] = [
     streaming_services,
@@ -218,6 +251,7 @@ CATEGORY_RULES: list[CategoryRuleFunction] = [
     shopping_clothes,
     shopping_other,
     gym_membership,
+    monthly_software_subscriptions,
 ]
 
 
