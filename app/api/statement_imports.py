@@ -101,7 +101,7 @@ def create_import_job(
 
 @router.get("/{import_job_id}", response_model=StatementImportResponse)
 def get_import_job(
-    user_id: AuthDependency, import_job_id: UUID, db: DBDependency
+    _: AuthDependency, import_job_id: UUID, db: DBDependency
 ) -> StatementImportResponse:
     job = load_job(import_job_id, db)
     if not job:

@@ -142,7 +142,7 @@ def get_side(transaction: RawTransactionSwedbank) -> Side:
 def convert_to_standardized_transaction(
     transaction: RawTransactionSwedbank,
 ) -> ExtractedTransaction:
-    standardized = ExtractedTransaction(
+    return ExtractedTransaction(
         transaction_datetime=transaction.started_at,
         type=get_transaction_type(transaction),
         counterparty=get_counterparty(transaction),
@@ -153,4 +153,3 @@ def convert_to_standardized_transaction(
         source=TransactionSource.SWEDBANK,
         dedup_key=calculate_dedup_key(transaction),
     )
-    return standardized

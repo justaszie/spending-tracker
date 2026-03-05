@@ -60,7 +60,7 @@ def get_single_transaction(
 
 @router.get("/spending-categories", response_model=list[str])
 def get_spending_categories(
-    user_id: AuthDependency,
+    _: AuthDependency,
     db: DBDependency,
 ) -> list[str]:
     categories_set = get_distinct_spending_categories(db=db)

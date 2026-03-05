@@ -1,4 +1,4 @@
-from collections.abc import Callable, Collection
+from collections.abc import Callable
 from typing import BinaryIO, TypedDict
 
 from app.core.project_types import ExtractedTransaction, StatementSource

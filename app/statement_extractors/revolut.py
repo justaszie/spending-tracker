@@ -68,11 +68,11 @@ def get_statement_rows(statement: BinaryIO) -> list[dict[str, Any]]:
         first_row = next(rows_iterator)
         headers = [str(header) for header in first_row]
 
-        rows = [
-            {header: value for header, value in zip(headers, row)}
+        return [
+            dict(zip(headers, row, strict=True))
             for row in rows_iterator
         ]
-        return rows
+
     finally:
         workbook.close()
 
@@ -124,7 +124,7 @@ class RawTransactionRevolut(BaseModel):
 def convert_to_standardized_transaction(
     transaction: RawTransactionRevolut,
 ) -> ExtractedTransaction:
-    standardized = ExtractedTransaction(
+    return ExtractedTransaction(
         transaction_datetime=transaction.started_at,
         type=get_transaction_type(transaction),
         counterparty=transaction.description,
@@ -135,8 +135,6 @@ def convert_to_standardized_transaction(
         source=TransactionSource.REVOLUT,
         dedup_key=calculate_dedup_key(transaction),
     )
-
-    return standardized
 
 
 # 1. Calculated fields required by the program

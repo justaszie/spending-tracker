@@ -46,8 +46,7 @@ def create_new_job(new_job: StatementImportJob, db: Engine) -> StatementImportJo
 
 def load_job(job_id: uuid.UUID, db: Engine) -> StatementImportJob | None:
     with Session(db) as session:
-        job = session.get(StatementImportJob, job_id)
-        return job
+        return session.get(StatementImportJob, job_id)
 
 
 def update_job(updated_job: StatementImportJob, db: Engine) -> StatementImportJob:

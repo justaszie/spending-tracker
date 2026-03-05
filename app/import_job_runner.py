@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from pathlib import Path
 from typing import BinaryIO, TypedDict
 from uuid import UUID
 import datetime as dt
@@ -10,7 +9,6 @@ from currency_converter import (  # type: ignore[import-untyped]
     CurrencyConverter,
 )
 from sqlalchemy import Engine
-import pandas as pd
 
 from app.business_rules.filter_rules import FilterRuleFN, get_filter_rules
 from app.core.project_types import (
