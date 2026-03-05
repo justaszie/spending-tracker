@@ -7,7 +7,12 @@ from pydantic import BaseModel
 
 from app.core.config import app_config
 from app.core.dependencies import AuthDependency, DBDependency
-from app.db.transactions import Transaction, get_transaction, get_transactions
+from app.db.transactions import (
+    Transaction,
+    get_distinct_spending_categories,
+    get_transaction,
+    get_transactions,
+)
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -40,7 +45,7 @@ def get_all_transactions(
     )
 
 
-@router.get("/{transaction_id}", response_model=Transaction)
+@router.get("/{transaction_id:uuid}", response_model=Transaction)
 def get_single_transaction(
     user_id: AuthDependency,
     transaction_id: UUID,
@@ -51,3 +56,12 @@ def get_single_transaction(
         raise HTTPException(status_code=404, detail="Transaction not found")
 
     return transaction
+
+
+@router.get("/spending-categories", response_model=list[str])
+def get_spending_categories(
+    user_id: AuthDependency,
+    db: DBDependency,
+) -> list[str]:
+    categories_set = get_distinct_spending_categories(db=db)
+    return sorted(categories_set)

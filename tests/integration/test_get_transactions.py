@@ -270,3 +270,48 @@ class TestGetSingleTransaction:
         response = test_client.get(f"{self.TRANSACTIONS_API_PATH}/{non_existent_id}")
 
         assert response.status_code == 404
+
+
+class TestGetSpendingCategories:
+    TRANSACTIONS_API_PATH = f"{app_config.V1_API_PREFIX}/transactions"
+
+    def test_returns_distinct_spending_categories(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        inserted_txns = [
+            db_transaction(
+                spending_category="GROCERIES",
+            ),
+            db_transaction(
+                spending_category="FOOD_DELIVERY",
+            ),
+            # Duplicate category should not appear twice
+            db_transaction(
+                spending_category="GROCERIES",
+            ),
+            # None should be ignored
+            db_transaction(
+                spending_category=None,
+            ),
+        ]
+
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all(inserted_txns)
+            session.commit()
+
+        response = test_client.get(f"{self.TRANSACTIONS_API_PATH}/spending-categories")
+        assert response.status_code == 200
+
+        body = response.json()
+        assert body == ["FOOD_DELIVERY", "GROCERIES"]
+
+    def test_returns_empty_list_when_no_transactions_exist(
+        self,
+        test_client,
+    ):
+        response = test_client.get(f"{self.TRANSACTIONS_API_PATH}/spending-categories")
+        assert response.status_code == 200
+        assert response.json() == []

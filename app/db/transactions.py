@@ -88,3 +88,17 @@ def get_transaction(
             Transaction.id == transaction_id, Transaction.user_id == user_id
         )
         return session.exec(statement).first()
+
+
+def get_distinct_spending_categories(
+    db: Engine,
+) -> set[str]:
+    """Return distinct, non-null spending categories from existing data"""
+    with Session(db) as session:
+        statement = (
+            select(Transaction.spending_category)
+            .where(Transaction.spending_category.is_not(None))
+            .distinct()
+        )
+        result = session.exec(statement).all()
+        return set(result)
