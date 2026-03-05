@@ -142,7 +142,7 @@ class TestRunJob:
                 user_id=uuid.uuid4(),
                 db=test_db,
                 file_storage=mocker.Mock(),
-                statements_bucket="statements"
+                statements_bucket="statements",
             )
 
 

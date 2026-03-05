@@ -102,7 +102,7 @@ class TestTransactionCustomValidation:
             "TOPUP",
             "Fee",
             "TRADE",
-        ]
+        ],
     )
     def test_invalid_transaction_types_rejected(self, invalid_type):
         """Unsupported types (CASHBACK, EXCHANGE, TOPUP, FEE, TRADE) are rejected (case-insensitive matching)."""
@@ -130,7 +130,10 @@ class TestExtractTransactions:
         assert t.orig_currency == "EUR"
         assert t.side == Side.DEBIT
         assert t.source == TransactionSource.REVOLUT
-        assert t.dedup_key == "9f3941334e9a03094af0d301ce8de765282f91858d98b064e7c2b7cd6a50f4bc"
+        assert (
+            t.dedup_key
+            == "9f3941334e9a03094af0d301ce8de765282f91858d98b064e7c2b7cd6a50f4bc"
+        )
         assert t.note is None
 
     def test_only_valid_transactions_extracted(self):
@@ -254,4 +257,3 @@ class TestExceptionMapping:
         statement = BytesIO(b"not an xlsx file")
         with pytest.raises(StatementExtractorError):
             extract_transactions(statement)
-

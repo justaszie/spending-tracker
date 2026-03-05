@@ -27,6 +27,7 @@ TEST_USER_ID = uuid.UUID("e92460b8-c69a-4706-bf9c-addefd582836")
 
 IMPORT_API_PATH = f"{app_config.V1_API_PREFIX}/statement-imports"
 
+
 @pytest.fixture
 def test_client(test_db):
     app.dependency_overrides[get_file_storage] = lambda: FakeStorage()
@@ -129,8 +130,12 @@ class TestImportRevolut:
         assert len(transactions_for_job) == imported_txn_count
 
         # Sanity check that category enrichment ran: at least some transactions have a spending_category
-        with_category = sum(1 for t in transactions_for_job if t.spending_category is not None)
-        assert with_category >= 2, "expected at least a few transactions to have spending_category set"
+        with_category = sum(
+            1 for t in transactions_for_job if t.spending_category is not None
+        )
+        assert with_category >= 2, (
+            "expected at least a few transactions to have spending_category set"
+        )
 
     def test_does_not_import_duplicates(self, test_client, test_db):
         """Import 2 overlapping statements and verify that duplicate transactions are not inserted"""

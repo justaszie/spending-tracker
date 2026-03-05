@@ -123,7 +123,10 @@ class TestExtractTransactions:
         assert t.orig_currency == "EUR"
         assert t.side == Side.DEBIT
         assert t.source == TransactionSource.SWEDBANK
-        assert t.dedup_key == "d4685410dd4a3d20713e63fe980e3d48518f79ef286a989986a67bab2d16626a"
+        assert (
+            t.dedup_key
+            == "d4685410dd4a3d20713e63fe980e3d48518f79ef286a989986a67bab2d16626a"
+        )
 
     def test_only_valid_transactions_extracted(self):
         """Verifying extracted counts: 22 valid + 6 invalid transactions -> 22 extracted."""
@@ -181,7 +184,9 @@ class TestGetCounterparty:
         assert get_counterparty(raw) == "Some Merchant"
 
     def test_uses_description_when_no_counterparty(self):
-        raw = to_raw_txn(txn_row({"Gavėjas": "", "Paaiškinimai": "Fallback description"}))
+        raw = to_raw_txn(
+            txn_row({"Gavėjas": "", "Paaiškinimai": "Fallback description"})
+        )
         assert get_counterparty(raw) == "Fallback description"
 
 
@@ -189,9 +194,7 @@ class TestGetTransactionType:
     """Transaction type from Kodas and description."""
 
     def test_detects_cash_withdrawals(self):
-        raw = to_raw_txn(
-            txn_row({"Kodas": "K", "Paaiškinimai": "grynieji ATM 123"})
-        )
+        raw = to_raw_txn(txn_row({"Kodas": "K", "Paaiškinimai": "grynieji ATM 123"}))
         assert get_transaction_type(raw) == TransactionType.CASH_WITHDRAWAL
 
     def test_detects_card_payments(self):
@@ -205,7 +208,6 @@ class TestGetTransactionType:
     def test_returns_other_for_unknown_input(self):
         raw = to_raw_txn(txn_row({"Kodas": "X"}))
         assert get_transaction_type(raw) == TransactionType.OTHER
-
 
 
 class TestGetSide:

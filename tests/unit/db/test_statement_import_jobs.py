@@ -113,7 +113,7 @@ class TestUpdateJob:
         created = create_new_job(new_job=job, db=test_db)
 
         # Making updates to the created job
-        new_timestamp =  dt.datetime(2026, 2, 1, 12, 0, 0)
+        new_timestamp = dt.datetime(2026, 2, 1, 12, 0, 0)
         created.status = ImportJobStatus.RUNNING
         created.failure_reason = "random"
         created.updated_at = new_timestamp
