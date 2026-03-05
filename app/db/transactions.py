@@ -77,3 +77,14 @@ def get_transactions(
 
         result = session.exec(statement).all()
         return list(result)
+
+
+def get_transaction(
+    transaction_id: uuid.UUID, user_id: uuid.UUID, db: Engine
+) -> Transaction | None:
+    """Return a single transaction for a user or None if not found."""
+    with Session(db) as session:
+        statement = select(Transaction).where(
+            Transaction.id == transaction_id, Transaction.user_id == user_id
+        )
+        return session.exec(statement).first()

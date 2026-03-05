@@ -1,12 +1,13 @@
 from typing import Annotated
+from uuid import UUID
 import logging
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from app.core.config import app_config
 from app.core.dependencies import AuthDependency, DBDependency
-from app.db.transactions import Transaction, get_transactions
+from app.db.transactions import Transaction, get_transaction, get_transactions
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -37,3 +38,16 @@ def get_all_transactions(
         page=page,
         size=size,
     )
+
+
+@router.get("/{transaction_id}", response_model=Transaction)
+def get_single_transaction(
+    user_id: AuthDependency,
+    transaction_id: UUID,
+    db: DBDependency,
+) -> Transaction:
+    transaction = get_transaction(transaction_id=transaction_id, user_id=user_id, db=db)
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    return transaction

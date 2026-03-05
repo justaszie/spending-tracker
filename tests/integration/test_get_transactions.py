@@ -230,3 +230,43 @@ class TestGetTransactions:
         assert body["page"] == page
         assert body["size"] == size
         assert body["transactions"] == []
+
+
+class TestGetSingleTransaction:
+    TRANSACTIONS_API_PATH = f"{app_config.V1_API_PREFIX}/transactions"
+
+    def test_returns_single_transaction_for_current_user(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        # Arrange: insert a single transaction for the authenticated user
+        txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key=random_dedup_key(),
+        )
+
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add(txn)
+            session.commit()
+            session.refresh(txn)
+
+        # Act
+        response = test_client.get(f"{self.TRANSACTIONS_API_PATH}/{txn.id}")
+
+        # Assert
+        assert response.status_code == 200
+        body = response.json()
+        assert uuid.UUID(body["id"]) == txn.id
+        assert uuid.UUID(body["user_id"]) == txn.user_id
+
+    def test_returns_404_when_transaction_not_found(
+        self,
+        test_client,
+    ):
+        non_existent_id = uuid.uuid4()
+
+        response = test_client.get(f"{self.TRANSACTIONS_API_PATH}/{non_existent_id}")
+
+        assert response.status_code == 404
