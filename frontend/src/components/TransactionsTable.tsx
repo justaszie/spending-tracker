@@ -3,6 +3,8 @@ import { transactionsAPI } from '../services/api'
 import type { Transaction } from '../types'
 import './TransactionsTable.css'
 
+const PAGE_SIZE = 20
+
 export default function TransactionsTable() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -12,11 +14,15 @@ export default function TransactionsTable() {
   const [filterSource] = useState('all')
   const [filterSide] = useState('all')
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState<number | undefined>(undefined)
 
   const loadTransactions = useCallback(async () => {
     setLoading(true)
     try {
       const result = await transactionsAPI.getTransactions({
+        page,
+        size: PAGE_SIZE,
         search: searchTerm,
         sortBy,
         sortOrder,
@@ -29,18 +35,20 @@ export default function TransactionsTable() {
         filtered = filtered.filter((t) => t.side === filterSide)
       }
       setTransactions(filtered)
+      setTotal(result.total)
     } catch (error) {
       console.error('Failed to load transactions:', error)
     } finally {
       setLoading(false)
     }
-  }, [searchTerm, sortBy, sortOrder, filterSource, filterSide])
+  }, [page, searchTerm, sortBy, sortOrder, filterSource, filterSide])
 
   useEffect(() => {
     loadTransactions()
   }, [loadTransactions])
 
   const handleSort = (column: string) => {
+    setPage(1)
     if (sortBy === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
@@ -48,6 +56,11 @@ export default function TransactionsTable() {
       setSortOrder('asc')
     }
   }
+
+  const totalPages = total !== undefined ? Math.ceil(total / PAGE_SIZE) : undefined
+  const hasNextPage =
+    totalPages !== undefined ? page < totalPages : transactions.length >= PAGE_SIZE
+  const hasPrevPage = page > 1
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -109,7 +122,10 @@ export default function TransactionsTable() {
           type="text"
           placeholder="Filter counterparties..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value)
+            setPage(1)
+          }}
           className="search-input"
         />
       </div>
@@ -161,9 +177,7 @@ export default function TransactionsTable() {
                   {sortBy === 'orig_amount' &&
                     (sortOrder === 'asc' ? '↑' : '↓')}
                 </th>
-                <th>L1 CAT</th>
-                <th>L2 CAT</th>
-                <th>L3 CAT</th>
+                <th>CATEGORY</th>
                 <th>NOTE</th>
                 <th className="actions-column"></th>
               </tr>
@@ -203,9 +217,7 @@ export default function TransactionsTable() {
                       transaction.side
                     )}
                   </td>
-                  <td>{transaction.l1_category ?? '-'}</td>
-                  <td>{transaction.l2_category ?? '-'}</td>
-                  <td>{transaction.l3_category ?? '-'}</td>
+                  <td>{transaction.spending_category ?? '-'}</td>
                   <td>{transaction.note ?? '-'}</td>
                   <td className="actions-column">
                     <button type="button" className="actions-button">
@@ -216,6 +228,35 @@ export default function TransactionsTable() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && transactions.length > 0 && (
+        <div className="pagination">
+          <span className="pagination-info">
+            Page {page}
+            {totalPages !== undefined && ` of ${totalPages}`}
+          </span>
+          <div className="pagination-buttons">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={!hasPrevPage}
+              onClick={() => setPage((p) => p - 1)}
+              aria-label="Previous page"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={!hasNextPage}
+              onClick={() => setPage((p) => p + 1)}
+              aria-label="Next page"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
     </div>

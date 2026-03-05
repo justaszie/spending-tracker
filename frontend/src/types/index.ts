@@ -13,10 +13,10 @@ export interface Transaction {
   side: Side
   source: TransactionSource
   eur_amount: string
-  l1_category: string | null
-  l2_category: string | null
-  l3_category: string | null
+  manually_added?: boolean
   note: string | null
+  spending_category: string | null
+  meal_type: string | null
   import_job_id: string | null
 }
 
@@ -25,12 +25,12 @@ export interface TransactionsResponse {
   transactions: Transaction[]
   total?: number
   page?: number
-  limit?: number
+  size?: number
 }
 
 export interface GetTransactionsParams {
   page?: number
-  limit?: number
+  size?: number
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
