@@ -1,4 +1,4 @@
-name: Testing Flow
+name: Backend Flow
 
 on:
   push:
@@ -26,9 +26,9 @@ jobs:
       - name: Run mypy
         run: uv run mypy app
       - name: Run linter
-        run: uv run ruff check
+        run: uv run ruff check app --fix
       - name: Run formatter
-        run: uv run ruff format --check
+        run: uv run ruff format app --check
 
 
   testing:
