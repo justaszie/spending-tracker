@@ -95,8 +95,8 @@ async def lifespan(app: FastAPI):  # type: ignore
     yield
 
     # Shutdown
-    if app.state.db_engine:
-        engine.dispose()
+    if hasattr(app.state, "db_engine"):
+        app.state.db_engine.dispose()
 
 
 # Configure logger format
