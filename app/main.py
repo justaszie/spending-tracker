@@ -71,6 +71,7 @@ async def lifespan(app: FastAPI):  # type: ignore
         raise ConfigError("Missing database connection string in environment")
 
     # 2. Initialize service role supabase client (optional if environment is not DEV or PROD)
+    supabase_admin = None
     supabase_url = app_config.SUPABASE_URL
     supabase_admin_key = app_config.SUPABASE_ADMIN_KEY
     if supabase_url and supabase_admin_key:
