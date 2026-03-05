@@ -24,7 +24,7 @@ jobs:
       - name: Announce Start
         run: echo "Starting CI Flow"
       - name: Run mypy
-        run: uv run mypy app
+        run: uv run mypy
       - name: Run linter
         run: uv run ruff check app --fix
       - name: Run formatter
