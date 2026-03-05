@@ -1,32 +1,31 @@
 repos:
-- repo: local
-  hooks:
-  - id: type-checker
-    name: type-checker
-    entry: uv run mypy
-    language: system
-    types: [python]
-    stages: [pre-push]
+  - repo: local
+    hooks:
+      - id: type-checker
+        name: type-checker
+        entry: uv run mypy
+        language: system
+        types: [python]
+        stages: [pre-push]
 
-  - id: formatter
-    name: formatter
-    entry: uv run ruff check
-    language: system
-    types: [python]
-    stages: [pre-push]
+      - id: linter
+        name: linter
+        entry: uv run ruff check
+        language: system
+        types: [python]
+        stages: [pre-push]
 
-  - id: linter
-    name: linter
-    entry: uv run ruff check
-    language: system
-    types: [python]
-    stages: [pre-push]
+      - id: formatter
+        name: formatter
+        entry: uv run ruff check
+        language: system
+        types: [python]
+        stages: [pre-push]
 
-  - id: unit-tests
-    name: unit-tests
-    entry: uv run pytest tests/unit
-    language: system
-    pass_filenames: false
-    always_run: true
-    stages: [pre-push]
-
+      - id: unit-tests
+        name: unit-tests
+        entry: uv run pytest tests/unit
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

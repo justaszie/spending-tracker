@@ -23,7 +23,7 @@ jobs:
           uv sync
       - name: Announce Start
         run: echo "Starting CI Flow"
-      - name: Run mypy strict
+      - name: Run mypy
         run: uv run mypy app
       - name: Run linter
         run: uv run ruff check
