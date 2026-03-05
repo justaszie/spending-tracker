@@ -6,8 +6,7 @@ import uuid
 
 from fastapi.testclient import TestClient
 from httpx import Response
-from sqlmodel import Session, SQLModel, create_engine, select
-from sqlmodel.pool import StaticPool
+from sqlmodel import Session, select
 import pytest
 
 from app.core.config import app_config
@@ -25,23 +24,6 @@ from app.storage.file_storage import StatementDownloadError
 
 TEST_USER_ID = uuid.UUID("e92460b8-c69a-4706-bf9c-addefd582836")
 
-
-@pytest.fixture
-def test_db():
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-
-    # Import models so that metadata includes all tables, then create schema.
-    SQLModel.metadata.create_all(engine)
-
-    try:
-        yield engine
-    finally:
-        SQLModel.metadata.drop_all(engine)
-        engine.dispose()
 
 IMPORT_API_PATH = f"{app_config.V1_API_PREFIX}/statement-imports"
 

@@ -2,7 +2,7 @@ from decimal import Decimal
 import datetime as dt
 import uuid
 
-from sqlmodel import SQLModel, create_engine
+from sqlmodel import SQLModel, StaticPool, create_engine
 import pytest
 
 from app.core.project_types import (
@@ -31,6 +31,7 @@ def extracted_transaction():
         }
         data.update(override_values)
         return ExtractedTransaction(**data)
+
     return make
 
 
@@ -51,6 +52,7 @@ def importable_transaction():
         }
         data.update(override_values)
         return ImportableTransaction(**data)
+
     return make
 
 
@@ -73,20 +75,25 @@ def db_transaction():
         }
         data.update(override_values)
         return Transaction(**data)
+
     return make
 
 
 @pytest.fixture
 def test_db():
     engine = create_engine(
-        "sqlite:///:memory:",
+        "sqlite://",
         connect_args={"check_same_thread": False},
+        # Using static pool to make sure all threads use the same connection
+        # and the same in-memory DB
+        poolclass=StaticPool,
     )
-    # We need to import all data models to create a schema in the test db
-    from app.db.statement_import_jobs import StatementImportJob
-    from app.db.transactions import Transaction
+
+    # Import models so that metadata includes all tables, then create schema.
     SQLModel.metadata.create_all(engine)
+
     try:
         yield engine
     finally:
         SQLModel.metadata.drop_all(engine)
+        engine.dispose()
