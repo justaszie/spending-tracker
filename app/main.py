@@ -10,7 +10,6 @@ from fastapi import (
     FastAPI,
     HTTPException,
     Request,
-    Response,
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -20,8 +19,7 @@ from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
 from app.api.transactions import router as transactions_router
-from app.core.config import AppEnvironment, app_config
-from app.core.dependencies import get_authenticated_user
+from app.core.config import AppEnvironment, ConfigError, app_config
 from app.storage.file_storage import FileStorage
 from supabase import create_client
 
@@ -33,6 +31,9 @@ def validate_user_creds(
     creds: Annotated[HTTPBasicCredentials, Depends(user_creds_auth)],
 ) -> str:
     # Create a supabase client separate from global admin client that uses storage
+    if not app_config.SUPABASE_URL or not app_config.SUPABASE_ANON_KEY:
+        raise ConfigError("Missing Supabase URL / Anon Key in environment")
+
     supabase_client = create_client(
         app_config.SUPABASE_URL, app_config.SUPABASE_ANON_KEY
     )
@@ -55,26 +56,38 @@ def validate_user_creds(
 # Instantiating auth service, storage and logging config as part of app startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore
-    # 1. Initialize database clien
-    connection_string = app_config.DB_CONNECTION_STRING
-    if not connection_string:
-        logger.error("Missing database connection string in environment")
-        raise Exception("Missing database connection string in environment")
-    engine = create_engine(connection_string)
-    SQLModel.metadata.create_all(engine)
-    app.state.db_engine = engine
-    logger.info("Database Connection Established")
+    environment = app_config.APP_ENVIRONMENT
 
-    # 2. Initialize service role supabase client
+    # 1. Initialize database client (optional if environment is not DEV or PROD)
+    connection_string = app_config.DB_CONNECTION_STRING
+
+    if connection_string:
+        engine = create_engine(connection_string)
+        SQLModel.metadata.create_all(engine)
+        app.state.db_engine = engine
+        logger.info("Database Connection Established")
+    elif environment != AppEnvironment.TEST:
+        logger.error("Missing database connection string in environment")
+        raise ConfigError("Missing database connection string in environment")
+
+    # 2. Initialize service role supabase client (optional if environment is not DEV or PROD)
     supabase_url = app_config.SUPABASE_URL
     supabase_admin_key = app_config.SUPABASE_ADMIN_KEY
-    supabase_admin = create_client(supabase_url, supabase_admin_key)
-    app.state.supabase_admin = supabase_admin
-    logger.info("Supabase Admin Client Initialized")
+    if supabase_url and supabase_admin_key:
+        supabase_admin = create_client(supabase_url, supabase_admin_key)
+        app.state.supabase_admin = supabase_admin
+        logger.info("Supabase Admin Client Initialized")
+    elif environment != AppEnvironment.TEST:
+        logger.error("Missing Supabase URL / Secret Key in environment")
+        raise ConfigError("Missing Supabase URL / Secret Key in environment")
 
-    # 3. Initialize file storage client
-    app.state.file_storage = FileStorage(supabase_admin)
-    logger.info("File Storage Initialized")
+    # 3. Initialize file storage client (optional if environment is not DEV or PROD)
+    if supabase_admin:
+        app.state.file_storage = FileStorage(supabase_admin)
+        logger.info("File Storage Initialized")
+    elif environment != AppEnvironment.TEST:
+        logger.error("Cannot initialize File Storage without supabase client")
+        raise Exception("Cannot initialize File Storage without supabase client")
 
     logger.info("App is fully initialized")
 

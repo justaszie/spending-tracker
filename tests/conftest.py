@@ -5,6 +5,7 @@ import uuid
 from sqlmodel import SQLModel, StaticPool, create_engine
 import pytest
 
+from app.core.config import AppEnvironment, app_config
 from app.core.project_types import (
     ExtractedTransaction,
     ImportableTransaction,
@@ -13,6 +14,14 @@ from app.core.project_types import (
     TransactionType,
 )
 from app.db.transactions import Transaction
+
+
+# Set APP_ENVIRONMENT to "TEST" to skip initializing external resources (e.g. Supabase)
+# that are not needed
+@pytest.fixture(autouse=True)
+def force_test_environment(monkeypatch):
+    monkeypatch.setenv("APP_ENVIRONMENT", AppEnvironment.TEST.value)
+    app_config.APP_ENVIRONMENT = AppEnvironment.TEST
 
 
 @pytest.fixture(scope="session")
