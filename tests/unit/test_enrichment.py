@@ -1,8 +1,8 @@
-from decimal import Decimal
 import datetime as dt
+from decimal import Decimal
 
-from currency_converter import RateNotFoundError
 import pytest
+from currency_converter import RateNotFoundError  # type: ignore[import-untyped]
 
 from app.business_rules.spending_categories import groceries, hot_drinks
 from app.enrichment import (

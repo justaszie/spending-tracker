@@ -1,11 +1,11 @@
+import datetime as dt
+import logging
+import re
 from csv import DictReader
 from decimal import Decimal
 from hashlib import sha256
 from io import TextIOWrapper
 from typing import Any, BinaryIO, Self
-import datetime as dt
-import logging
-import re
 
 from pydantic import (
     BaseModel,

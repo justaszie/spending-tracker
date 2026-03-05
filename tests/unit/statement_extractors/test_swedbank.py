@@ -1,7 +1,7 @@
-from decimal import Decimal
-from io import BytesIO, StringIO
 import csv
 import datetime as dt
+from decimal import Decimal
+from io import BytesIO, StringIO
 
 import pytest
 

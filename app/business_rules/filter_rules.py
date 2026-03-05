@@ -1,5 +1,5 @@
-from collections.abc import Callable
 import re
+from collections.abc import Callable
 
 from app.core.project_types import ExtractedTransaction, TransactionType
 

@@ -1,8 +1,8 @@
+import datetime as dt
+import logging
 from collections.abc import Iterable
 from typing import BinaryIO, TypedDict
 from uuid import UUID
-import datetime as dt
-import logging
 
 from currency_converter import (  # type: ignore[import-untyped]
     ECB_URL,

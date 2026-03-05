@@ -1,9 +1,10 @@
+import datetime as dt
+import logging
 from decimal import Decimal
 from hashlib import sha256
 from typing import Any, BinaryIO, Self
-import datetime as dt
-import logging
 
+import openpyxl
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -11,7 +12,6 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
-import openpyxl
 
 from app.core.project_types import (
     ExtractedTransaction,
@@ -68,10 +68,7 @@ def get_statement_rows(statement: BinaryIO) -> list[dict[str, Any]]:
         first_row = next(rows_iterator)
         headers = [str(header) for header in first_row]
 
-        return [
-            dict(zip(headers, row, strict=True))
-            for row in rows_iterator
-        ]
+        return [dict(zip(headers, row, strict=True)) for row in rows_iterator]
 
     finally:
         workbook.close()

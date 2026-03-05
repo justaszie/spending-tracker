@@ -1,6 +1,6 @@
-from decimal import Decimal
 import datetime as dt
 import uuid
+from decimal import Decimal
 
 from sqlalchemy import Engine, UniqueConstraint
 from sqlmodel import Field, Session, SQLModel, select

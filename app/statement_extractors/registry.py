@@ -1,9 +1,9 @@
 from collections.abc import Callable
 from typing import BinaryIO, TypedDict
 
-from app.core.project_types import ExtractedTransaction, StatementSource
 import app.statement_extractors.revolut as revolut_extractor
 import app.statement_extractors.swedbank as swedbank_extractor
+from app.core.project_types import ExtractedTransaction, StatementSource
 
 ExtractorFN = Callable[[BinaryIO], list[ExtractedTransaction]]
 

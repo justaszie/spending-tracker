@@ -1,6 +1,6 @@
+import uuid
 from decimal import Decimal
 from io import BytesIO
-import uuid
 
 import pytest
 

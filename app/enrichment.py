@@ -1,7 +1,7 @@
-from collections.abc import Sequence
-from decimal import Decimal
 import datetime as dt
 import logging
+from collections.abc import Sequence
+from decimal import Decimal
 
 from currency_converter import (  # type: ignore[import-untyped]
     CurrencyConverter,

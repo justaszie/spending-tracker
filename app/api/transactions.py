@@ -1,6 +1,6 @@
+import logging
 from typing import Annotated
 from uuid import UUID
-import logging
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel

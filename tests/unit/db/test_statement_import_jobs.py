@@ -1,8 +1,8 @@
 import datetime as dt
 import uuid
 
-from sqlmodel import Session, select
 import pytest
+from sqlmodel import Session, select
 
 from app.core.project_types import ImportJobStatus, StatementSource
 from app.db.statement_import_jobs import (

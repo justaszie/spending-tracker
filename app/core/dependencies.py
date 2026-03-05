@@ -1,6 +1,6 @@
+import logging
 from typing import Annotated, cast
 from uuid import UUID
-import logging
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import (

@@ -1,8 +1,8 @@
+import datetime as dt
+import logging
 from io import BytesIO
 from typing import Any, BinaryIO, cast
 from uuid import UUID
-import datetime as dt
-import logging
 
 from app.statement_validation import StatementMetadata
 

@@ -1,5 +1,5 @@
-from pydantic import ValidationError
 import pytest
+from pydantic import ValidationError
 
 from app.core.project_types import StatementSource
 from app.statement_validation import StatementMetadata

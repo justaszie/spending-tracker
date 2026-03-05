@@ -1,5 +1,5 @@
-from decimal import Decimal
 import datetime as dt
+from decimal import Decimal
 
 import pytest
 

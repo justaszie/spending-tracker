@@ -1,8 +1,8 @@
-from contextlib import asynccontextmanager
-from typing import Annotated, Any
 import logging
 import time
 import uuid
+from contextlib import asynccontextmanager
+from typing import Annotated, Any
 
 from fastapi import (
     APIRouter,
@@ -95,7 +95,8 @@ async def lifespan(app: FastAPI):  # type: ignore
     yield
 
     # Shutdown
-    engine.dispose()
+    if app.state.db_engine:
+        engine.dispose()
 
 
 # Configure logger format

@@ -1,8 +1,8 @@
 # This module contains definition of categorization rules
+import re
 from collections.abc import Callable
 from decimal import Decimal
 from typing import Literal, NotRequired, TypedDict
-import re
 
 from app.core.project_types import ImportableTransaction
 

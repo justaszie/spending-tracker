@@ -1,9 +1,9 @@
-from decimal import Decimal
 import datetime as dt
 import uuid
+from decimal import Decimal
 
-from sqlmodel import SQLModel, StaticPool, create_engine
 import pytest
+from sqlmodel import SQLModel, StaticPool, create_engine
 
 from app.core.config import AppEnvironment, app_config
 from app.core.project_types import (
