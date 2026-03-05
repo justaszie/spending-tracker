@@ -20,21 +20,22 @@ class StatementMetadata(BaseModel):
 
     source: StatementSource
     file_name: str
-    file_size: int
+    file_size: int | None
     file_type: str | None
 
     @field_validator("file_size")
     @classmethod
-    def valid_file_size(cls, value: int):
-        if value <= 0:
-            raise ValueError("Statement file can't be empty")
+    def valid_file_size(cls, value: int | None) -> int | None:
+        if value is not None:
+            if value <= 0:
+                raise ValueError("Statement file can't be empty")
 
-        max_size = app_config.MAX_STATEMENT_SIZE
-        if value > max_size:
-            raise ValueError(
-                f"Statement file can't exceed {max_size / 1024**2}MB. "
-                f"Try splitting the statement file into smaller chunks"
-            )
+            max_size = app_config.MAX_STATEMENT_SIZE
+            if value > max_size:
+                raise ValueError(
+                    f"Statement file can't exceed {max_size / 1024**2}MB. "
+                    f"Try splitting the statement file into smaller chunks"
+                )
         return value
 
     @model_validator(mode="after")

@@ -10,8 +10,8 @@ ExtractorFN = Callable[[BinaryIO], list[ExtractedTransaction]]
 
 class ExtractorConfig(TypedDict):
     extractor_fn: ExtractorFN
-    allowed_extensions: Collection[str]
-    allowed_content_types: Collection[str]
+    allowed_extensions: set[str]
+    allowed_content_types: set[str]
 
 
 # Registry of extractors
@@ -47,12 +47,12 @@ def get_extractor_fn(statement_source: StatementSource) -> ExtractorFN | None:
 def allowed_file_extensions(statement_source: StatementSource) -> set[str]:
     config = get_extractor_config(statement_source)
     if config is None:
-        return {}
-    return config.get("allowed_extensions", {})
+        return set()
+    return config.get("allowed_extensions", set())
 
 
 def allowed_content_types(statement_source: StatementSource) -> set[str]:
     config = get_extractor_config(statement_source)
     if config is None:
-        return {}
-    return config.get("allowed_content_types", {})
+        return set()
+    return config.get("allowed_content_types", set())

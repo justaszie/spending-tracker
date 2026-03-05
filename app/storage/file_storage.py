@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, cast
 from uuid import UUID
 import datetime as dt
 import logging
@@ -53,7 +53,7 @@ class FileStorage:
             path=file_path,
             file_options={"cache-control": "3600", "upsert": "true"},
         )
-        return response.path
+        return cast(str, response.path)
 
     # Download a file from a storage bucket in supabase
     def load_file(

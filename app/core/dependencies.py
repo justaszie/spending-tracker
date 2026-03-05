@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, cast
 from uuid import UUID
 import logging
 
@@ -10,7 +10,7 @@ from fastapi.security import (
 from sqlalchemy import Engine
 from supabase_auth.errors import AuthApiError
 
-from app.core.config import AppEnvironment, app_config
+from app.core.config import AppEnvironment, ConfigError, app_config
 from app.storage.file_storage import FileStorage
 from supabase import Client
 
@@ -18,22 +18,22 @@ logger = logging.getLogger(__name__)
 jwt_auth = HTTPBearer(auto_error=False)
 
 
-def get_db_engine(request: Request):
-    return request.app.state.db_engine
+def get_db_engine(request: Request) -> Engine:
+    return cast(Engine, request.app.state.db_engine)
 
 
 DBDependency = Annotated[Engine, Depends(get_db_engine)]
 
 
 def get_file_storage(request: Request) -> FileStorage:
-    return request.app.state.file_storage
+    return cast(FileStorage, request.app.state.file_storage)
 
 
 FSDependency = Annotated[FileStorage, Depends(get_file_storage)]
 
 
 def get_supabase_admin(request: Request) -> Client:
-    return request.app.state.supabase_admin
+    return cast(Client, request.app.state.supabase_admin)
 
 
 SupabaseAdminDependency = Annotated[Client, Depends(get_supabase_admin)]
@@ -45,6 +45,9 @@ def get_authenticated_user(
 ) -> UUID:
     # Skip jwt validation in DEV environment
     if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
+        if not app_config.TEST_USER_ID:
+            raise ConfigError("Missing TEST_USER_ID environment value")
+
         return app_config.TEST_USER_ID
 
     if not header:

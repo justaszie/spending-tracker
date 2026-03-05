@@ -13,7 +13,7 @@ class TransactionInsertError(Exception):
 
 
 class Transaction(SQLModel, table=True):
-    __tablename__ = "transactions"  # type: ignore
+    __tablename__ = "transactions"
     __table_args__ = (
         UniqueConstraint(
             "user_id", "dedup_key", name="uq_transaction_user_id_dedup_key"
@@ -70,7 +70,7 @@ def get_transactions(
         statement = (
             select(Transaction)
             .where(Transaction.user_id == user_id)
-            .order_by(Transaction.transaction_datetime.desc())
+            .order_by(Transaction.transaction_datetime.desc())  # type: ignore[attr-defined]
             .offset(offset)
         )
         if limit is not None:
@@ -98,8 +98,8 @@ def get_distinct_spending_categories(
     with Session(db) as session:
         statement = (
             select(Transaction.spending_category)
-            .where(Transaction.spending_category.is_not(None))
+            .where(Transaction.spending_category.is_not(None))  # type: ignore
             .distinct()
         )
         result = session.exec(statement).all()
-        return set(result)
+        return {category for category in result if category is not None}

@@ -3,7 +3,10 @@ from decimal import Decimal
 import datetime as dt
 import logging
 
-from currency_converter import CurrencyConverter, RateNotFoundError
+from currency_converter import (  # type: ignore[import-untyped]
+    CurrencyConverter,
+    RateNotFoundError,
+)
 
 from app.business_rules.spending_categories import (
     FOOD_CATEGORIES,

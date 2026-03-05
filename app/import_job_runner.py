@@ -5,12 +5,14 @@ from uuid import UUID
 import datetime as dt
 import logging
 
-from currency_converter import ECB_URL, CurrencyConverter
+from currency_converter import (  # type: ignore[import-untyped]
+    ECB_URL,
+    CurrencyConverter,
+)
 from sqlalchemy import Engine
 import pandas as pd
 
 from app.business_rules.filter_rules import FilterRuleFN, get_filter_rules
-from app.core.config import AppConfig, AppEnvironment
 from app.core.project_types import (
     ExtractedTransaction,
     ImportableTransaction,
@@ -225,7 +227,7 @@ def enrich_transactions(
 
             txn.meal_type = get_meal_type(txn)
 
-    return transactions
+    return list[ImportableTransaction](transactions)
 
 
 def import_transactions(
@@ -297,7 +299,7 @@ def update_job_start(job: StatementImportJob, db: Engine) -> StatementImportJob:
     return update_job(updated_job=job, db=db)
 
 
-def record_job_failure(job: StatementImportJob, e: Exception, db: Engine):
+def record_job_failure(job: StatementImportJob, e: Exception, db: Engine) -> None:
     failure_details: JobFailureDetails = get_failure_details(e)
     failure_reason = failure_details["job_failure_reason"]
     error_message = failure_details["error_message"]
@@ -353,9 +355,3 @@ def get_failure_details(exc: Exception) -> JobFailureDetails:
         "job_failure_reason": "OTHER_ERROR",
         "error_message": "Unexpected error",
     }
-
-
-def _transactions_dump(transactions, filename):
-    df = pd.DataFrame(txn.model_dump() for txn in transactions)
-    logs_dir = Path.absolute(Path(__name__).parent.parent) / "throwaway" / "import_logs"
-    df.to_csv(f"{logs_dir}/{filename}.csv")

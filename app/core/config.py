@@ -9,6 +9,10 @@ PROJECT_ROOT = Path.resolve(Path(__file__).parent.parent.parent)
 ENV_FILE = PROJECT_ROOT / ".env"
 
 
+class ConfigError(Exception):
+    pass
+
+
 class AppEnvironment(StrEnum):
     DEV = "DEV"
     PROD = "PROD"
@@ -31,4 +35,4 @@ class AppConfig(BaseSettings):
     DEFAULT_PAGE_SIZE: int = 50
 
 
-app_config = AppConfig() # type: ignore
+app_config = AppConfig()  # type: ignore

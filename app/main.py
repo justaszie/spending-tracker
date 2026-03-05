@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Any
 import logging
 import time
 import uuid
@@ -10,6 +10,7 @@ from fastapi import (
     FastAPI,
     HTTPException,
     Request,
+    Response,
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -135,7 +136,7 @@ app.include_router(transactions_router, prefix=api_prefix)
 
 # Middleware to log processed requests
 @app.middleware("http")
-async def log_request_processed(request: Request, call_next):
+async def log_request_processed(request: Request, call_next: Any) -> Any:
     start_time = time.perf_counter()
     request_id = uuid.uuid4()
     method = request.method

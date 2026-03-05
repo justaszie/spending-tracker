@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class StatementImportJob(SQLModel, table=True):
-    __tablename__ = "statement_import_jobs"  # type: ignore
+    __tablename__ = "statement_import_jobs"
 
     id: uuid.UUID = Field(primary_key=True, default_factory=uuid.uuid4)
     statement_source: StatementSource = Field(nullable=False)
