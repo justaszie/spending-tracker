@@ -6,7 +6,7 @@ repos:
         entry: uv run mypy
         language: system
         types: [python]
-        files: ^app/*.$
+        files: ^app/.*$
         stages: [pre-push]
 
       - id: linter
@@ -14,7 +14,7 @@ repos:
         entry: uv run ruff check
         language: system
         types: [python]
-        files: ^app/*.$
+        files: ^app/.*$
         stages: [pre-push]
 
       - id: formatter
