@@ -7,21 +7,24 @@ repos:
     language: system
     files: ^app/.*\.py$
     types: [python]
-    stages: [push]
+    stages: [pre-push]
   - id: formatter
     name: formatter
     entry: uv run ruff check
     language: system
     files: ^(tests|app)/\*\.py$
+    stages: [pre-push]
   - id: linter
     name: linter
     entry: uv run ruff
     language: system
     files: ^(tests|app)/\*\.py$
+    stages: [pre-push]
   - id: unit-tests
     name: unit-tests
     entry: uv run pytest tests/unit
     language: system
     pass_filenames: false
     always_run: true
+    stages: [pre-push]
 

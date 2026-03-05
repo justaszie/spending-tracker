@@ -31,4 +31,4 @@ class AppConfig(BaseSettings):
     DEFAULT_PAGE_SIZE: int = 50
 
 
-app_config = AppConfig()
+app_config = AppConfig() # type: ignore
