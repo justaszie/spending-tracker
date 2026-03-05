@@ -26,7 +26,7 @@ jobs:
       - name: Run mypy
         run: uv run mypy app
       - name: Run linter
-        run: uv run ruff check app --fix
+        run: uv run ruff check app
       - name: Run formatter
         run: uv run ruff format --check
 
