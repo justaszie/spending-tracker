@@ -68,7 +68,7 @@ def get_statement_rows(statement: BinaryIO) -> list[dict[str, Any]]:
         first_row = next(rows_iterator)
         headers = [str(header) for header in first_row]
 
-        return [dict(zip(headers, row, strict=True)) for row in rows_iterator]
+        return [dict(zip(headers, row, strict=False)) for row in rows_iterator]
 
     finally:
         workbook.close()
