@@ -78,6 +78,11 @@ ignore = [
     "T201",   # Print statements (useful for debugging, can be strict)
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+# Force supabase/supabase_auth to be treated as third-party (before first-party)
+known-third-party = ["supabase", "supabase_auth"]
+
 [tool.ruff.lint.mccabe]
 # Maximum complexity (default: 10)
 max-complexity = 10

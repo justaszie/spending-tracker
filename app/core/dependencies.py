@@ -8,11 +8,11 @@ from fastapi.security import (
     HTTPBearer,
 )
 from sqlalchemy import Engine
+from supabase import Client
 from supabase_auth.errors import AuthApiError
 
 from app.core.config import AppEnvironment, ConfigError, app_config
 from app.storage.file_storage import FileStorage
-from supabase import Client
 
 logger = logging.getLogger(__name__)
 jwt_auth = HTTPBearer(auto_error=False)

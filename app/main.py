@@ -15,13 +15,13 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlmodel import SQLModel, create_engine
 from starlette.middleware.cors import CORSMiddleware
+from supabase import create_client
 from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
 from app.api.transactions import router as transactions_router
 from app.core.config import AppEnvironment, ConfigError, app_config
 from app.storage.file_storage import FileStorage
-from supabase import create_client
 
 user_creds_auth = HTTPBasic()
 
