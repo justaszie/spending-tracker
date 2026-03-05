@@ -82,6 +82,7 @@ async def lifespan(app: FastAPI):  # type: ignore
     # Shutdown
     engine.dispose()
 
+
 # Configure logger format
 logging.basicConfig(
     format="[{levelname}] - {asctime} - {name}: {message}",
@@ -90,7 +91,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 # Custom logging is done to cover the external service calls
-logging.getLogger('httpx').disabled = True
+logging.getLogger("httpx").disabled = True
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +111,7 @@ def authenticate_user(
     jwt: Annotated[str, Depends(validate_user_creds)],
 ) -> JSONResponse:
     return JSONResponse({"access_token": jwt})
+
 
 # CORS Setup: allow all known client domains
 cors_origins: list[str] = []
@@ -138,7 +140,7 @@ async def log_request_processed(request: Request, call_next):
     request_id = uuid.uuid4()
     method = request.method
     path = request.url.path
-    logger.info(f"Processing request {request_id}. {method} | {path}" )
+    logger.info(f"Processing request {request_id}. {method} | {path}")
     # Make request available in the route functions to link it with other events
     request.state.request_id = request_id
 
@@ -156,4 +158,3 @@ async def log_request_processed(request: Request, call_next):
     response.headers["X-Request-Id"] = str(request_id)
 
     return response
-

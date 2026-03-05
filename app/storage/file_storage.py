@@ -13,6 +13,7 @@ class StatementDownloadError(Exception):
 
 logger = logging.getLogger(__name__)
 
+
 # Integrate with supabase file storage
 class FileStorage:
     def __init__(self, supabase_client: Any):

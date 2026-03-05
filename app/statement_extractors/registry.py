@@ -50,6 +50,7 @@ def allowed_file_extensions(statement_source: StatementSource) -> set[str]:
         return {}
     return config.get("allowed_extensions", {})
 
+
 def allowed_content_types(statement_source: StatementSource) -> set[str]:
     config = get_extractor_config(statement_source)
     if config is None:

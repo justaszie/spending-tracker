@@ -60,6 +60,7 @@ def get_existing_dedup_keys(user_id: uuid.UUID, db: Engine) -> set[str]:
         # Set allows O(1) lookups when separating new transactions from existing ones
         return set(result)
 
+
 # The query can be used either with pagination params or without (limit = None)
 # Pagination will be off if we need to use this for tests
 def get_transactions(

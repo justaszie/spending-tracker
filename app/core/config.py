@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 PROJECT_ROOT = Path.resolve(Path(__file__).parent.parent.parent)
 ENV_FILE = PROJECT_ROOT / ".env"
 
+
 class AppEnvironment(StrEnum):
     DEV = "DEV"
     PROD = "PROD"
@@ -23,12 +24,11 @@ class AppConfig(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_ANON_KEY: str
     SUPABASE_ADMIN_KEY: str
-    MAX_STATEMENT_SIZE: int = 2 * 1024**2 # 2MB based on the available samples
+    MAX_STATEMENT_SIZE: int = 2 * 1024**2  # 2MB based on the available samples
     V1_API_PREFIX: str = "/api/v1"
     FRONTEND_URL: str | None = None
     MAX_PAGE_SIZE: int = 100
     DEFAULT_PAGE_SIZE: int = 50
-
 
 
 app_config = AppConfig()

@@ -12,12 +12,12 @@ repos:
     name: formatter
     entry: uv run ruff check
     language: system
-    files: ^(tests|app)/\.py$
+    files: ^(tests|app)/\*\.py$
   - id: linter
     name: linter
     entry: uv run ruff
     language: system
-    files: ^(tests|app)/\.py$
+    files: ^(tests|app)/\*\.py$
   - id: unit-tests
     name: unit-tests
     entry: uv run pytest tests/unit
