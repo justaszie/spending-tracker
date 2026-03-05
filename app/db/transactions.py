@@ -42,7 +42,7 @@ class Transaction(SQLModel, table=True):
 
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
     try:
-        with Session(db, expire_on_commit = False) as session:
+        with Session(db, expire_on_commit=False) as session:
             # setting expire_on_commit=False allows to reuse
             # the Transaction instances in the client code (import job runner)
             session.add_all(transactions)
@@ -60,15 +60,20 @@ def get_existing_dedup_keys(user_id: uuid.UUID, db: Engine) -> set[str]:
         # Set allows O(1) lookups when separating new transactions from existing ones
         return set(result)
 
-
-def get_transactions(user_id: uuid.UUID, db: Engine) -> list[Transaction]:
+# The query can be used either with pagination params or without (limit = None)
+# Pagination will be off if we need to use this for tests
+def get_transactions(
+    user_id: uuid.UUID, db: Engine, offset: int = 0, limit: int | None = None
+) -> list[Transaction]:
     with Session(db) as session:
         statement = (
             select(Transaction)
             .where(Transaction.user_id == user_id)
             .order_by(Transaction.transaction_datetime.desc())
-            # TODO - replace sample with pagination
-            .limit(50)
+            .offset(offset)
         )
+        if limit is not None:
+            statement = statement.limit(limit)
+
         result = session.exec(statement).all()
         return list(result)
