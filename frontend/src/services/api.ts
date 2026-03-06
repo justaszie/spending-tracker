@@ -31,6 +31,9 @@ export const transactionsAPI = {
       search = "",
       sortBy = "transaction_datetime",
       sortOrder = "desc",
+      side,
+      spending_category,
+      untaggedOnly,
     } = params;
 
     const queryParams = new URLSearchParams({
@@ -39,7 +42,17 @@ export const transactionsAPI = {
       sort_by: sortBy,
       sort_order: sortOrder,
     });
-    if (search) queryParams.set("search", search);
+    if (search) queryParams.set("search", search.trim());
+
+    if (side?.length) {
+      side.forEach((value) => queryParams.append("side", value));
+    }
+    if (spending_category?.length) {
+      spending_category.forEach((value) => queryParams.append("spending_category", value));
+    }
+    if (untaggedOnly) {
+      queryParams.set("untagged_only", "true");
+    }
 
     const response = await fetch(
       `${API_BASE_URL}/transactions?${queryParams}`,

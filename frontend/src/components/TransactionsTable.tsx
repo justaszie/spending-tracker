@@ -12,7 +12,8 @@ export default function TransactionsTable() {
   const [sortBy, setSortBy] = useState('transaction_datetime')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [filterSource] = useState('all')
-  const [filterSide] = useState('all')
+  const [untaggedOnly, setUntaggedOnly] = useState(false)
+  const [debitOnly, setDebitOnly] = useState(false)
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState<number | undefined>(undefined)
@@ -26,13 +27,12 @@ export default function TransactionsTable() {
         search: searchTerm,
         sortBy,
         sortOrder,
+        untaggedOnly: untaggedOnly || undefined,
+        side: debitOnly ? ['debit'] : undefined,
       })
       let filtered = result.transactions
       if (filterSource !== 'all') {
         filtered = filtered.filter((t) => t.source === filterSource)
-      }
-      if (filterSide !== 'all') {
-        filtered = filtered.filter((t) => t.side === filterSide)
       }
       setTransactions(filtered)
       setTotal(result.total)
@@ -41,7 +41,7 @@ export default function TransactionsTable() {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, sortBy, sortOrder, filterSource, filterSide])
+  }, [page, searchTerm, sortBy, sortOrder, filterSource, untaggedOnly, debitOnly])
 
   useEffect(() => {
     loadTransactions()
@@ -127,6 +127,31 @@ export default function TransactionsTable() {
           }}
           className="search-input"
         />
+      </div>
+
+      <div className="transactions-filters">
+        <label className="filter-checkbox">
+          <input
+            type="checkbox"
+            checked={untaggedOnly}
+            onChange={(e) => {
+              setUntaggedOnly(e.target.checked)
+              setPage(1)
+            }}
+          />
+          <span>Untagged Only</span>
+        </label>
+        <label className="filter-checkbox">
+          <input
+            type="checkbox"
+            checked={debitOnly}
+            onChange={(e) => {
+              setDebitOnly(e.target.checked)
+              setPage(1)
+            }}
+          />
+          <span>Debit Only</span>
+        </label>
       </div>
 
       {loading ? (
