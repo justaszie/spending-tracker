@@ -1,25 +1,25 @@
-import { useState, useEffect, useCallback } from 'react'
-import { transactionsAPI } from '../services/api'
-import type { Transaction } from '../types'
-import './TransactionsTable.css'
+import { useState, useEffect, useCallback } from "react";
+import { transactionsAPI } from "../services/api";
+import type { Transaction } from "../types";
+import "./TransactionsTable.css";
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
 export default function TransactionsTable() {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('transaction_datetime')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [filterSource] = useState('all')
-  const [untaggedOnly, setUntaggedOnly] = useState(false)
-  const [debitOnly, setDebitOnly] = useState(false)
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
-  const [page, setPage] = useState(1)
-  const [total, setTotal] = useState<number | undefined>(undefined)
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("transaction_datetime");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [filterSource] = useState("all");
+  const [untaggedOnly, setUntaggedOnly] = useState(false);
+  const [debitOnly, setDebitOnly] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState<number | undefined>(undefined);
 
   const loadTransactions = useCallback(async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const result = await transactionsAPI.getTransactions({
         page,
@@ -28,83 +28,92 @@ export default function TransactionsTable() {
         sortBy,
         sortOrder,
         untaggedOnly: untaggedOnly || undefined,
-        side: debitOnly ? ['debit'] : undefined,
-      })
-      let filtered = result.transactions
-      if (filterSource !== 'all') {
-        filtered = filtered.filter((t) => t.source === filterSource)
+        side: debitOnly ? ["debit"] : undefined,
+      });
+      let filtered = result.transactions;
+      if (filterSource !== "all") {
+        filtered = filtered.filter((t) => t.source === filterSource);
       }
-      setTransactions(filtered)
-      setTotal(result.total)
+      setTransactions(filtered);
+      setTotal(result.total);
     } catch (error) {
-      console.error('Failed to load transactions:', error)
+      console.error("Failed to load transactions:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [page, searchTerm, sortBy, sortOrder, filterSource, untaggedOnly, debitOnly])
+  }, [
+    page,
+    searchTerm,
+    sortBy,
+    sortOrder,
+    filterSource,
+    untaggedOnly,
+    debitOnly,
+  ]);
 
   useEffect(() => {
-    loadTransactions()
-  }, [loadTransactions])
+    loadTransactions();
+  }, [loadTransactions]);
 
   const handleSort = (column: string) => {
-    setPage(1)
+    setPage(1);
     if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
-      setSortBy(column)
-      setSortOrder('asc')
+      setSortBy(column);
+      setSortOrder("asc");
     }
-  }
+  };
 
-  const totalPages = total !== undefined ? Math.ceil(total / PAGE_SIZE) : undefined
+  const totalPages =
+    total !== undefined ? Math.ceil(total / PAGE_SIZE) : undefined;
   const hasNextPage =
-    totalPages !== undefined ? page < totalPages : transactions.length >= PAGE_SIZE
-  const hasPrevPage = page > 1
+    totalPages !== undefined
+      ? page < totalPages
+      : transactions.length >= PAGE_SIZE;
+  const hasPrevPage = page > 1;
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const month = date.toLocaleDateString('en-US', { month: 'short' })
-    const day = date.getDate().toString().padStart(2, '0')
-    const hours = date.getHours().toString().padStart(2, '0')
-    const minutes = date.getMinutes().toString().padStart(2, '0')
-    return `${month} ${day} ${hours}:${minutes}`
-  }
+    const date = new Date(dateString);
+    const year = date.getFullYear().toString();
+    const month = date.toLocaleDateString("en-US", { month: "short" });
+    const day = date.getDate().toString().padStart(2, "0");
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${day} ${month} ${year}, ${hours}:${minutes}`;
+  };
 
-  const formatAmount = (
-    amount: string,
-    side: string
-  ) => {
-    const formatted = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
+  const formatAmount = (amount: string, side: string) => {
+    const formatted = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "EUR",
       minimumFractionDigits: 2,
-    }).format(Math.abs(Number(amount)))
-    return side === 'debit' ? `-${formatted}` : `+${formatted}`
-  }
+    }).format(Math.abs(Number(amount)));
+    return side === "debit" ? `-${formatted}` : `+${formatted}`;
+  };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedRows(new Set(transactions.map((t) => t.id)))
+      setSelectedRows(new Set(transactions.map((t) => t.id)));
     } else {
-      setSelectedRows(new Set())
+      setSelectedRows(new Set());
     }
-  }
+  };
 
   const handleSelectRow = (id: string) => {
-    const newSelected = new Set(selectedRows)
+    const newSelected = new Set(selectedRows);
     if (newSelected.has(id)) {
-      newSelected.delete(id)
+      newSelected.delete(id);
     } else {
-      newSelected.add(id)
+      newSelected.add(id);
     }
-    setSelectedRows(newSelected)
-  }
+    setSelectedRows(newSelected);
+  };
 
   const isAllSelected =
-    transactions.length > 0 && selectedRows.size === transactions.length
+    transactions.length > 0 && selectedRows.size === transactions.length;
   const isIndeterminate =
-    selectedRows.size > 0 && selectedRows.size < transactions.length
+    selectedRows.size > 0 && selectedRows.size < transactions.length;
 
   return (
     <div className="transactions-container">
@@ -122,8 +131,8 @@ export default function TransactionsTable() {
           placeholder="Filter counterparties..."
           value={searchTerm}
           onChange={(e) => {
-            setSearchTerm(e.target.value)
-            setPage(1)
+            setSearchTerm(e.target.value);
+            setPage(1);
           }}
           className="search-input"
         />
@@ -135,8 +144,8 @@ export default function TransactionsTable() {
             type="checkbox"
             checked={untaggedOnly}
             onChange={(e) => {
-              setUntaggedOnly(e.target.checked)
-              setPage(1)
+              setUntaggedOnly(e.target.checked);
+              setPage(1);
             }}
           />
           <span>Untagged Only</span>
@@ -146,8 +155,8 @@ export default function TransactionsTable() {
             type="checkbox"
             checked={debitOnly}
             onChange={(e) => {
-              setDebitOnly(e.target.checked)
-              setPage(1)
+              setDebitOnly(e.target.checked);
+              setPage(1);
             }}
           />
           <span>Debit Only</span>
@@ -168,41 +177,45 @@ export default function TransactionsTable() {
                     type="checkbox"
                     checked={isAllSelected}
                     ref={(input) => {
-                      if (input) input.indeterminate = isIndeterminate
+                      if (input) input.indeterminate = isIndeterminate;
                     }}
                     onChange={handleSelectAll}
                   />
                 </th>
                 <th>ID</th>
                 <th
-                  onClick={() => handleSort('transaction_datetime')}
+                  onClick={() => handleSort("transaction_datetime")}
                   className="sortable"
                 >
-                  Date{' '}
-                  {sortBy === 'transaction_datetime' &&
-                    (sortOrder === 'asc' ? '↑' : '↓')}
+                  Date{" "}
+                  {sortBy === "transaction_datetime" &&
+                    (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
                 <th
-                  onClick={() => handleSort('counterparty')}
+                  onClick={() => handleSort("counterparty")}
                   className="sortable"
                 >
-                  COUNTERPARTY{' '}
-                  {sortBy === 'counterparty' &&
-                    (sortOrder === 'asc' ? '↑' : '↓')}
+                  COUNTERPARTY{" "}
+                  {sortBy === "counterparty" &&
+                    (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
-                <th onClick={() => handleSort('side')} className="sortable">
-                  SIDE {sortBy === 'side' && (sortOrder === 'asc' ? '↑' : '↓')}
+                <th onClick={() => handleSort("side")} className="sortable">
+                  SIDE {sortBy === "side" && (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
                 <th
-                  onClick={() => handleSort('eur_amount')}
+                  onClick={() => handleSort("eur_amount")}
                   className="sortable"
                 >
-                  Amount (EUR){' '}
-                  {sortBy === 'eur_amount' &&
-                    (sortOrder === 'asc' ? '↑' : '↓')}
+                  Amount (EUR){" "}
+                  {sortBy === "eur_amount" && (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
-                <th onClick={() => handleSort('spending_category')} className="sortable">
-                  CATEGORY {sortBy === 'spending_category' && (sortOrder === 'asc' ? '↑' : '↓')}
+                <th
+                  onClick={() => handleSort("spending_category")}
+                  className="sortable"
+                >
+                  CATEGORY{" "}
+                  {sortBy === "spending_category" &&
+                    (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
                 <th>NOTE</th>
                 <th className="actions-column"></th>
@@ -224,26 +237,21 @@ export default function TransactionsTable() {
                   </td>
                   <td>{transaction.counterparty}</td>
                   <td>
-                    <span
-                      className={`badge badge-${transaction.side}`}
-                    >
+                    <span className={`badge badge-${transaction.side}`}>
                       {transaction.side.toUpperCase()}
                     </span>
                   </td>
                   <td
                     className={
-                      transaction.side === 'debit'
-                        ? 'amount-debit'
-                        : 'amount-credit'
+                      transaction.side === "debit"
+                        ? "amount-debit"
+                        : "amount-credit"
                     }
                   >
-                    {formatAmount(
-                      transaction.eur_amount,
-                      transaction.side
-                    )}
+                    {formatAmount(transaction.eur_amount, transaction.side)}
                   </td>
-                  <td>{transaction.spending_category ?? '-'}</td>
-                  <td>{transaction.note ?? '-'}</td>
+                  <td>{transaction.spending_category ?? "-"}</td>
+                  <td>{transaction.note ?? "-"}</td>
                   <td className="actions-column">
                     <button type="button" className="actions-button">
                       ⋯
@@ -285,5 +293,5 @@ export default function TransactionsTable() {
         </div>
       )}
     </div>
-  )
+  );
 }
