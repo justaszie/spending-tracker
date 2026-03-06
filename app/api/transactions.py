@@ -3,11 +3,11 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.core.config import app_config
 from app.core.dependencies import AuthDependency, DBDependency
-from app.core.project_types import TransactionsSortField
+from app.core.project_types import Side, TransactionsSortField
 from app.db.transactions import (
     Transaction,
     get_distinct_spending_categories,
@@ -27,14 +27,16 @@ class TransactionsRead(BaseModel):
 
 
 class TransactionsQueryParams(BaseModel):
-    page: Annotated[int, Query(default=1, gt=0)]
-    size: Annotated[
-        int,
-        Query(default=app_config.DEFAULT_PAGE_SIZE, le=app_config.MAX_PAGE_SIZE, gt=0),
-    ]
-    search: str | None = ""
+    page: int = Field(default=1, gt=0)
+    size: int = Field(
+        default=app_config.DEFAULT_PAGE_SIZE, le=app_config.MAX_PAGE_SIZE, gt=0
+    )
+    search: str | None = None
     sort_by: TransactionsSortField | None = None
     sort_order: Literal["asc", "desc"] | None = None
+    side: list[Side] | None = None
+    spending_category: list[str] | None = None
+    untagged_only: bool = False
 
 
 @router.get("", response_model=TransactionsRead)
@@ -46,6 +48,14 @@ def get_all_transactions(
     offset = (query.page - 1) * query.size
     limit = query.size
 
+    logger.info(f"Query Params: {query}")
+
+    filters = {}
+    if query.side:
+        filters["side"] = [s.value for s in query.side]
+    if query.spending_category:
+        filters["spending_category"] = list(query.spending_category)
+
     transactions = get_transactions(
         user_id=user_id,
         db=db,
@@ -54,6 +64,8 @@ def get_all_transactions(
         search=query.search,
         sort_by=query.sort_by,
         sort_order=query.sort_order,
+        filters=filters if filters else None,
+        no_category_only=query.untagged_only,
     )
     return TransactionsRead(
         transactions=transactions,

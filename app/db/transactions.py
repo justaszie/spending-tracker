@@ -1,9 +1,9 @@
 import datetime as dt
 import uuid
 from decimal import Decimal
-from typing import Literal
+from typing import Any, Literal
 
-from sqlalchemy import Engine, String, UniqueConstraint, cast, or_
+from sqlalchemy import Engine, String, UniqueConstraint, cast, func, or_
 from sqlmodel import Field, Session, SQLModel, select
 
 from app.core.project_types import (
@@ -77,6 +77,8 @@ def get_transactions(
     search: str | None = "",
     sort_by: TransactionsSortField | None = None,
     sort_order: Literal["asc", "desc"] | None = None,
+    filters: dict[str, list[Any]] | None = None,
+    no_category_only: bool | None = False,
 ) -> list[Transaction]:
     with Session(db) as session:
         statement = select(Transaction).where(Transaction.user_id == user_id)
@@ -91,6 +93,25 @@ def get_transactions(
                 Transaction.note.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
             )
             statement = statement.where(search_filter)
+
+        if filters:
+            for field_name, values in filters.items():
+                # Skip empty value collections
+                if not values:
+                    continue
+
+                # Skip fields that are not in the Transaction model
+                if not hasattr(Transaction, field_name):
+                    continue
+
+                column = getattr(Transaction, field_name)
+                normalized_values = [str(value).strip().lower() for value in values]
+                statement = statement.where(
+                    func.lower(cast(column, String)).in_(normalized_values)
+                )
+
+        if no_category_only:
+            statement = statement.where(Transaction.spending_category.is_(None))  # type: ignore[union-attr]
 
         sort_by = sort_by if sort_by else "transaction_datetime"
         sort_column = getattr(Transaction, sort_by)

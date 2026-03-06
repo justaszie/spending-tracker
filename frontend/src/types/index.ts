@@ -34,6 +34,12 @@ export interface GetTransactionsParams {
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+  /** Filter by transaction side (repeated param: side=debit&side=credit) */
+  side?: Side[]
+  /** Filter by spending category (repeated param: spending_category=...&spending_category=...) */
+  spending_category?: string[]
+  /** Only transactions with null spending_category */
+  untaggedOnly?: boolean
 }
 
 export interface ImportJobResult {

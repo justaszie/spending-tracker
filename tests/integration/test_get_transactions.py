@@ -232,20 +232,13 @@ class TestGetTransactions:
         assert body["transactions"] == []
 
     @pytest.mark.parametrize(
-        ("search_term", "field"),
-        [
-            ("id-fragment", "id"),
-            ("acme", "counterparty"),
-            ("groc", "spending_category"),
-            ("subway", "note"),
-        ],
+        "field", ["id", "counterparty", "spending_category", "note"]
     )
     def test_search_finds_matching_transactions(
         self,
         test_client,
         test_db,
         db_transaction,
-        search_term,
         field,
     ):
         matching = db_transaction(
@@ -269,13 +262,12 @@ class TestGetTransactions:
             session.refresh(matching)
 
         if field == "id":
-            # Search by a stable substring of the UUID.
             search_value = str(matching.id).split("-")[0]
         elif field == "counterparty":
             search_value = "acme"
         elif field == "spending_category":
             search_value = "groc"
-        else:
+        elif field == "note":
             search_value = "subway"
 
         response = test_client.get(
@@ -403,6 +395,219 @@ class TestGetTransactions:
             params={"page": 1, "size": 10, "sort_order": "up"},
         )
         assert response.status_code == 422
+
+    def test_side_filter_returns_only_debit_transactions(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        debit_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="debit-only",
+            side="debit",
+        )
+        credit_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="credit-only",
+            side="credit",
+        )
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([debit_txn, credit_txn])
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "side": ["debit"]},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["transactions"]) == 1
+        assert body["transactions"][0]["dedup_key"] == debit_txn.dedup_key
+        assert body["transactions"][0]["side"] == "debit"
+
+    def test_side_filter_returns_only_credit_transactions(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        debit_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="debit-only",
+            side="debit",
+        )
+        credit_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="credit-only",
+            side="credit",
+        )
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([debit_txn, credit_txn])
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "side": ["credit"]},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["transactions"]) == 1
+        assert body["transactions"][0]["dedup_key"] == credit_txn.dedup_key
+        assert body["transactions"][0]["side"] == "credit"
+
+    def test_side_filter_multiple_values_returns_both(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        debit_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="debit-only",
+            side="debit",
+        )
+        credit_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="credit-only",
+            side="credit",
+        )
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([debit_txn, credit_txn])
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "side": ["debit", "credit"]},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["transactions"]) == 2
+        dedup_keys = {t["dedup_key"] for t in body["transactions"]}
+        assert dedup_keys == {debit_txn.dedup_key, credit_txn.dedup_key}
+
+    def test_spending_category_filter_returns_only_matching(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        groceries_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="groceries",
+            spending_category="GROCERIES",
+        )
+        transport_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="transport",
+            spending_category="TRANSPORT",
+        )
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([groceries_txn, transport_txn])
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "spending_category": ["GROCERIES"]},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["transactions"]) == 1
+        assert body["transactions"][0]["dedup_key"] == groceries_txn.dedup_key
+        assert body["transactions"][0]["spending_category"] == "GROCERIES"
+
+    def test_untagged_only_returns_only_null_spending_category(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        tagged_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="tagged",
+            spending_category="GROCERIES",
+        )
+        untagged_txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="untagged",
+            spending_category=None,
+        )
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([tagged_txn, untagged_txn])
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "untagged_only": True},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["transactions"]) == 1
+        assert body["transactions"][0]["dedup_key"] == untagged_txn.dedup_key
+        assert body["transactions"][0]["spending_category"] is None
+
+    def test_untagged_only_with_side_filter(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        """untagged_only=true and side=debit returns only debit transactions with null spending_category."""
+        debit_tagged = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="debit-tagged",
+            side="debit",
+            spending_category="BILLS",
+        )
+        debit_untagged = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="debit-untagged",
+            side="debit",
+            spending_category=None,
+        )
+        credit_untagged = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="credit-untagged",
+            side="credit",
+            spending_category=None,
+        )
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([debit_tagged, debit_untagged, credit_untagged])
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "side": ["debit"], "untagged_only": True},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["transactions"]) == 1
+        assert body["transactions"][0]["dedup_key"] == debit_untagged.dedup_key
+        assert body["transactions"][0]["side"] == "debit"
+        assert body["transactions"][0]["spending_category"] is None
+
+    def test_untagged_only_returns_empty_when_all_tagged(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        txn = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="only-tagged",
+            spending_category="GROCERIES",
+        )
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add(txn)
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "untagged_only": True},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["transactions"] == []
 
 
 class TestGetSingleTransaction:
