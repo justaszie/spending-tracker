@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from app.core.config import app_config
 from app.core.dependencies import AuthDependency, DBDependency
+from app.core.project_types import TransactionsSortField
 from app.db.transactions import (
     Transaction,
     get_distinct_spending_categories,
@@ -25,23 +26,39 @@ class TransactionsRead(BaseModel):
     transactions: list[Transaction]
 
 
+class TransactionsQueryParams(BaseModel):
+    page: Annotated[int, Query(default=1, gt=0)]
+    size: Annotated[
+        int,
+        Query(default=app_config.DEFAULT_PAGE_SIZE, le=app_config.MAX_PAGE_SIZE, gt=0),
+    ]
+    search: str | None = ""
+    sort_by: TransactionsSortField | None = None
+    sort_order: Literal["asc", "desc"] | None = None
+
+
 @router.get("", response_model=TransactionsRead)
 def get_all_transactions(
+    query: Annotated[TransactionsQueryParams, Query()],
     user_id: AuthDependency,
     db: DBDependency,
-    page: Annotated[int, Query(gt=0)] = 1,
-    size: Annotated[
-        int, Query(le=app_config.MAX_PAGE_SIZE, gt=0)
-    ] = app_config.DEFAULT_PAGE_SIZE,
 ) -> TransactionsRead:
-    offset = (page - 1) * size
-    limit = size
+    offset = (query.page - 1) * query.size
+    limit = query.size
 
-    transactions = get_transactions(user_id=user_id, db=db, offset=offset, limit=limit)
+    transactions = get_transactions(
+        user_id=user_id,
+        db=db,
+        offset=offset,
+        limit=limit,
+        search=query.search,
+        sort_by=query.sort_by,
+        sort_order=query.sort_order,
+    )
     return TransactionsRead(
         transactions=transactions,
-        page=page,
-        size=size,
+        page=query.page,
+        size=query.size,
     )
 
 

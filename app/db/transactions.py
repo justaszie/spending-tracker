@@ -1,11 +1,17 @@
 import datetime as dt
 import uuid
 from decimal import Decimal
+from typing import Literal
 
-from sqlalchemy import Engine, UniqueConstraint
+from sqlalchemy import Engine, String, UniqueConstraint, cast, or_
 from sqlmodel import Field, Session, SQLModel, select
 
-from app.core.project_types import Side, TransactionSource, TransactionType
+from app.core.project_types import (
+    Side,
+    TransactionSource,
+    TransactionsSortField,
+    TransactionType,
+)
 
 
 class TransactionInsertError(Exception):
@@ -64,15 +70,39 @@ def get_existing_dedup_keys(user_id: uuid.UUID, db: Engine) -> set[str]:
 # The query can be used either with pagination params or without (limit = None)
 # Pagination will be off if we need to use this for tests
 def get_transactions(
-    user_id: uuid.UUID, db: Engine, offset: int = 0, limit: int | None = None
+    user_id: uuid.UUID,
+    db: Engine,
+    offset: int = 0,
+    limit: int | None = None,
+    search: str | None = "",
+    sort_by: TransactionsSortField | None = None,
+    sort_order: Literal["asc", "desc"] | None = None,
 ) -> list[Transaction]:
     with Session(db) as session:
-        statement = (
-            select(Transaction)
-            .where(Transaction.user_id == user_id)
-            .order_by(Transaction.transaction_datetime.desc())  # type: ignore[attr-defined]
-            .offset(offset)
-        )
+        statement = select(Transaction).where(Transaction.user_id == user_id)
+
+        if search and len(search) > 1:
+            search_query = search.strip()
+            # Case-insensitive regex match on id (as text), counterparty, spending_category, note
+            search_filter = or_(
+                cast(Transaction.id, String).ilike(f"%{search_query}%"),  # type: ignore[attr-defined]
+                Transaction.counterparty.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
+                Transaction.spending_category.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
+                Transaction.note.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
+            )
+            statement = statement.where(search_filter)
+
+        sort_by = sort_by if sort_by else "transaction_datetime"
+        sort_column = getattr(Transaction, sort_by)
+
+        sort_order = sort_order if sort_order else "desc"
+        if sort_order == "asc":
+            statement = statement.order_by(sort_column.asc())  # type: ignore[attr-defined]
+        else:
+            statement = statement.order_by(sort_column.desc())  # type: ignore[attr-defined]
+
+        statement = statement.offset(offset)
+
         if limit is not None:
             statement = statement.limit(limit)
 

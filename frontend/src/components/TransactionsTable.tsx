@@ -73,12 +73,11 @@ export default function TransactionsTable() {
 
   const formatAmount = (
     amount: string,
-    currency: string,
     side: string
   ) => {
     const formatted = new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency || 'EUR',
+      currency: 'EUR',
       minimumFractionDigits: 2,
     }).format(Math.abs(Number(amount)))
     return side === 'debit' ? `-${formatted}` : `+${formatted}`
@@ -170,14 +169,16 @@ export default function TransactionsTable() {
                   SIDE {sortBy === 'side' && (sortOrder === 'asc' ? '↑' : '↓')}
                 </th>
                 <th
-                  onClick={() => handleSort('orig_amount')}
+                  onClick={() => handleSort('eur_amount')}
                   className="sortable"
                 >
                   Amount (EUR){' '}
-                  {sortBy === 'orig_amount' &&
+                  {sortBy === 'eur_amount' &&
                     (sortOrder === 'asc' ? '↑' : '↓')}
                 </th>
-                <th>CATEGORY</th>
+                <th onClick={() => handleSort('spending_category')} className="sortable">
+                  CATEGORY {sortBy === 'spending_category' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
                 <th>NOTE</th>
                 <th className="actions-column"></th>
               </tr>
@@ -212,8 +213,7 @@ export default function TransactionsTable() {
                     }
                   >
                     {formatAmount(
-                      transaction.orig_amount,
-                      transaction.orig_currency,
+                      transaction.eur_amount,
                       transaction.side
                     )}
                   </td>

@@ -231,6 +231,179 @@ class TestGetTransactions:
         assert body["size"] == size
         assert body["transactions"] == []
 
+    @pytest.mark.parametrize(
+        ("search_term", "field"),
+        [
+            ("id-fragment", "id"),
+            ("acme", "counterparty"),
+            ("groc", "spending_category"),
+            ("subway", "note"),
+        ],
+    )
+    def test_search_finds_matching_transactions(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+        search_term,
+        field,
+    ):
+        matching = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key=f"match-{field}",
+            counterparty="ACME CORP",
+            spending_category="GROCERIES",
+            note="Lunch at Subway",
+        )
+        non_matching = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key=f"other-{field}",
+            counterparty="Different Merchant",
+            spending_category="TRANSPORT",
+            note="No match here",
+        )
+
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([matching, non_matching])
+            session.commit()
+            session.refresh(matching)
+
+        if field == "id":
+            # Search by a stable substring of the UUID.
+            search_value = str(matching.id).split("-")[0]
+        elif field == "counterparty":
+            search_value = "acme"
+        elif field == "spending_category":
+            search_value = "groc"
+        else:
+            search_value = "subway"
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "search": search_value},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert [t["dedup_key"] for t in body["transactions"]] == [matching.dedup_key]
+
+    def test_search_returns_empty_list_when_no_match(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        txns = [
+            db_transaction(
+                user_id=TEST_USER_ID,
+                dedup_key="txn-1",
+                counterparty="Merchant One",
+                spending_category="BILLS",
+                note="something",
+            ),
+            db_transaction(
+                user_id=TEST_USER_ID,
+                dedup_key="txn-2",
+                counterparty="Merchant Two",
+                spending_category="TRANSPORT",
+                note="another",
+            ),
+        ]
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all(txns)
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 50, "search": "definitely-not-present"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["transactions"] == []
+
+    @pytest.mark.parametrize(
+        ("sort_by", "sort_order", "expected_dedup_keys"),
+        [
+            ("transaction_datetime", "asc", ["a", "b", "c"]),
+            ("transaction_datetime", "desc", ["c", "b", "a"]),
+            ("counterparty", "asc", ["a", "b", "c"]),
+            ("counterparty", "desc", ["c", "b", "a"]),
+            ("spending_category", "asc", ["a", "b", "c"]),
+            ("spending_category", "desc", ["c", "b", "a"]),
+            # Side values are stored/sorted as strings ("credit" < "debit").
+            ("side", "asc", ["a", "c", "b"]),
+            ("side", "desc", ["b", "a", "c"]),
+            ("eur_amount", "asc", ["a", "b", "c"]),
+            ("eur_amount", "desc", ["c", "b", "a"]),
+        ],
+    )
+    def test_sorting_happy_paths(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+        sort_by,
+        sort_order,
+        expected_dedup_keys,
+    ):
+        txn_a = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="a",
+            transaction_datetime=datetime.fromisoformat("2026-01-01T10:00:00"),
+            counterparty="A Merchant",
+            spending_category="A_CATEGORY",
+            side="credit",
+            eur_amount="1.00",
+        )
+        txn_b = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="b",
+            transaction_datetime=datetime.fromisoformat("2026-01-02T10:00:00"),
+            counterparty="B Merchant",
+            spending_category="B_CATEGORY",
+            side="debit",
+            eur_amount="2.00",
+        )
+        txn_c = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="c",
+            transaction_datetime=datetime.fromisoformat("2026-01-03T10:00:00"),
+            counterparty="C Merchant",
+            spending_category="C_CATEGORY",
+            side="credit",
+            eur_amount="3.00",
+        )
+
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([txn_a, txn_b, txn_c])
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={
+                "page": 1,
+                "size": 50,
+                "sort_by": sort_by,
+                "sort_order": sort_order,
+            },
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert [t["dedup_key"] for t in body["transactions"]] == expected_dedup_keys
+
+    def test_invalid_sort_by_returns_422(self, test_client):
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 10, "sort_by": "not_a_real_field"},
+        )
+        assert response.status_code == 422
+
+    def test_invalid_sort_order_returns_422(self, test_client):
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": 1, "size": 10, "sort_order": "up"},
+        )
+        assert response.status_code == 422
+
 
 class TestGetSingleTransaction:
     TRANSACTIONS_API_PATH = f"{app_config.V1_API_PREFIX}/transactions"

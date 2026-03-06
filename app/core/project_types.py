@@ -1,7 +1,7 @@
 import datetime as dt
 from decimal import Decimal
 from enum import StrEnum
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel, model_validator
 
@@ -63,3 +63,12 @@ class ImportableTransaction(ExtractedTransaction):
         self.orig_amount = self.orig_amount.quantize(Decimal("0.01"))
         self.eur_amount = self.eur_amount.quantize(Decimal("0.01"))
         return self
+
+
+type TransactionsSortField = Literal[
+    "transaction_datetime",
+    "counterparty",
+    "spending_category",
+    "side",
+    "eur_amount",
+]
