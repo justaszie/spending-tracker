@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { transactionsAPI } from "../services/api";
 import type { Transaction } from "../types";
 import "./TransactionsTable.css";
 
 const PAGE_SIZE = 20;
+const CATEGORY_MAX_LENGTH = 50;
 
 export default function TransactionsTable() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -17,6 +19,15 @@ export default function TransactionsTable() {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState<number | undefined>(undefined);
+
+  const [categoryPopoverId, setCategoryPopoverId] = useState<string | null>(null);
+  const [categorySearchQuery, setCategorySearchQuery] = useState("");
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [patchLoadingId, setPatchLoadingId] = useState<string | null>(null);
+  const categoryPopoverRef = useRef<HTMLDivElement>(null);
+  const categorySearchInputRef = useRef<HTMLInputElement>(null);
 
   const loadTransactions = useCallback(async () => {
     setLoading(true);
@@ -54,6 +65,84 @@ export default function TransactionsTable() {
   useEffect(() => {
     loadTransactions();
   }, [loadTransactions]);
+
+  useEffect(() => {
+    if (categories.length === 0 && !categoriesLoading) {
+      setCategoriesLoading(true);
+      transactionsAPI
+        .getSpendingCategories()
+        .then(setCategories)
+        .catch(console.error)
+        .finally(() => setCategoriesLoading(false));
+    }
+  }, [categories.length, categoriesLoading]);
+
+  useEffect(() => {
+    if (categoryPopoverId) {
+      setCategorySearchQuery("");
+      const t = setTimeout(() => categorySearchInputRef.current?.focus(), 0);
+      return () => clearTimeout(t);
+    }
+  }, [categoryPopoverId]);
+
+  useEffect(() => {
+    if (!categoryPopoverId) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCategoryPopoverId(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [categoryPopoverId]);
+
+  useEffect(() => {
+    if (!categoryPopoverId) return;
+    const onMouseDown = (e: MouseEvent) => {
+      if (
+        categoryPopoverRef.current &&
+        !categoryPopoverRef.current.contains(e.target as Node) &&
+        !(e.target as HTMLElement).closest(".category-cell-trigger")
+      ) {
+        setCategoryPopoverId(null);
+      }
+    };
+    window.addEventListener("mousedown", onMouseDown);
+    return () => window.removeEventListener("mousedown", onMouseDown);
+  }, [categoryPopoverId]);
+
+  const openCategoryPopover = (e: React.MouseEvent, transactionId: string) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setAnchorRect(rect);
+    setCategoryPopoverId(transactionId);
+  };
+
+  const applyCategory = async (transactionId: string, value: string) => {
+    const trimmed = value.trim().slice(0, CATEGORY_MAX_LENGTH);
+    if (!trimmed) return;
+    setPatchLoadingId(transactionId);
+    try {
+      const updated = await transactionsAPI.patchTransaction(transactionId, {
+        spending_category: trimmed,
+      });
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === transactionId ? updated : t)),
+      );
+      setCategoryPopoverId(null);
+    } catch (err) {
+      console.error("Failed to update category:", err);
+    } finally {
+      setPatchLoadingId(null);
+    }
+  };
+
+  const popoverTransaction = categoryPopoverId
+    ? transactions.find((t) => t.id === categoryPopoverId)
+    : null;
+  const query = categorySearchQuery.trim().toLowerCase();
+  const matchingCategories = query
+    ? categories.filter((c) => c.toLowerCase().includes(query))
+    : categories;
+  const canCreateNew =
+    query.length > 0 && !categories.some((c) => c.toLowerCase() === query);
 
   const handleSort = (column: string) => {
     setPage(1);
@@ -250,7 +339,16 @@ export default function TransactionsTable() {
                   >
                     {formatAmount(transaction.eur_amount, transaction.side)}
                   </td>
-                  <td>{transaction.spending_category ?? "-"}</td>
+                  <td className="category-cell">
+                    <button
+                      type="button"
+                      className="category-cell-trigger"
+                      onClick={(e) => openCategoryPopover(e, transaction.id)}
+                      disabled={patchLoadingId === transaction.id}
+                    >
+                      {transaction.spending_category ?? "Select category…"}
+                    </button>
+                  </td>
                   <td>{transaction.note ?? "-"}</td>
                   <td className="actions-column">
                     <button type="button" className="actions-button">
@@ -292,6 +390,97 @@ export default function TransactionsTable() {
           </div>
         </div>
       )}
+
+      {categoryPopoverId &&
+        popoverTransaction &&
+        anchorRect &&
+        (() => {
+          const viewportPadding = 24;
+          const spaceBelow =
+            typeof window !== "undefined"
+              ? window.innerHeight - anchorRect.bottom - viewportPadding
+              : 320;
+          const spaceAbove =
+            typeof window !== "undefined"
+              ? anchorRect.top - viewportPadding
+              : 320;
+          const openAbove = spaceBelow < 240;
+          const maxHeight = Math.min(
+            320,
+            Math.max(120, openAbove ? spaceAbove : spaceBelow),
+          );
+          return createPortal(
+            <div
+              ref={categoryPopoverRef}
+              className="category-popover"
+              style={{
+                position: "fixed",
+                ...(openAbove
+                  ? {
+                      bottom: window.innerHeight - anchorRect.top + 4,
+                      top: "auto",
+                    }
+                  : { top: anchorRect.bottom + 4 }),
+                left: anchorRect.left,
+                minWidth: Math.max(anchorRect.width, 280),
+                maxHeight,
+              }}
+              role="dialog"
+              aria-label="Select spending category"
+            >
+            <div className="category-popover-search">
+              <span className="category-popover-search-icon" aria-hidden>🔍</span>
+              <input
+                ref={categorySearchInputRef}
+                type="text"
+                value={categorySearchQuery}
+                onChange={(e) => setCategorySearchQuery(e.target.value)}
+                placeholder="Search categories…"
+                className="category-popover-input"
+              />
+            </div>
+            {canCreateNew && (
+              <div className="category-popover-section">
+                <div className="category-popover-section-title">New Category</div>
+                <button
+                  type="button"
+                  className="category-popover-option category-popover-create"
+                  onClick={() =>
+                    applyCategory(
+                      categoryPopoverId,
+                      categorySearchQuery.trim().slice(0, CATEGORY_MAX_LENGTH),
+                    )
+                  }
+                >
+                  + Create &quot;{categorySearchQuery.trim().slice(0, 50)}&quot;
+                </button>
+              </div>
+            )}
+            <div className="category-popover-section">
+              <div className="category-popover-section-title">Categories</div>
+              <ul className="category-popover-list">
+                {matchingCategories.length === 0 ? (
+                  <li className="category-popover-empty">No matching categories</li>
+                ) : (
+                  matchingCategories.map((cat) => (
+                    <li key={cat}>
+                      <button
+                        type="button"
+                        className="category-popover-option"
+                        onClick={() => applyCategory(categoryPopoverId, cat)}
+                      >
+                        <span className="category-popover-dot" />
+                        {cat}
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+          </div>,
+            document.body,
+          );
+        })()}
     </div>
   );
 }
