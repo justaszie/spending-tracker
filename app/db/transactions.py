@@ -18,6 +18,10 @@ class TransactionInsertError(Exception):
     pass
 
 
+class TransactionNotFoundError(Exception):
+    pass
+
+
 class Transaction(SQLModel, table=True):
     __tablename__ = "transactions"
     __table_args__ = (
@@ -154,3 +158,27 @@ def get_distinct_spending_categories(
         )
         result = session.exec(statement).all()
         return {category for category in result if category is not None}
+
+
+def update_transaction(
+    db: Engine,
+    user_id: uuid.UUID,
+    transaction_id: uuid.UUID,
+    update_data: dict[str, Any],
+) -> Transaction | None:
+    """Returns updated Transaction or None if transaction not found"""
+    with Session(db) as session:
+        statement = select(Transaction).where(
+            Transaction.user_id == user_id, Transaction.id == transaction_id
+        )
+        existing = session.exec(statement).one()
+
+        if not existing:
+            return None
+
+        existing.sqlmodel_update(update_data)
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+
+        return existing

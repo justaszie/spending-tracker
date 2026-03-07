@@ -289,3 +289,138 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Category cell and trigger */
+.category-cell {
+  position: relative;
+  vertical-align: middle;
+}
+
+.category-cell-trigger {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--background-white);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  text-align: left;
+  min-height: 32px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category-cell-trigger:hover:not(:disabled) {
+  background-color: #f9fafb;
+  border-color: #cbd5e1;
+}
+
+.category-cell-trigger:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Category popover */
+.category-popover {
+  z-index: 1000;
+  background: var(--background-white);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.category-popover-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.category-popover-search-icon {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.category-popover-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.category-popover-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.category-popover-section {
+  padding: 6px 0;
+}
+
+.category-popover-section-title {
+  padding: 6px 12px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.category-popover-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.category-popover-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.category-popover-option:hover {
+  background-color: #f3f4f6;
+}
+
+.category-popover-create {
+  color: var(--primary, #0f172a);
+  font-weight: 500;
+}
+
+.category-popover-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.category-popover-empty {
+  padding: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}

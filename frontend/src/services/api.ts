@@ -2,6 +2,7 @@ import { supabase } from "../supabaseClient";
 import type {
   GetTransactionsParams,
   TransactionsResponse,
+  Transaction,
   ImportJobResult,
   ImportJobTransactionsResponse,
   StatementSource,
@@ -68,6 +69,31 @@ export const transactionsAPI = {
       return { transactions: data, total: data.length, page, size };
     }
     return data as TransactionsResponse;
+  },
+
+  getSpendingCategories: async (): Promise<string[]> => {
+    const response = await fetch(
+      `${API_BASE_URL}/transactions/spending-categories`,
+      { method: "GET", headers: await getAuthHeaders() },
+    );
+    if (!response.ok) throw new Error("Failed to fetch spending categories");
+    return response.json() as Promise<string[]>;
+  },
+
+  patchTransaction: async (
+    transactionId: string,
+    payload: { spending_category?: string },
+  ): Promise<Transaction> => {
+    const response = await fetch(
+      `${API_BASE_URL}/transactions/${transactionId}`,
+      {
+        method: "PATCH",
+        headers: await getAuthHeaders(),
+        body: JSON.stringify(payload),
+      },
+    );
+    if (!response.ok) throw new Error("Failed to update transaction");
+    return response.json() as Promise<Transaction>;
   },
 };
 
