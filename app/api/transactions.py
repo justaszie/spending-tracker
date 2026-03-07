@@ -13,6 +13,7 @@ from app.db.transactions import (
     get_distinct_spending_categories,
     get_transaction,
     get_transactions,
+    update_transaction,
 )
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
@@ -24,6 +25,13 @@ class TransactionsRead(BaseModel):
     page: int
     size: int
     transactions: list[Transaction]
+
+
+class TransactionUpdate(BaseModel):
+    # Design decision to set max_length limits to avoid
+    # very long and granular spending-category and meal_type labels
+    spending_category: str | None = Field(default=None, max_length=50)
+    meal_type: str | None = Field(default=None, max_length=20)
 
 
 class TransactionsQueryParams(BaseModel):
@@ -94,3 +102,21 @@ def get_spending_categories(
 ) -> list[str]:
     categories_set = get_distinct_spending_categories(db=db)
     return sorted(categories_set)
+
+
+@router.patch("/{transaction_id:uuid}", response_model=Transaction)
+def patch_transaction(
+    user_id: AuthDependency,
+    db: DBDependency,
+    transaction_id: UUID,
+    update_payload: TransactionUpdate,
+) -> Transaction:
+    update_data = update_payload.model_dump(exclude_unset=True)
+    updated = update_transaction(
+        db=db, user_id=user_id, transaction_id=transaction_id, update_data=update_data
+    )
+
+    if not updated:
+        raise HTTPException(404, detail="Transaction not found")
+
+    return updated
