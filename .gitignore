@@ -23,6 +23,7 @@ run
 scripts
 docs
 .coverage
+project_context.md
 
 # Frontend (React/Vite)
 frontend/node_modules/
@@ -47,3 +48,11 @@ frontend/*.sw?
 frontend/.vite/
 frontend/dev_notes.md
 design/
+
+# Frontend-v2
+frontend-v2/node_modules
+frontend-v2/dist
+frontend-v2/.DS_Store
+frontend-v2/server/public
+frontend-v2/vite.config.ts.*
+frontend-v2/*.tar.gz
