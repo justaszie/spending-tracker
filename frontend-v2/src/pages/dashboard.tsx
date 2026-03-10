@@ -22,10 +22,9 @@ import { ImportModal } from "@/components/transactions/ImportModal";
 import {
   GetTransactionsParams,
   Transaction,
-  TransactionSide,
   TransactionUpdatePayload,
 } from "@/types/transactions";
-import { useTransactions } from "@/hooks/use-transactions";
+import { useTransactions } from "@/hooks/transactions/use-transactions";
 import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogries";
 import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
 import { useAuth } from "@/contexts/AuthContext";
