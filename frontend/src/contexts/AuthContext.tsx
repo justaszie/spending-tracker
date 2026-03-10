@@ -10,6 +10,7 @@ import {
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../supabaseClient'
 
+
 export interface AuthResult {
   success: boolean
   error?: string
