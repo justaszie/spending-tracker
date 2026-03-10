@@ -189,5 +189,9 @@ def get_total_count(
     db: Engine,
 ) -> int:
     with Session(db) as session:
-        query = select(func.count(Transaction.id)).where(Transaction.user_id == user_id)
-        return session.exec(query).one()
+        query = (
+            select(func.count())
+            .select_from(Transaction)
+            .where(Transaction.user_id == user_id)
+        )
+        return session.scalar(query) or 0
