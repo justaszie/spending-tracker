@@ -37,10 +37,18 @@ logger = logging.getLogger(__name__)
 class StatementImportResponse(BaseModel):
     import_job_id: UUID
     import_job_status: ImportJobStatus
+    failure_reason: str | None = None
+    imported_txn_count: int | None = None
+    duplicate_txn_count: int | None = None
 
 
 ### Routes
-@router.post("", status_code=202, response_model=StatementImportResponse)
+@router.post(
+    "",
+    status_code=202,
+    response_model=StatementImportResponse,
+    response_model_exclude_unset=True,
+)
 def create_import_job(
     user_id: AuthDependency,
     statement_file: Annotated[UploadFile, File()],
@@ -99,7 +107,12 @@ def create_import_job(
     return StatementImportResponse(import_job_id=job.id, import_job_status=job.status)
 
 
-@router.get("/{import_job_id}", response_model=StatementImportResponse)
+@router.get(
+    "/{import_job_id}",
+    response_model=StatementImportResponse,
+    response_model_exclude_unset=True,
+    response_model_exclude_none=True,
+)
 def get_import_job(
     _: AuthDependency, import_job_id: UUID, db: DBDependency
 ) -> StatementImportResponse:
@@ -107,4 +120,10 @@ def get_import_job(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    return StatementImportResponse(import_job_id=job.id, import_job_status=job.status)
+    result = {
+        "import_job_id": job.id,
+        "import_job_status": job.status,
+        **job.model_dump(),
+    }
+    result.update()
+    return StatementImportResponse.model_validate(result)
