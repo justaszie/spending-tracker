@@ -1,5 +1,12 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Enable React Query DevTools for debugging
+declare global {
+  interface Window {
+    __TANSTACK_QUERY_CLIENT__: import("@tanstack/query-core").QueryClient;
+  }
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -7,16 +14,37 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+function buildUrlWithParams(
+  url: string,
+  params?: Record<string, string | number | boolean | undefined>,
+): string {
+  if (!params || typeof params !== "object" || Array.isArray(params)) {
+    return url;
+  }
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null) {
+      search.append(key, String(value));
+    }
+  }
+  const queryString = search.toString();
+  if (!queryString) return url;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}${queryString}`;
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  params?: Record<string, string | number | boolean | undefined>,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const finalUrl = buildUrlWithParams(url, params);
+  const res = await fetch(finalUrl, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    // credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -29,9 +57,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-    });
+    const res = await fetch(`http://localhost:8002/${queryKey.join("/")}`);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
@@ -48,7 +74,7 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      retry: 3,
     },
     mutations: {
       retry: false,

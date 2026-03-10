@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import NotFound from "@/pages/not-found";
 
+// This code is for all users
+window.__TANSTACK_QUERY_CLIENT__ = queryClient;
+
 function Router() {
   return (
     <Switch>
