@@ -8,8 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -17,23 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Search,
-  Filter,
-  Download,
-  Plus,
-  MoreHorizontal,
-  Tag,
-  CreditCard,
-  Wallet,
-  CheckCircle2,
-  Pencil,
-  Play,
-  X,
-  Upload,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Upload, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CategorySelector } from "@/components/transactions/CategorySelector";
 import { ImportModal } from "@/components/transactions/ImportModal";
@@ -43,7 +25,10 @@ import {
   TransactionSide,
 } from "@/types/transactions";
 import { useTransactions } from "@/hooks/use-transactions";
+import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogries";
+import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
 import { useAuth } from "@/contexts/AuthContext";
+import { TransactionSearch } from "@/components/transactions/TransactionSearch";
 
 // Helper for formatting currency
 const formatCurrency = (amount: number, currency: string = "EUR") => {
@@ -89,6 +74,11 @@ export default function Dashboard() {
   };
 
   const { data, isLoading, error, isFetching } = useTransactions(params);
+  const {
+    data: spendingCategoriesData,
+  } = useSpendingCategories();
+
+  const updateTransactionMutation = useUpdateTransaction();
 
   if (isLoading) {
     return <p>Loading...</p>;
@@ -101,6 +91,7 @@ export default function Dashboard() {
   const transactions = data?.transactions ?? [];
   // TODO - Remove the test value once the API returns proper total value
   const totalCount = data?.total ?? 5000;
+  const spendingCategories = spendingCategoriesData ?? [];
 
   const handleSort = (
     column: "date" | "counterparty" | "amount" | "category",
@@ -113,14 +104,11 @@ export default function Dashboard() {
     }
   };
 
-  // TODO: use mutation hooks to call PATCH endpoint and refetch transactions
   const handleUpdateTransaction = (
     id: string,
-    updates: Partial<Transaction>,
+    updates: Partial<Pick<Transaction, "spending_category" | "note">>,
   ) => {
-    setTransactions((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updates } : t)),
-    );
+    updateTransactionMutation.mutate({ id, updates });
   };
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -200,16 +188,7 @@ export default function Dashboard() {
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search transactions..."
-                className="pl-9 bg-card"
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-              />
-            </div>
+            <TransactionSearch value={searchTerm} onSearchChange={handleSearchChange} />
             <div className="flex items-center border rounded-md bg-card p-1">
               <Button
                 variant={filterType === "all" ? "secondary" : "ghost"}
@@ -366,6 +345,7 @@ export default function Dashboard() {
                 <TransactionRow
                   key={t.id}
                   transaction={t}
+                  spendingCategories={spendingCategories}
                   onUpdate={(updates) => handleUpdateTransaction(t.id, updates)}
                 />
               ))}
@@ -388,10 +368,11 @@ export default function Dashboard() {
 
 interface TransactionRowProps {
   transaction: Transaction;
+  spendingCategories: string[],
   onUpdate: (updates: Partial<Transaction>) => void;
 }
 
-function TransactionRow({ transaction, onUpdate }: TransactionRowProps) {
+function TransactionRow({ transaction, spendingCategories, onUpdate }: TransactionRowProps) {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteTemp, setNoteTemp] = useState(transaction.note || "");
 
@@ -428,6 +409,7 @@ function TransactionRow({ transaction, onUpdate }: TransactionRowProps) {
         <div className="w-full max-w-[280px]">
           <CategorySelector
             category={transaction.spending_category}
+            existing={spendingCategories}
             onSelect={(cat) => onUpdate({ spending_category: cat })}
           />
         </div>

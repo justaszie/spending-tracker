@@ -32,6 +32,7 @@ class TransactionUpdate(BaseModel):
     # very long and granular spending-category and meal_type labels
     spending_category: str | None = Field(default=None, max_length=50)
     meal_type: str | None = Field(default=None, max_length=20)
+    note: str | None = Field(default=None)
 
 
 class TransactionsQueryParams(BaseModel):
