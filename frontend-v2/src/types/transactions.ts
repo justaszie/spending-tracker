@@ -18,6 +18,10 @@ export type Transaction = {
   import_job_id: string | null;
 };
 
+export type TransactionUpdatePayload = Partial<
+  Pick<Transaction, "spending_category" | "note">
+>;
+
 export type GetTransactionsParams = {
   page?: number;
   size?: number;

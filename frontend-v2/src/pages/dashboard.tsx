@@ -23,6 +23,7 @@ import {
   GetTransactionsParams,
   Transaction,
   TransactionSide,
+  TransactionUpdatePayload,
 } from "@/types/transactions";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogries";
@@ -106,7 +107,7 @@ export default function Dashboard() {
 
   const handleUpdateTransaction = (
     id: string,
-    updates: Partial<Pick<Transaction, "spending_category" | "note">>,
+    updates: TransactionUpdatePayload,
   ) => {
     updateTransactionMutation.mutate({ id, updates });
   };
@@ -369,7 +370,7 @@ export default function Dashboard() {
 interface TransactionRowProps {
   transaction: Transaction;
   spendingCategories: string[],
-  onUpdate: (updates: Partial<Transaction>) => void;
+  onUpdate: (updates: TransactionUpdatePayload) => void;
 }
 
 function TransactionRow({ transaction, spendingCategories, onUpdate }: TransactionRowProps) {

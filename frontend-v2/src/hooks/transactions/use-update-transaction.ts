@@ -1,10 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { transactionsAPI } from "@/lib/api";
-import { Transaction } from "@/types/transactions";
-
-type TransactionUpdatePayload = Partial<
-  Pick<Transaction, "spending_category" | "note">
->;
+import {
+  Transaction,
+  TransactionUpdatePayload,
+} from "@/types/transactions";
 
 interface UpdateTransactionVariables {
   id: string;
