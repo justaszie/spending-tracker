@@ -1,4 +1,4 @@
-// import { supabase } from "../supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import type {
   GetTransactionsParams,
   TransactionsResponse,
@@ -12,14 +12,13 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8002/api/v1";
 
 async function getAuthHeaders(): Promise<HeadersInit> {
-  // const {
-  //   data: { session },
-  // } = await supabase.auth.getSession();
-  // const token = session?.access_token;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
   return {
     "Content-Type": "application/json",
-    // TODO: Add the auth headers once Auth is implemented
-    // ...(token && { Authorization: `Bearer ${token}` }),
+    ...(token && { Authorization: `Bearer ${token}` }),
   };
 }
 

@@ -44,6 +44,7 @@ import {
   TransactionSide,
 } from "@/types/transactions";
 import { useTransactions } from "@/hooks/use-transactions";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Helper for formatting currency
 const formatCurrency = (amount: number, currency: string = "EUR") => {
@@ -64,6 +65,8 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<SortableField | null>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const { logout, user } = useAuth();
 
   const itemsPerPage = 50;
 
@@ -174,7 +177,19 @@ export default function Dashboard() {
               <Upload className="mr-2 h-4 w-4" />
               Import
             </Button>
-            <div className="h-8 w-8 rounded-full bg-secondary"></div>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+                <p>{user && user.email?.slice(0, 1).toUpperCase()}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-xs text-muted-foreground"
+                onClick={() => logout()}
+              >
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
