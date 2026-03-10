@@ -11,6 +11,7 @@ from app.core.project_types import Side, TransactionsSortField
 from app.db.transactions import (
     Transaction,
     get_distinct_spending_categories,
+    get_total_count,
     get_transaction,
     get_transactions,
     update_transaction,
@@ -21,10 +22,11 @@ router = APIRouter(prefix="/transactions", tags=["Transactions"])
 logger = logging.getLogger(__name__)
 
 
-class TransactionsRead(BaseModel):
+class TransactionsReadResponse(BaseModel):
     page: int
     size: int
     transactions: list[Transaction]
+    total: int
 
 
 class TransactionUpdate(BaseModel):
@@ -48,12 +50,12 @@ class TransactionsQueryParams(BaseModel):
     untagged_only: bool = False
 
 
-@router.get("", response_model=TransactionsRead)
+@router.get("", response_model=TransactionsReadResponse)
 def get_all_transactions(
     query: Annotated[TransactionsQueryParams, Query()],
     user_id: AuthDependency,
     db: DBDependency,
-) -> TransactionsRead:
+) -> TransactionsReadResponse:
     offset = (query.page - 1) * query.size
     limit = query.size
 
@@ -76,10 +78,12 @@ def get_all_transactions(
         filters=filters if filters else None,
         no_category_only=query.untagged_only,
     )
-    return TransactionsRead(
+    total_count = get_total_count(user_id=user_id, db=db)
+    return TransactionsReadResponse(
         transactions=transactions,
         page=query.page,
         size=query.size,
+        total=total_count,
     )
 
 

@@ -182,3 +182,13 @@ def update_transaction(
         session.refresh(existing)
 
         return existing
+
+
+def get_total_count(
+    user_id: uuid.UUID,
+    db: Engine,
+) -> int:
+    with Session(db) as session:
+        query = select(Transaction.id).where(Transaction.user_id == user_id)
+        result = session.exec(query).all()
+        return len(result)

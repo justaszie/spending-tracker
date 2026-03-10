@@ -90,7 +90,7 @@ export default function Dashboard() {
 
   const transactions = data?.transactions ?? [];
   // TODO - Remove the test value once the API returns proper total value
-  const totalCount = data?.total ?? 5000;
+  const totalCount = data?.total || 0;
   const spendingCategories = spendingCategoriesData ?? [];
 
   const handleSort = (
