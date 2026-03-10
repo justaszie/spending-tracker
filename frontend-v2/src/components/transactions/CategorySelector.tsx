@@ -16,19 +16,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
-import { categories } from "@/lib/mockData"
 
 interface CategorySelectorProps {
-  category: string | null
+  category: string | null,
+  existing: string[],
   onSelect: (category: string) => void
 }
 
-export function CategorySelector({ category, onSelect }: CategorySelectorProps) {
+export function CategorySelector({ category, existing, onSelect }: CategorySelectorProps) {
   const [open, setOpen] = React.useState(false)
   const [searchValue, setSearchValue] = React.useState("")
-  
+
   // Combine predefined categories with current one if it's custom
-  const [allCategories, setAllCategories] = React.useState<string[]>(categories)
+  const [allCategories, setAllCategories] = React.useState<string[]>(existing)
 
   const handleSelect = (value: string) => {
     onSelect(value)
@@ -66,8 +66,8 @@ export function CategorySelector({ category, onSelect }: CategorySelectorProps) 
           )}
         >
           {category ? (
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={cn("font-medium border px-1.5 py-0.5 rounded-sm whitespace-nowrap", getBadgeColor(category))}
             >
               {category}
@@ -80,9 +80,9 @@ export function CategorySelector({ category, onSelect }: CategorySelectorProps) 
       </PopoverTrigger>
       <PopoverContent className="w-[280px] p-0 shadow-lg" align="start">
         <Command>
-          <CommandInput 
-            placeholder="Search or type new category..." 
-            className="h-9" 
+          <CommandInput
+            placeholder="Search or type new category..."
+            className="h-9"
             value={searchValue}
             onValueChange={setSearchValue}
           />

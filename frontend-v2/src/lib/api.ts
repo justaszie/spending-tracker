@@ -49,7 +49,9 @@ export const transactionsAPI = {
       side.forEach((value) => queryParams.append("side", value));
     }
     if (spendingCategory?.length) {
-      spendingCategory.forEach((value) => queryParams.append("spending_category", value));
+      spendingCategory.forEach((value) =>
+        queryParams.append("spending_category", value),
+      );
     }
     if (untaggedOnly) {
       queryParams.set("untagged_only", "true");
@@ -82,7 +84,7 @@ export const transactionsAPI = {
 
   patchTransaction: async (
     transactionId: string,
-    payload: { spending_category?: string },
+    payload: { spending_category?: string | null; note?: string | null },
   ): Promise<Transaction> => {
     const response = await fetch(
       `${API_BASE_URL}/transactions/${transactionId}`,
