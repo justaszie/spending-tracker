@@ -11,7 +11,7 @@ interface TransactionSearchProps {
 export function TransactionSearch({
   value,
   onSearchChange,
-  debounceMs = 300,
+  debounceMs = 200,
 }: TransactionSearchProps) {
   const [localValue, setLocalValue] = useState(value);
 
