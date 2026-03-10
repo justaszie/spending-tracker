@@ -1,42 +1,34 @@
-import { useState, useEffect } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import { useState, useEffect, useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Upload, 
-  CheckCircle2, 
-  AlertCircle, 
-  Loader2, 
-  Building2, 
+import {
+  Upload,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Building2,
   FileText,
   ArrowRight,
   ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type JobStatus = "pending" | "running" | "completed" | "failed";
-
-interface ImportJob {
-  id: string;
-  status: JobStatus;
-  imported: number;
-  duplicate: number;
-  error?: string;
-}
+import { statementImportAPI } from "@/lib/api";
+import type { ImportJobResult, StatementSource, ImportJobStatus } from "@/types/transactions";
 
 interface ImportModalProps {
   open: boolean;
@@ -44,60 +36,132 @@ interface ImportModalProps {
 }
 
 const SUPPORTED_BANKS = [
-  { id: "sparkasse", name: "Sparkasse", icon: "S" },
   { id: "revolut", name: "Revolut", icon: "R" },
-  { id: "amex", name: "American Express", icon: "A" },
-  { id: "paypal", name: "PayPal", icon: "P" },
+  { id: "swedbank", name: "Swedbank LT", icon: "S" },
 ];
 
 export function ImportModal({ open, onOpenChange }: ImportModalProps) {
-  const [step, setStep] = useState<"select" | "uploading" | "processing" | "result">("select");
-  const [selectedBank, setSelectedBank] = useState<string>("");
+  const [step, setStep] = useState<"select" | "uploading" | "processing" | "result" | "error">("select");
+  const [selectedBank, setSelectedBank] = useState<StatementSource | "">("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [job, setJob] = useState<ImportJob | null>(null);
+  const [job, setJob] = useState<ImportJobResult | null>(null);
+  const [jobStatus, setJobStatus] = useState<ImportJobStatus | null>(null);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Simulate file upload
-  const handleUpload = () => {
-    if (!selectedBank) return;
-    setStep("uploading");
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      setUploadProgress(progress);
-      if (progress >= 100) {
-        clearInterval(interval);
-        startProcessing();
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        window.clearInterval(pollingIntervalRef.current);
       }
-    }, 150);
+    };
+  }, []);
+
+  const startPollingJobStatus = (jobId: string) => {
+    if (pollingIntervalRef.current) {
+      window.clearInterval(pollingIntervalRef.current);
+    }
+
+    pollingIntervalRef.current = window.setInterval(async () => {
+      try {
+        const current = await statementImportAPI.getImportJobStatus(jobId);
+        setJob(current);
+        setJobStatus(current.import_job_status);
+
+        if (current.import_job_status === "completed") {
+          if (pollingIntervalRef.current) {
+            window.clearInterval(pollingIntervalRef.current);
+          }
+          setStep("result");
+        } else if (current.import_job_status === "failed") {
+          if (pollingIntervalRef.current) {
+            window.clearInterval(pollingIntervalRef.current);
+          }
+          setErrorMessage(current.failure_reason || "Statement import failed");
+          setStep("error");
+        }
+      } catch (error) {
+        if (pollingIntervalRef.current) {
+          window.clearInterval(pollingIntervalRef.current);
+        }
+        setErrorMessage("Failed to fetch import status");
+        setStep("error");
+      }
+    }, 1500);
   };
 
-  // Simulate background processing
-  const startProcessing = () => {
-    setStep("processing");
-    setJob({ id: crypto.randomUUID(), status: "pending", imported: 0, duplicate: 0 });
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+  };
 
-    // Status transition simulation
-    setTimeout(() => {
-      setJob(prev => prev ? { ...prev, status: "running" } : null);
-    }, 1000);
+  const handleUpload = async () => {
+    if (!selectedBank || !selectedFile) return;
 
-    setTimeout(() => {
-      setJob(prev => prev ? { 
-        ...prev, 
-        status: "completed", 
-        imported: Math.floor(Math.random() * 45) + 5, 
-        duplicate: Math.floor(Math.random() * 10) 
-      } : null);
-      setStep("result");
-    }, 4000);
+    setErrorMessage(null);
+    setUploadProgress(0);
+    setStep("uploading");
+
+    // Fake upload progress for nicer UX while the real request runs
+    let progress = 0;
+    const uploadInterval = window.setInterval(() => {
+      progress = Math.min(progress + 10, 95);
+      setUploadProgress(progress);
+    }, 150);
+
+    try {
+      const result = await statementImportAPI.uploadStatement(
+        selectedFile,
+        selectedBank,
+      );
+
+      window.clearInterval(uploadInterval);
+      setUploadProgress(100);
+
+      setJob(result);
+      setJobStatus(result.import_job_status);
+      setStartedAt(Date.now());
+      setStep("processing");
+
+      startPollingJobStatus(result.import_job_id);
+    } catch (error) {
+      window.clearInterval(uploadInterval);
+      setErrorMessage("Upload failed. Please try again.");
+      setStep("error");
+    }
   };
 
   const reset = () => {
     setStep("select");
     setSelectedBank("");
+    setSelectedFile(null);
     setUploadProgress(0);
     setJob(null);
+    setJobStatus(null);
+    setErrorMessage(null);
+    setStartedAt(null);
+    if (pollingIntervalRef.current) {
+      window.clearInterval(pollingIntervalRef.current);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
+
+  const effectiveStatus: ImportJobStatus | null = jobStatus ?? job?.import_job_status ?? null;
+
+  const processingTitle =
+    effectiveStatus === "pending"
+      ? "Scheduling import..."
+      : effectiveStatus === "running"
+        ? "Parsing transactions..."
+        : effectiveStatus === "failed"
+          ? "Import failed"
+          : "Processing statement...";
 
   return (
     <Dialog open={open} onOpenChange={(val) => {
@@ -108,7 +172,7 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
         <DialogHeader>
           <DialogTitle>Import Bank Statement</DialogTitle>
           <DialogDescription>
-            Upload your statement PDF or CSV to import transactions.
+            Upload your statement to import transactions.
           </DialogDescription>
         </DialogHeader>
 
@@ -121,7 +185,9 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
                   {SUPPORTED_BANKS.map((bank) => (
                     <button
                       key={bank.id}
-                      onClick={() => setSelectedBank(bank.id)}
+                      onClick={() =>
+                        setSelectedBank(bank.id as StatementSource)
+                      }
                       className={cn(
                         "flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:bg-muted/50",
                         selectedBank === bank.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-card"
@@ -138,21 +204,39 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
 
               <div className="space-y-3">
                 <label className="text-sm font-medium">2. Choose file</label>
-                <div 
+                <div
                   className={cn(
-                    "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/30 transition-colors",
-                    selectedBank ? "opacity-100" : "opacity-40 pointer-events-none"
+                    "border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors",
+                    selectedBank
+                      ? "cursor-pointer hover:bg-muted/30"
+                      : "opacity-40 pointer-events-none",
                   )}
-                  onClick={handleUpload}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                     <Upload className="h-5 w-5 text-primary" />
                   </div>
                   <div className="text-sm font-medium text-center">
-                    Click to browse or drag and drop
+                    {selectedFile ? selectedFile.name : "Click to browse or drag and drop"}
                   </div>
-                  <div className="text-xs text-muted-foreground">PDF, CSV or TXT (Max 10MB)</div>
+                  <div className="text-xs text-muted-foreground">
+                    PDF, CSV or TXT (Max 10MB)
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.csv,.txt,.xls,.xlsx"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
                 </div>
+                <Button
+                  className="w-full"
+                  disabled={!selectedBank || !selectedFile}
+                  onClick={handleUpload}
+                >
+                  Start import
+                </Button>
               </div>
             </div>
           )}
@@ -184,7 +268,7 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
               </div>
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-foreground">
-                  {job?.status === "pending" ? "Scheduling import..." : "Parsing transactions..."}
+                  {processingTitle}
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   Our background worker is processing your statement
@@ -195,7 +279,7 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                 </span>
-                Job ID: {job?.id.slice(0, 8)}...
+                Job ID: {job?.import_job_id.slice(0, 8)}...
               </div>
             </div>
           )}
@@ -209,14 +293,18 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
                 <h3 className="text-xl font-bold text-foreground">Import Successful</h3>
                 <p className="text-sm text-muted-foreground">Your statement has been processed.</p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 py-4 border-y">
                 <div className="space-y-1">
-                  <div className="text-2xl font-bold font-mono text-emerald-600">{job?.imported}</div>
+                  <div className="text-2xl font-bold font-mono text-emerald-600">
+                    {job?.imported_txn_count ?? 0}
+                  </div>
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Imported</div>
                 </div>
                 <div className="space-y-1 border-l">
-                  <div className="text-2xl font-bold font-mono text-amber-600">{job?.duplicate}</div>
+                  <div className="text-2xl font-bold font-mono text-amber-600">
+                    {job?.duplicate_txn_count ?? 0}
+                  </div>
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Duplicates</div>
                 </div>
               </div>
@@ -225,8 +313,40 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
                 <Button className="w-full" onClick={() => onOpenChange(false)}>
                   Go to Transactions
                 </Button>
-                <Button variant="ghost" className="w-full text-xs" onClick={reset}>
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs"
+                  onClick={reset}
+                >
                   Import another statement
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "error" && (
+            <div className="space-y-6 text-center animate-in fade-in duration-300">
+              <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-200 dark:border-red-800">
+                <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-foreground">
+                  Import failed
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {errorMessage || "Your statement could not be processed."}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button className="w-full" onClick={reset}>
+                  Try again
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Close
                 </Button>
               </div>
             </div>

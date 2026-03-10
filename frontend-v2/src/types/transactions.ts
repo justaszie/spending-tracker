@@ -1,5 +1,5 @@
 export type TransactionSide = "credit" | "debit";
-export type TransactionSource = 'swedbank' | 'revolut' | string;
+export type TransactionSource = "swedbank" | "revolut";
 
 export type Transaction = {
   id: string;
@@ -31,10 +31,10 @@ export type GetTransactionsParams = {
     | "counterparty"
     | "eur_amount"
     | "spending_category";
-  sortOrder?: 'asc' | 'desc',
+  sortOrder?: "asc" | "desc";
   untaggedOnly?: boolean;
   side?: TransactionSide[];
-  spendingCategory?: string[],
+  spendingCategory?: string[];
 };
 
 export type TransactionsResponse = {
@@ -42,4 +42,16 @@ export type TransactionsResponse = {
   total?: number;
   page?: number;
   size?: number;
+};
+
+export type ImportJobStatus = "pending" | "running" | "completed" | "failed";
+
+export type StatementSource = "swedbank" | "revolut";
+
+export type ImportJobResult = {
+  import_job_id: string;
+  import_job_status: ImportJobStatus;
+  failure_reason: string | null;
+  imported_txn_count: number | null;
+  duplicate_txn_count: number | null;
 };

@@ -3,13 +3,11 @@ import type {
   GetTransactionsParams,
   TransactionsResponse,
   Transaction,
-  // ImportJobResult,
-  // ImportJobTransactionsResponse,
-  // StatementSource,
+  ImportJobResult,
+  StatementSource,
 } from "@/types/transactions";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 async function getAuthHeaders(): Promise<HeadersInit> {
   const {
@@ -96,6 +94,43 @@ export const transactionsAPI = {
     );
     if (!response.ok) throw new Error("Failed to update transaction");
     return response.json() as Promise<Transaction>;
+  },
+};
+
+export const statementImportAPI = {
+  uploadStatement: async (
+    file: File,
+    statementSource: StatementSource,
+  ): Promise<ImportJobResult> => {
+    const formData = new FormData();
+    formData.append("statement_file", file);
+    formData.append("statement_source", statementSource);
+    const headers = await getAuthHeaders();
+    const authHeader =
+      typeof headers === "object" && headers && "Authorization" in headers
+        ? (headers as Record<string, string>).Authorization
+        : undefined;
+    const response = await fetch(`${API_BASE_URL}/statement-imports`, {
+      method: "POST",
+      headers: authHeader ? { Authorization: authHeader } : {},
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Upload failed");
+    return response.json() as Promise<ImportJobResult>;
+  },
+
+  getImportJobStatus: async (
+    importJobId: string,
+  ): Promise<ImportJobResult> => {
+    const response = await fetch(
+      `${API_BASE_URL}/statement-imports/${importJobId}`,
+      {
+        method: "GET",
+        headers: await getAuthHeaders(),
+      },
+    );
+    if (!response.ok) throw new Error("Failed to fetch job status");
+    return response.json() as Promise<ImportJobResult>;
   },
 };
 
