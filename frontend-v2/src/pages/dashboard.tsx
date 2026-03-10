@@ -182,8 +182,8 @@ export default function Dashboard() {
       </header>
 
       <main className="container py-8 px-6">
-        {/* Stats Row - Placeholder for future stats */}
-        <div className="mb-8"></div>
+        {/* Stats Row - Placeholder for future analytics cards */}
+        <div></div>
 
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
