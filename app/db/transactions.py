@@ -85,47 +85,14 @@ def get_transactions(
     no_category_only: bool | None = False,
 ) -> list[Transaction]:
     with Session(db) as session:
-        statement = select(Transaction).where(Transaction.user_id == user_id)
-
-        if search and len(search) > 1:
-            search_query = search.strip()
-            # Case-insensitive regex match on id (as text), counterparty, spending_category, note
-            search_filter = or_(
-                cast(Transaction.id, String).ilike(f"%{search_query}%"),  # type: ignore[attr-defined]
-                Transaction.counterparty.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
-                Transaction.spending_category.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
-                Transaction.note.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
-            )
-            statement = statement.where(search_filter)
-
-        if filters:
-            for field_name, values in filters.items():
-                # Skip empty value collections
-                if not values:
-                    continue
-
-                # Skip fields that are not in the Transaction model
-                if not hasattr(Transaction, field_name):
-                    continue
-
-                column = getattr(Transaction, field_name)
-                normalized_values = [str(value).strip().lower() for value in values]
-                statement = statement.where(
-                    func.lower(cast(column, String)).in_(normalized_values)
-                )
-
-        if no_category_only:
-            statement = statement.where(Transaction.spending_category.is_(None))  # type: ignore[union-attr]
-
-        sort_by = sort_by if sort_by else "transaction_datetime"
-        sort_column = getattr(Transaction, sort_by)
-
-        sort_order = sort_order if sort_order else "desc"
-        if sort_order == "asc":
-            statement = statement.order_by(sort_column.asc())  # type: ignore[attr-defined]
-        else:
-            statement = statement.order_by(sort_column.desc())  # type: ignore[attr-defined]
-
+        statement = _build_transactions_query(
+            user_id=user_id,
+            search=search,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            filters=filters,
+            no_category_only=no_category_only,
+        )
         statement = statement.offset(offset)
 
         if limit is not None:
@@ -184,14 +151,74 @@ def update_transaction(
         return existing
 
 
+def _build_transactions_query(
+    user_id: uuid.UUID,
+    search: str | None = "",
+    sort_by: TransactionsSortField | None = None,
+    sort_order: Literal["asc", "desc"] | None = None,
+    filters: dict[str, list[Any]] | None = None,
+    no_category_only: bool | None = False,
+):
+    statement = select(Transaction).where(Transaction.user_id == user_id)
+
+    if search and len(search) > 1:
+        search_query = search.strip()
+        # Case-insensitive match on id (as text), counterparty, spending_category, note
+        search_filter = or_(
+            cast(Transaction.id, String).ilike(f"%{search_query}%"),  # type: ignore[attr-defined]
+            Transaction.counterparty.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
+            Transaction.spending_category.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
+            Transaction.note.ilike(f"%{search_query}%"),  # type: ignore[attr-defined, union-attr]
+        )
+        statement = statement.where(search_filter)
+
+    if filters:
+        for field_name, values in filters.items():
+            # Skip empty value collections
+            if not values:
+                continue
+
+            # Skip fields that are not in the Transaction model
+            if not hasattr(Transaction, field_name):
+                continue
+
+            column = getattr(Transaction, field_name)
+            normalized_values = [str(value).strip().lower() for value in values]
+            statement = statement.where(
+                func.lower(cast(column, String)).in_(normalized_values)
+            )
+
+    if no_category_only:
+        statement = statement.where(Transaction.spending_category.is_(None))  # type: ignore[union-attr]
+
+    sort_by = sort_by if sort_by else "transaction_datetime"
+    sort_column = getattr(Transaction, sort_by)
+
+    sort_order = sort_order if sort_order else "desc"
+    if sort_order == "asc":
+        statement = statement.order_by(sort_column.asc())  # type: ignore[attr-defined]
+    else:
+        statement = statement.order_by(sort_column.desc())  # type: ignore[attr-defined]
+
+    return statement
+
+
 def get_total_count(
     user_id: uuid.UUID,
     db: Engine,
+    search: str | None = "",
+    filters: dict[str, list[Any]] | None = None,
+    no_category_only: bool | None = False,
 ) -> int:
     with Session(db) as session:
-        query = (
-            select(func.count())
-            .select_from(Transaction)
-            .where(Transaction.user_id == user_id)
+        base_statement = _build_transactions_query(
+            user_id=user_id,
+            search=search,
+            sort_by=None,
+            sort_order=None,
+            filters=filters,
+            no_category_only=no_category_only,
         )
+        subquery = base_statement.subquery()
+        query = select(func.count()).select_from(subquery)
         return session.scalar(query) or 0

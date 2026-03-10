@@ -78,7 +78,13 @@ def get_all_transactions(
         filters=filters if filters else None,
         no_category_only=query.untagged_only,
     )
-    total_count = get_total_count(user_id=user_id, db=db)
+    total_count = get_total_count(
+        user_id=user_id,
+        db=db,
+        search=query.search,
+        filters=filters if filters else None,
+        no_category_only=query.untagged_only,
+    )
     return TransactionsReadResponse(
         transactions=transactions,
         page=query.page,
