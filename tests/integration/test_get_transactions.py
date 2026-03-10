@@ -231,6 +231,34 @@ class TestGetTransactions:
         assert body["size"] == size
         assert body["transactions"] == []
 
+    def test_total_matches_number_of_transactions_without_filters(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        total_txns = 25
+        page = 1
+        size = 10
+
+        self._insert_random_transactions(
+            test_db=test_db,
+            db_transaction=db_transaction,
+            count=total_txns,
+        )
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH,
+            params={"page": page, "size": size},
+        )
+        assert response.status_code == 200
+
+        body = response.json()
+        assert body["page"] == page
+        assert body["size"] == size
+        assert len(body["transactions"]) == size
+        assert body["total"] == total_txns
+
     @pytest.mark.parametrize(
         "field", ["id", "counterparty", "spending_category", "note"]
     )
@@ -277,6 +305,9 @@ class TestGetTransactions:
         assert response.status_code == 200
         body = response.json()
         assert [t["dedup_key"] for t in body["transactions"]] == [matching.dedup_key]
+
+        # Total should reflect all matching rows, not just the page size.
+        assert body["total"] == 1
 
     def test_search_returns_empty_list_when_no_match(
         self,
@@ -425,6 +456,7 @@ class TestGetTransactions:
         assert len(body["transactions"]) == 1
         assert body["transactions"][0]["dedup_key"] == debit_txn.dedup_key
         assert body["transactions"][0]["side"] == "debit"
+        assert body["total"] == 1
 
     def test_side_filter_returns_only_credit_transactions(
         self,
@@ -515,6 +547,7 @@ class TestGetTransactions:
         assert len(body["transactions"]) == 1
         assert body["transactions"][0]["dedup_key"] == groceries_txn.dedup_key
         assert body["transactions"][0]["spending_category"] == "GROCERIES"
+        assert body["total"] == 1
 
     def test_untagged_only_returns_only_null_spending_category(
         self,

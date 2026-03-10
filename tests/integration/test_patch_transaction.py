@@ -49,3 +49,38 @@ def test_patch_transaction_updates_spending_category(
     assert get_response.status_code == 200
     body = get_response.json()
     assert body["spending_category"] == "EATING_OUT"
+
+
+def test_patch_transaction_updates_spending_category_and_note(
+    test_client: TestClient, test_db, db_transaction
+):
+    """PATCH with spending_category and note, then GET to verify both are updated."""
+    transaction = db_transaction(
+        user_id=TEST_USER_ID,
+        spending_category="GROCERIES",
+        note="Initial note",
+    )
+    with Session(test_db, expire_on_commit=False) as session:
+        session.add(transaction)
+        session.commit()
+        session.refresh(transaction)
+
+    transaction_id = transaction.id
+    transactions_path = f"{app_config.V1_API_PREFIX}/transactions"
+    patch_response = test_client.patch(
+        f"{transactions_path}/{transaction_id}",
+        json={
+            "spending_category": "EATING_OUT",
+            "note": "Updated note",
+        },
+    )
+    assert patch_response.status_code == 200
+    patched_body = patch_response.json()
+    assert patched_body["spending_category"] == "EATING_OUT"
+    assert patched_body["note"] == "Updated note"
+
+    get_response = test_client.get(f"{transactions_path}/{transaction_id}")
+    assert get_response.status_code == 200
+    body = get_response.json()
+    assert body["spending_category"] == "EATING_OUT"
+    assert body["note"] == "Updated note"
