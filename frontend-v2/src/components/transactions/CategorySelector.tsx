@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
+import { getCategoryLabel } from "@/config/categories"
 
 interface CategorySelectorProps {
   category: string | null,
@@ -70,7 +71,7 @@ export function CategorySelector({ category, existing, onSelect }: CategorySelec
               variant="outline"
               className={cn("font-medium border px-1.5 py-0.5 rounded-sm whitespace-nowrap", getBadgeColor(category))}
             >
-              {category}
+              {getCategoryLabel(category)}
             </Badge>
           ) : (
             <span className="text-muted-foreground group-hover:text-foreground transition-colors">Select Category...</span>
@@ -114,7 +115,7 @@ export function CategorySelector({ category, existing, onSelect }: CategorySelec
                 >
                   <div className="flex items-center w-full">
                     <div className={cn("w-2 h-2 rounded-full mr-2", getBadgeColor(cat).split(" ")[0].replace("text-", "bg-"))}></div>
-                    <span>{cat}</span>
+                    <span>{getCategoryLabel(cat)}</span>
                     {category === cat && (
                       <Check className="ml-auto h-3 w-3 opacity-100 text-primary" />
                     )}

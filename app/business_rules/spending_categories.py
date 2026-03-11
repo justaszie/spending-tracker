@@ -35,7 +35,6 @@ SpendingCategory = Literal[
     "STREAMING_SERVICES",
     "SUPPLEMENTS",
     "TAXI",
-    "TBD",
     "TICKETS_TO_EVENTS",
     "TRANSPORT_CITY",
     "TRANSPORT_INTERCITY",
