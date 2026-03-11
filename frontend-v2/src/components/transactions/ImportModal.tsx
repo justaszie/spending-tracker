@@ -80,7 +80,7 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
           if (pollingIntervalRef.current) {
             window.clearInterval(pollingIntervalRef.current);
           }
-          setErrorMessage(current.failure_reason || "Statement import failed");
+          setErrorMessage("Statement import failed. Please try again.");
           setStep("error");
         }
       } catch (error) {
