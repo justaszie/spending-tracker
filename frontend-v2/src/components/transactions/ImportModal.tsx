@@ -27,7 +27,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { statementImportAPI } from "@/lib/api";
+import { ApiError, statementImportAPI } from "@/lib/api";
 import type { ImportJobResult, StatementSource, ImportJobStatus } from "@/types/transactions";
 
 interface ImportModalProps {
@@ -50,6 +50,7 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const pollingIntervalRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const GENERIC_UPLOAD_FAILURE_MESSAGE = "Upload failed. Please try again.";
 
   useEffect(() => {
     return () => {
@@ -128,7 +129,13 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
       startPollingJobStatus(result.import_job_id);
     } catch (error) {
       window.clearInterval(uploadInterval);
-      setErrorMessage("Upload failed. Please try again.");
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message || GENERIC_UPLOAD_FAILURE_MESSAGE);
+      } else if (error instanceof Error) {
+        setErrorMessage(error.message || GENERIC_UPLOAD_FAILURE_MESSAGE);
+      } else {
+        setErrorMessage(GENERIC_UPLOAD_FAILURE_MESSAGE);
+      }
       setStep("error");
     }
   };
