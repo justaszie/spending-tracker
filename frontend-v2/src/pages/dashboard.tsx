@@ -148,30 +148,16 @@ export default function Dashboard() {
             >
               Transactions
             </a>
-            <a
+            {/* Not supported right now */}
+            {/* <a
               href="#"
               className="transition-colors hover:text-foreground/80 text-foreground/60"
             >
               Analytics
-            </a>
-            <a
-              href="#"
-              onClick={() => setImportModalOpen(true)}
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
-            >
-              Import
-            </a>
+            </a> */}
           </nav>
           <div className="ml-auto flex items-center space-x-4">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setImportModalOpen(true)}
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
                 <p>{user && user.email?.slice(0, 1).toUpperCase()}</p>
               </div>
@@ -217,17 +203,17 @@ export default function Dashboard() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
               size="sm"
               onClick={() => setImportModalOpen(true)}
             >
               <Upload className="mr-2 h-4 w-4" />
-              Import
+              Import Statement
             </Button>
-            <Button size="sm">
+            {/* Not supported right now */}
+            {/* <Button size="sm">
               <Plus className="mr-2 h-4 w-4" />
               Add Manual
-            </Button>
+            </Button> */}
           </div>
         </div>
 
