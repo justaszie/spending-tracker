@@ -18,6 +18,7 @@ export type AuthContextValue = {
   session: Session | null;
   user: User | null;
   isAuthLoading: boolean;
+  authError: string | null;
   currentToken: string | null;
   login: (params: LoginParams) => Promise<void>;
   signup: (params: SignupParams) => Promise<void>;
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [currentToken, setCurrentToken] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -45,14 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!isMounted) return;
       if (error) {
-        // If session lookup fails, treat as signed out.
+        // If session lookup fails, treat as signed out and record error.
         setSession(null);
         setUser(null);
         setCurrentToken(null);
+        setAuthError("Failed to check authentication status.");
       } else {
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
         setCurrentToken(initialSession?.access_token ?? null);
+        setAuthError(null);
       }
       setIsAuthLoading(false);
     }
@@ -65,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(nextSession?.user ?? null);
         setCurrentToken(nextSession?.access_token ?? null);
         setIsAuthLoading(false);
+        setAuthError(null);
       },
     );
 
@@ -100,12 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       isAuthLoading,
+      authError,
       currentToken,
       login,
       signup,
       logout,
     }),
-    [session, user, isAuthLoading, currentToken, login, signup, logout],
+    [session, user, isAuthLoading, authError, currentToken, login, signup, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

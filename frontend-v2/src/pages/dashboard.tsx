@@ -29,6 +29,7 @@ import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogr
 import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
 import { useAuth } from "@/contexts/AuthContext";
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
+import ErrorPage from "@/pages/error";
 
 // Helper for formatting currency
 const formatCurrency = (amount: number, currency: string = "EUR") => {
@@ -85,7 +86,12 @@ export default function Dashboard() {
   }
 
   if (error) {
-    return <p>{error.toString()}</p>;
+    return (
+      <ErrorPage
+        title="Unable to load dashboard"
+        message="An unexpected error occurred while loading your transactions. Please try again in a moment."
+      />
+    );
   }
 
   const transactions = data?.transactions ?? [];
