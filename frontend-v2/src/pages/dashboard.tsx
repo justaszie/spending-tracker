@@ -30,6 +30,7 @@ import { useUpdateTransaction } from "@/hooks/transactions/use-update-transactio
 import { useAuth } from "@/contexts/AuthContext";
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
 import ErrorPage from "@/pages/error";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 
 // Helper for formatting currency
 const formatCurrency = (amount: number, currency: string = "EUR") => {
@@ -82,7 +83,7 @@ export default function Dashboard() {
   const updateTransactionMutation = useUpdateTransaction();
 
   if (isLoading) {
-    return <p>Loading...</p>;
+    return <FullScreenLoader open label="Loading dashboard..." />;
   }
 
   if (error) {

@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
+import { FullScreenLoader } from "@/components/FullScreenLoader";
 
 type LoginParams = { email: string; password: string };
 type SignupParams = { email: string; password: string };
@@ -114,7 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [session, user, isAuthLoading, authError, currentToken, login, signup, logout],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <FullScreenLoader open={isAuthLoading} label="Loading..." />
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {
