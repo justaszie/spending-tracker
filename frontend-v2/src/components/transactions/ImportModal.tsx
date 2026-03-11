@@ -40,6 +40,8 @@ const SUPPORTED_BANKS = [
   { id: "swedbank", name: "Swedbank LT", icon: "S" },
 ];
 
+const MAX_POLLING_ATTEMPTS = 200;
+
 export function ImportModal({ open, onOpenChange }: ImportModalProps) {
   const [step, setStep] = useState<"select" | "uploading" | "processing" | "result" | "error">("select");
   const [selectedBank, setSelectedBank] = useState<StatementSource | null>(null);
@@ -61,12 +63,25 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
   }, []);
 
   const startPollingJobStatus = (jobId: string) => {
+    let attempts = 0;
+
     if (pollingIntervalRef.current) {
       window.clearInterval(pollingIntervalRef.current);
     }
 
     pollingIntervalRef.current = window.setInterval(async () => {
       try {
+        attempts += 1;
+
+        if (attempts > MAX_POLLING_ATTEMPTS) {
+          if (pollingIntervalRef.current) {
+            window.clearInterval(pollingIntervalRef.current);
+          }
+          setErrorMessage("Import is taking longer than expected. Please try again.");
+          setStep("error");
+          return;
+        }
+
         const current = await statementImportAPI.getImportJobStatus(jobId);
         setJob(current);
         setJobStatus(current.import_job_status);
