@@ -42,7 +42,7 @@ const SUPPORTED_BANKS = [
 
 export function ImportModal({ open, onOpenChange }: ImportModalProps) {
   const [step, setStep] = useState<"select" | "uploading" | "processing" | "result" | "error">("select");
-  const [selectedBank, setSelectedBank] = useState<StatementSource | "">("");
+  const [selectedBank, setSelectedBank] = useState<StatementSource | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [job, setJob] = useState<ImportJobResult | null>(null);
@@ -135,7 +135,7 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
 
   const reset = () => {
     setStep("select");
-    setSelectedBank("");
+    setSelectedBank(null);
     setSelectedFile(null);
     setUploadProgress(0);
     setJob(null);
@@ -169,7 +169,7 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
         <DialogHeader>
           <DialogTitle>Import Bank Statement</DialogTitle>
           <DialogDescription>
-            Upload your statement to import transactions.
+            Upload your bank statement to import transactions.
           </DialogDescription>
         </DialogHeader>
 
@@ -214,15 +214,14 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
                     <Upload className="h-5 w-5 text-primary" />
                   </div>
                   <div className="text-sm font-medium text-center">
-                    {selectedFile ? selectedFile.name : "Click to browse or drag and drop"}
+                    {selectedFile ? selectedFile.name : "Click to browse"}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    PDF, CSV or TXT (Max 10MB)
+                    Statement file should be up to 2MB
                   </div>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf,.csv,.txt,.xls,.xlsx"
                     className="hidden"
                     onChange={handleFileChange}
                   />
@@ -268,7 +267,7 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
                   {processingTitle}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Our background worker is processing your statement
+                  We are processing your statement
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 text-xs font-mono text-muted-foreground bg-muted/50 py-2 px-4 rounded-full w-fit mx-auto border">
