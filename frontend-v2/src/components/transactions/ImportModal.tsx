@@ -47,7 +47,6 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [job, setJob] = useState<ImportJobResult | null>(null);
   const [jobStatus, setJobStatus] = useState<ImportJobStatus | null>(null);
-  const [startedAt, setStartedAt] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const pollingIntervalRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -124,7 +123,6 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
 
       setJob(result);
       setJobStatus(result.import_job_status);
-      setStartedAt(Date.now());
       setStep("processing");
 
       startPollingJobStatus(result.import_job_id);
@@ -143,7 +141,6 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
     setJob(null);
     setJobStatus(null);
     setErrorMessage(null);
-    setStartedAt(null);
     if (pollingIntervalRef.current) {
       window.clearInterval(pollingIntervalRef.current);
     }
