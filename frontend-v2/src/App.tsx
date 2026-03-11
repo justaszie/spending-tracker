@@ -11,9 +11,6 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { PublicOnly } from "@/components/PublicOnly";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-// This code is for all users
-window.__TANSTACK_QUERY_CLIENT__ = queryClient;
-
 function Router() {
   return (
     <Switch>
