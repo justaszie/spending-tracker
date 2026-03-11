@@ -133,7 +133,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
       {/* Navbar */}
       <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center px-6">
+        <div className="flex h-14 items-center px-6">
           <div className="mr-4 flex items-center gap-2 font-semibold">
             <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
               <span className="text-xs font-bold">S</span>
@@ -173,7 +173,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="container py-8 px-6">
+      <main className="py-8 px-6">
         {/* Stats Row - Placeholder for future analytics cards */}
         <div></div>
 
@@ -287,7 +287,7 @@ export default function Dashboard() {
                   </div>
                 </TableHead>
                 <TableHead
-                  className="w-[250px] cursor-pointer hover:bg-muted/60 select-none"
+                  className="w-[500px] cursor-pointer hover:bg-muted/60 select-none"
                   onClick={() => handleSort("counterparty")}
                 >
                   <div className="flex items-center gap-2">
@@ -301,7 +301,7 @@ export default function Dashboard() {
                   </div>
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer hover:bg-muted/60 select-none"
+                  className="w-[100px] cursor-pointer hover:bg-muted/60 select-none"
                   onClick={() => handleSort("amount")}
                 >
                   <div className="flex items-center gap-2">
@@ -315,7 +315,7 @@ export default function Dashboard() {
                   </div>
                 </TableHead>
                 <TableHead
-                  className="w-[300px] cursor-pointer hover:bg-muted/60 select-none"
+                  className="w-[250px] cursor-pointer hover:bg-muted/60 select-none"
                   onClick={() => handleSort("category")}
                 >
                   <div className="flex items-center gap-2">
