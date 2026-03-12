@@ -71,8 +71,6 @@ def build_db_engine(environment: AppEnvironment) -> Engine | None:
 
 
 def build_supabase_admin(environment: AppEnvironment) -> Client | None:
-    supabase_admin = None
-
     supabase_url = app_config.SUPABASE_URL
     supabase_admin_key = app_config.SUPABASE_ADMIN_KEY
 
@@ -80,9 +78,7 @@ def build_supabase_admin(environment: AppEnvironment) -> Client | None:
         raise ConfigError("Missing Supabase URL / Secret Key in environment")
 
     if supabase_url and supabase_admin_key:
-        supabase_admin = create_client(supabase_url, supabase_admin_key)
-        logger.info("Supabase Admin Client Initialized")
-        return supabase_admin
+        return create_client(supabase_url, supabase_admin_key)
 
     return None
 
@@ -104,7 +100,6 @@ def build_storage(
             raise Exception("Cannot initialize file storage without supabase client")
 
         if supabase_admin:
-            logger.info("Supabase file storage initialized")
             return SupabaseFileStorage(supabase_admin)
 
     return None
@@ -133,7 +128,7 @@ async def lifespan(app: FastAPI):  # type: ignore
     if storage is not None:
         app.state.file_storage = storage
         logger.info(
-            "File storage initialized with backend %s",
+            "File storage initialized with %s backend",
             app_config.STORAGE_BACKEND.value,
         )
 
