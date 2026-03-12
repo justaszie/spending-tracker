@@ -13,6 +13,7 @@ from fastapi import (
 )
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from pydantic import BaseModel
 from sqlmodel import SQLModel, create_engine
 from starlette.middleware.cors import CORSMiddleware
 from supabase import create_client
@@ -20,8 +21,8 @@ from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
 from app.api.transactions import router as transactions_router
-from app.core.config import AppEnvironment, ConfigError, app_config
-from app.storage.file_storage import FileStorage
+from app.core.config import AppEnvironment, ConfigError, PROJECT_ROOT, app_config
+from app.storage.file_storage import LocalFileStorage, SupabaseFileStorage
 
 user_creds_auth = HTTPBasic()
 
@@ -78,14 +79,17 @@ async def lifespan(app: FastAPI):  # type: ignore
         supabase_admin = create_client(supabase_url, supabase_admin_key)
         app.state.supabase_admin = supabase_admin
         logger.info("Supabase Admin Client Initialized")
-    elif environment != AppEnvironment.TEST:
+    elif environment not in (AppEnvironment.TEST, AppEnvironment.DEV):
         logger.error("Missing Supabase URL / Secret Key in environment")
         raise ConfigError("Missing Supabase URL / Secret Key in environment")
 
-    # 3. Initialize file storage client (optional if environment is not DEV or PROD)
-    if supabase_admin:
-        app.state.file_storage = FileStorage(supabase_admin)
-        logger.info("File Storage Initialized")
+    if environment == AppEnvironment.DEV:
+        local_root = app_config.LOCAL_STORAGE_ROOT or PROJECT_ROOT / "local_storage"
+        app.state.file_storage = LocalFileStorage(local_root)
+        logger.info("Local file storage initialized at %s", local_root)
+    elif supabase_admin:
+        app.state.file_storage = SupabaseFileStorage(supabase_admin)
+        logger.info("Supabase file storage initialized")
     elif environment != AppEnvironment.TEST:
         logger.error("Cannot initialize File Storage without supabase client")
         raise Exception("Cannot initialize File Storage without supabase client")
@@ -119,14 +123,18 @@ core_router = APIRouter()
 
 @core_router.get("/")
 def root() -> "str":
-    return "Status OK"
+    return "Status: OK"
 
 
-@core_router.post("/auth")
+class AccessTokenResponse(BaseModel):
+    access_token: str
+
+
+@core_router.post("/auth", response_model=AccessTokenResponse)
 def authenticate_user(
     jwt: Annotated[str, Depends(validate_user_creds)],
-) -> JSONResponse:
-    return JSONResponse({"access_token": jwt})
+) -> AccessTokenResponse:
+    return AccessTokenResponse(access_token=jwt)
 
 
 # CORS Setup: allow all known client domains
