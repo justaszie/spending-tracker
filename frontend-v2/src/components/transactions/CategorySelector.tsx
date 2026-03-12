@@ -29,7 +29,17 @@ export function CategorySelector({ category, existing, onSelect }: CategorySelec
   const [searchValue, setSearchValue] = React.useState("")
 
   // Combine predefined categories with current one if it's custom
-  const [allCategories, setAllCategories] = React.useState<string[]>(existing)
+  const [allCategories, setAllCategories] = React.useState<string[]>([])
+
+  React.useEffect(() => {
+    setAllCategories(() => {
+      const base = new Set(existing)
+      if (category && !base.has(category)) {
+        base.add(category)
+      }
+      return Array.from(base)
+    })
+  }, [existing, category])
 
   const handleSelect = (value: string) => {
     onSelect(value)

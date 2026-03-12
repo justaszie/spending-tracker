@@ -17,8 +17,9 @@ export function useUpdateTransaction() {
     mutationFn: ({ id, updates }: UpdateTransactionVariables) =>
       transactionsAPI.patchTransaction(id, updates),
     onSuccess: () => {
-      // Refetch transactions after a successful update
+      // Refetch transactions and spending categories after a successful update
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions", "spending-categories"] });
     },
   });
 }
