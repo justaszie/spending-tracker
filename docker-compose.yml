@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: spending-tracker-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"   # host:container (optional to expose)
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    container_name: spending-tracker-backend
+    environment:
+      # App env: DEV with demo-mode auth + local storage
+      APP_ENVIRONMENT: DEV
+      DEV_SKIP_AUTH: "true"
+      STORAGE_BACKEND: local
+
+      # Demo user id (must match your TEST_USER_ID expectations)
+      TEST_USER_ID: "32c36a58-0b35-4488-9d0c-b215ee5c7624"
+
+      # Database connection into the db service
+      DB_CONNECTION_STRING: "postgresql+psycopg2://postgres:postgres@db:5432/postgres"
+
+      # Where local storage writes files inside the container
+      LOCAL_STORAGE_ROOT: "/data/storage"
+
+      # Bucket name used in your config
+      STATEMENTS_STORAGE_BUCKET: "statements"
+
+      # CORS frontend URL (matches frontend service URL)
+      FRONTEND_URL: "http://localhost:5173"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      # Persist local storage files on the host
+      - local_storage:/data/storage
+
+  frontend:
+    build:
+      context: ./frontend-v2
+      dockerfile: Dockerfile
+    container_name: spending-tracker-frontend
+    environment:
+      # Point React app to backend service inside Docker network
+      VITE_API_BASE_URL: "http://localhost:8000/api/v1"
+
+      # Your planned demo auth mode (frontend side)
+      VITE_AUTH_MODE: "demo"
+
+      # If/when you want to use real Supabase in non-demo mode,
+      # you'll provide these via a separate compose or env file:
+      # VITE_SUPABASE_URL: "https://your-project.supabase.co"
+      # VITE_SUPABASE_ANON_KEY: "sb_publishable_..."
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+  local_storage:
