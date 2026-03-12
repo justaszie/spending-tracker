@@ -20,7 +20,6 @@ export type AuthContextValue = {
   user: User | null;
   isAuthLoading: boolean;
   authError: string | null;
-  currentToken: string | null;
   login: (params: LoginParams) => Promise<void>;
   signup: (params: SignupParams) => Promise<void>;
   logout: () => Promise<void>;
@@ -28,12 +27,18 @@ export type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const AUTH_MODE = import.meta.env.VITE_AUTH_MODE ?? "real";
+const APP_ENVIRONMENT = import.meta.env.VITE_APP_ENVIRONMENT;
+const TEST_USER_ID = import.meta.env.TEST_USER_ID as string | undefined;
+
+const IS_DEMO_MODE =
+  AUTH_MODE === "demo" && APP_ENVIRONMENT === "dev" && !!TEST_USER_ID;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [currentToken, setCurrentToken] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -41,6 +46,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
 
     async function init() {
+      if (IS_DEMO_MODE && TEST_USER_ID) {
+        const mockUser = {
+          id: TEST_USER_ID,
+        } as unknown as User;
+
+        const mockSession = {
+          access_token: "demo-access-token",
+          token_type: "bearer",
+          user: mockUser,
+          expires_in: 60 * 60 * 24 * 365,
+          expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365,
+          refresh_token: "demo-refresh-token",
+          provider_token: null,
+          provider_refresh_token: null,
+        } as unknown as Session;
+
+        if (!isMounted) return;
+
+        setSession(mockSession);
+        setUser(mockUser);
+        setAuthError(null);
+        setIsAuthLoading(false);
+
+        return;
+      }
+
       const {
         data: { session: initialSession },
         error,
@@ -51,12 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // If session lookup fails, treat as signed out and record error.
         setSession(null);
         setUser(null);
-        setCurrentToken(null);
         setAuthError("Failed to check authentication status.");
       } else {
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
-        setCurrentToken(initialSession?.access_token ?? null);
         setAuthError(null);
       }
       setIsAuthLoading(false);
@@ -64,11 +93,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     init();
 
+    if (IS_DEMO_MODE && TEST_USER_ID) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
     const { data: subscription } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, nextSession: Session | null) => {
         setSession(nextSession);
         setUser(nextSession?.user ?? null);
-        setCurrentToken(nextSession?.access_token ?? null);
         setIsAuthLoading(false);
         setAuthError(null);
       },
@@ -107,12 +141,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthLoading,
       authError,
-      currentToken,
       login,
       signup,
       logout,
     }),
-    [session, user, isAuthLoading, authError, currentToken, login, signup, logout],
+    [session, user, isAuthLoading, authError, login, signup, logout],
   );
 
   return (
