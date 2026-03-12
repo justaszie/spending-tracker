@@ -52,7 +52,7 @@ def validate_user_creds(
     return response.session.access_token
 
 
-def init_db(environment: AppEnvironment) -> Engine | None:
+def build_db_engine(environment: AppEnvironment) -> Engine | None:
     connection_string = app_config.DB_CONNECTION_STRING
 
     # DB is required in DEV and PROD environments
@@ -70,7 +70,7 @@ def init_db(environment: AppEnvironment) -> Engine | None:
     return None
 
 
-def init_supabase_admin(environment: AppEnvironment) -> Client | None:
+def build_supabase_admin(environment: AppEnvironment) -> Client | None:
     supabase_admin = None
 
     supabase_url = app_config.SUPABASE_URL
@@ -87,7 +87,7 @@ def init_supabase_admin(environment: AppEnvironment) -> Client | None:
     return None
 
 
-def init_storage(
+def build_storage(
     environment: AppEnvironment,
     storage_type: StorageBackendType = StorageBackendType.SUPABASE,
     supabase_admin: Client | None = None,
@@ -115,17 +115,17 @@ def init_storage(
 async def lifespan(app: FastAPI):  # type: ignore
     environment = app_config.APP_ENVIRONMENT
 
-    engine = init_db(environment)
+    engine = build_db_engine(environment)
     if engine is not None:
         app.state.db_engine = engine
         logger.info("Database Connection Established")
 
-    supabase_admin = init_supabase_admin(environment)
+    supabase_admin = build_supabase_admin(environment)
     if supabase_admin is not None:
         app.state.supabase_admin = supabase_admin
         logger.info("Supabase Admin Client Initialized")
 
-    storage = init_storage(
+    storage = build_storage(
         environment=environment,
         supabase_admin=supabase_admin,
         storage_type=app_config.STORAGE_BACKEND,
