@@ -33,7 +33,7 @@ from app.enrichment import (
 )
 from app.statement_extractors.errors import StatementExtractorError
 from app.statement_extractors.registry import get_extractor_fn
-from app.storage.file_storage import FileStorage, StatementDownloadError
+from app.storage.file_storage import StatementDownloadError, StorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def run_job(
     job_id: UUID,
     user_id: UUID,
     db: Engine,
-    file_storage: FileStorage,
+    file_storage: StorageBackend,
     statements_bucket: str,
 ) -> None:
     # Load job info

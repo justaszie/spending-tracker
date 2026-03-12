@@ -3,16 +3,13 @@ from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request
-from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    HTTPBearer,
-)
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import Engine
 from supabase import Client
 from supabase_auth.errors import AuthApiError
 
 from app.core.config import AppEnvironment, ConfigError, app_config
-from app.storage.file_storage import FileStorage
+from app.storage.file_storage import StorageBackend
 
 logger = logging.getLogger(__name__)
 jwt_auth = HTTPBearer(auto_error=False)
@@ -25,22 +22,15 @@ def get_db_engine(request: Request) -> Engine:
 DBDependency = Annotated[Engine, Depends(get_db_engine)]
 
 
-def get_file_storage(request: Request) -> FileStorage:
-    return cast(FileStorage, request.app.state.file_storage)
+def get_file_storage(request: Request) -> StorageBackend:
+    return cast(StorageBackend, request.app.state.file_storage)
 
 
-FSDependency = Annotated[FileStorage, Depends(get_file_storage)]
-
-
-def get_supabase_admin(request: Request) -> Client:
-    return cast(Client, request.app.state.supabase_admin)
-
-
-SupabaseAdminDependency = Annotated[Client, Depends(get_supabase_admin)]
+FSDependency = Annotated[StorageBackend, Depends(get_file_storage)]
 
 
 def get_authenticated_user(
-    supabase_admin: SupabaseAdminDependency,
+    request: Request,
     header: Annotated[HTTPAuthorizationCredentials | None, Depends(jwt_auth)],
 ) -> UUID:
     # Skip jwt validation in DEV environment
@@ -55,6 +45,7 @@ def get_authenticated_user(
         raise HTTPException(status_code=401, detail="User Authentication Failed")
 
     token = header.credentials
+    supabase_admin = cast(Client, request.app.state.supabase_admin)
     try:
         result = supabase_admin.auth.get_user(token)
     except AuthApiError as e:

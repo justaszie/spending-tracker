@@ -19,10 +19,18 @@ class AppEnvironment(StrEnum):
     TEST = "TEST"
 
 
+class StorageBackendType(StrEnum):
+    LOCAL = "local"
+    SUPABASE = "supabase"
+
+
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_FILE)
 
     STATEMENTS_STORAGE_BUCKET: str = "statements"
+    # Root directory for local file storage (used in DEV or when Supabase is not available)
+    LOCAL_STORAGE_ROOT: Path = PROJECT_ROOT / "local_storage"
+    STORAGE_BACKEND: StorageBackendType = StorageBackendType.SUPABASE
     TEST_USER_ID: UUID | None = None
     APP_ENVIRONMENT: AppEnvironment = AppEnvironment.PROD
     DB_CONNECTION_STRING: str | None = None
