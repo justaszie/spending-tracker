@@ -33,8 +33,8 @@ def get_authenticated_user(
     request: Request,
     header: Annotated[HTTPAuthorizationCredentials | None, Depends(jwt_auth)],
 ) -> UUID:
-    # Skip jwt validation in DEV environment
-    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV:
+    # Skip jwt validation in DEV environment if the feature flag is on
+    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV and app_config.DEV_SKIP_ATUH:
         if not app_config.TEST_USER_ID:
             raise ConfigError("Missing TEST_USER_ID environment value")
 

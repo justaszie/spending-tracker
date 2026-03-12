@@ -32,6 +32,7 @@ class AppConfig(BaseSettings):
     LOCAL_STORAGE_ROOT: Path = PROJECT_ROOT / "local_storage"
     STORAGE_BACKEND: StorageBackendType = StorageBackendType.SUPABASE
     TEST_USER_ID: UUID | None = None
+    DEV_SKIP_ATUH: bool = False
     APP_ENVIRONMENT: AppEnvironment = AppEnvironment.PROD
     DB_CONNECTION_STRING: str | None = None
     SUPABASE_URL: str | None = None
