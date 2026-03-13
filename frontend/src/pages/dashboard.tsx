@@ -31,6 +31,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
 import ErrorPage from "@/pages/error";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
+import { queryClient } from "@/lib/queryClient";
 
 // Helper for formatting currency
 const formatCurrency = (amount: number, currency: string = "EUR") => {
@@ -128,6 +129,13 @@ export default function Dashboard() {
     setFilterType(filter);
     setCurrentPage(1); // Reset to first page on filter change
   };
+
+  // Fire when user comes back from import modal to view refreshed transactions
+  const handleViewTransactions = () => {
+    // Refresh transactions data and close the modal
+    queryClient.invalidateQueries({queryKey: ["transactions"]});
+    setImportModalOpen(false);
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
@@ -353,7 +361,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      <ImportModal open={importModalOpen} onOpenChange={setImportModalOpen} />
+      <ImportModal open={importModalOpen} onOpenChange={setImportModalOpen} onViewTransactions={handleViewTransactions} />
     </div>
   );
 }

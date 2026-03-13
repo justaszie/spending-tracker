@@ -24,15 +24,18 @@ import {
   Building2,
   FileText,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  Proportions
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApiError, statementImportAPI } from "@/lib/api";
 import type { ImportJobResult, StatementSource, ImportJobStatus } from "@/types/transactions";
+import { Redirect } from "wouter";
 
 interface ImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onViewTransactions?: () => void;
 }
 
 const SUPPORTED_BANKS = [
@@ -40,9 +43,10 @@ const SUPPORTED_BANKS = [
   { id: "swedbank", name: "Swedbank LT", icon: "S" },
 ];
 
+// 200 attempts * 1.5sec = 5mins timeout for polling job status
 const MAX_POLLING_ATTEMPTS = 200;
 
-export function ImportModal({ open, onOpenChange }: ImportModalProps) {
+export function ImportModal({ open, onOpenChange, onViewTransactions }: ImportModalProps) {
   const [step, setStep] = useState<"select" | "uploading" | "processing" | "result" | "error">("select");
   const [selectedBank, setSelectedBank] = useState<StatementSource | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -170,6 +174,16 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
       fileInputRef.current.value = "";
     }
   };
+
+  const handleConfirmClick = () => {
+    // If the view transactions callback was provided, we call it
+    if (onViewTransactions) {
+      onViewTransactions();
+    // Otherwise, we just close the modal
+    } else {
+      onOpenChange(false);
+    }
+  }
 
   const effectiveStatus: ImportJobStatus | null = jobStatus ?? job?.import_job_status ?? null;
 
@@ -328,8 +342,8 @@ export function ImportModal({ open, onOpenChange }: ImportModalProps) {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Button className="w-full" onClick={() => onOpenChange(false)}>
-                  Go to Transactions
+                <Button className="w-full" onClick={() => handleConfirmClick()}>
+                  {onViewTransactions ? "Go to Transactions" : "OK" }
                 </Button>
                 <Button
                   variant="ghost"
