@@ -28,6 +28,13 @@ function Router() {
           </PublicOnly>
         )}
       </Route>
+      <Route path="/demo">
+        {() => (
+          <RequireAuth>
+            <Dashboard />
+          </RequireAuth>
+        )}
+      </Route>
       <Route path="/">
         {() => (
           <RequireAuth>

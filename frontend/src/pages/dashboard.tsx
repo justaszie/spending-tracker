@@ -53,7 +53,7 @@ export default function Dashboard() {
   const [sortColumn, setSortColumn] = useState<SortableField | null>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
-  const { logout, user } = useAuth();
+  const { logout, user, isDemo } = useAuth();
 
   const itemsPerPage = 50;
 
@@ -164,6 +164,11 @@ export default function Dashboard() {
             </a> */}
           </nav>
           <div className="ml-auto flex items-center space-x-4">
+            {isDemo && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+                Demo mode
+              </span>
+            )}
             <div className="flex items-center gap-1">
               <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
                 <p>{user && user.email?.slice(0, 1).toUpperCase()}</p>

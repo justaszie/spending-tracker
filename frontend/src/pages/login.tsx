@@ -9,7 +9,7 @@ export default function LoginPage() {
   const params = new URLSearchParams(location.split("?")[1] ?? "");
   const next = params.get("next");
 
-  const { login, isAuthLoading } = useAuth();
+  const { login, loginDemo, isAuthLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +26,9 @@ export default function LoginPage() {
       navigate(next ? decodeURIComponent(next) : "/");
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Failed to sign in. Please try again.";
+        err instanceof Error
+          ? err.message
+          : "Failed to sign in. Please try again.";
       setError(message);
     } finally {
       setSubmitting(false);
@@ -34,6 +36,23 @@ export default function LoginPage() {
   };
 
   const disabled = submitting || isAuthLoading;
+
+  const handleDemoClick = async () => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await loginDemo();
+      navigate("/demo");
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to start demo. Please try again.";
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -45,7 +64,9 @@ export default function LoginPage() {
             </div>
             <span className="font-semibold tracking-tight">SpendPulse</span>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Welcome back
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Sign in to view and manage your spending.
           </p>
@@ -88,19 +109,28 @@ export default function LoginPage() {
             </p>
           )}
 
-          <Button
-            type="submit"
-            className="w-full mt-2"
-            disabled={disabled}
-          >
-            {disabled ? "Signing in..." : "Sign in"}
-          </Button>
+          <div className="flex flex-row gap-2">
+            <Button type="submit" className="w-full mt-1" disabled={disabled}>
+              {disabled ? "Signing in..." : "Sign in"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full mt-1"
+              onClick={handleDemoClick}
+            >
+              Try demo
+            </Button>
+          </div>
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
           <span>
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              href="/signup"
+              className="text-primary underline-offset-4 hover:underline"
+            >
               Sign up
             </Link>
           </span>
@@ -109,4 +139,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
