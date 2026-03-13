@@ -8,7 +8,7 @@ from sqlalchemy import Engine
 from supabase import Client
 from supabase_auth.errors import AuthApiError
 
-from app.core.config import AppEnvironment, ConfigError, app_config
+from app.core.config import AppEnvironment, AuthMode, ConfigError, app_config
 from app.storage.file_storage import StorageBackend
 
 logger = logging.getLogger(__name__)
@@ -33,8 +33,11 @@ def get_authenticated_user(
     request: Request,
     header: Annotated[HTTPAuthorizationCredentials | None, Depends(jwt_auth)],
 ) -> UUID:
-    # Skip jwt validation in DEV environment if the feature flag is on
-    if app_config.APP_ENVIRONMENT == AppEnvironment.DEV and app_config.DEV_SKIP_AUTH:
+    # Skip jwt validation in DEV environment if the demo feature flag is on
+    if (
+        app_config.APP_ENVIRONMENT == AppEnvironment.DEV
+        and app_config.AUTH_MODE == AuthMode.DEMO
+    ):
         if not app_config.TEST_USER_ID:
             raise ConfigError("Missing TEST_USER_ID environment value")
 
