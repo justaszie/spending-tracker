@@ -28,8 +28,8 @@ export type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const AUTH_MODE = import.meta.env.VITE_AUTH_MODE ?? "real";
-const APP_ENVIRONMENT = import.meta.env.VITE_APP_ENVIRONMENT;
-const TEST_USER_ID = import.meta.env.TEST_USER_ID as string | undefined;
+const APP_ENVIRONMENT = import.meta.env.VITE_APP_ENVIRONMENT ?? "prod";
+const TEST_USER_ID = import.meta.env.VITE_TEST_USER_ID as string | undefined;
 
 const IS_DEMO_MODE =
   AUTH_MODE === "demo" && APP_ENVIRONMENT === "dev" && !!TEST_USER_ID;
@@ -49,7 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (IS_DEMO_MODE && TEST_USER_ID) {
         const mockUser = {
           id: TEST_USER_ID,
-        } as unknown as User;
+          email: "test@test",
+        } as User;
 
         const mockSession = {
           access_token: "demo-access-token",
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           refresh_token: "demo-refresh-token",
           provider_token: null,
           provider_refresh_token: null,
-        } as unknown as Session;
+        } as Session;
 
         if (!isMounted) return;
 
@@ -163,4 +164,3 @@ export function useAuth(): AuthContextValue {
   }
   return ctx;
 }
-

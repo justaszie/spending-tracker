@@ -1,4 +1,4 @@
-# frontend-v2/Dockerfile
+# frontend/Dockerfile
 FROM node:22-alpine AS frontend
 
 WORKDIR /usr/src/app

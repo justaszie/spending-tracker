@@ -16,7 +16,7 @@ COPY pyproject.toml README.md ./
 # Install dependencies into a project-local virtualenv (.venv) using uv
 # --no-dev: only install main dependencies, not dev/test tools
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN uv sync
 
 # Copy the application code
 COPY app ./app

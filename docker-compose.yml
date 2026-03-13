@@ -16,26 +16,17 @@ services:
       context: .
       dockerfile: backend.Dockerfile
     container_name: spending-tracker-backend
-    environment:
-      # App env: DEV with demo-mode auth + local storage
-      APP_ENVIRONMENT: DEV
-      DEV_SKIP_AUTH: "true"
-      STORAGE_BACKEND: local
-
-      # Demo user id (must match your TEST_USER_ID expectations)
-      TEST_USER_ID: "32c36a58-0b35-4488-9d0c-b215ee5c7624"
-
-      # Database connection into the db service
-      DB_CONNECTION_STRING: "postgresql+psycopg2://postgres:postgres@db:5432/postgres"
-
-      # Where local storage writes files inside the container
-      LOCAL_STORAGE_ROOT: "/data/storage"
-
-      # Bucket name used in your config
-      STATEMENTS_STORAGE_BUCKET: "statements"
-
-      # CORS frontend URL (matches frontend service URL)
-      FRONTEND_URL: "http://localhost:5173"
+    # environment:
+    #   APP_ENVIRONMENT: ${APP_ENVIRONMENT}
+    #   AUTH_MODE: ${AUTH_MODE}
+    #   STORAGE_BACKEND: ${STORAGE_BACKEND}
+    #   TEST_USER_ID: ${TEST_USER_ID}
+    #   DB_CONNECTION_STRING: ${DB_CONNECTION_STRING}
+    #   LOCAL_STORAGE_ROOT: ${LOCAL_STORAGE_ROOT}
+    #   STATEMENTS_STORAGE_BUCKET: ${STATEMENTS_STORAGE_BUCKET}
+    #   FRONTEND_URL: ${FRONTEND_URL}
+    env_file:
+      - .env.docker
     ports:
       - "8000:8000"
     depends_on:
@@ -46,20 +37,16 @@ services:
 
   frontend:
     build:
-      context: ./frontend-v2
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: spending-tracker-frontend
-    environment:
-      # Point React app to backend service inside Docker network
-      VITE_API_BASE_URL: "http://localhost:8000/api/v1"
-
-      # Your planned demo auth mode (frontend side)
-      VITE_AUTH_MODE: "demo"
-
-      # If/when you want to use real Supabase in non-demo mode,
-      # you'll provide these via a separate compose or env file:
-      # VITE_SUPABASE_URL: "https://your-project.supabase.co"
-      # VITE_SUPABASE_ANON_KEY: "sb_publishable_..."
+    # environment:
+    #   VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    #   VITE_AUTH_MODE: ${VITE_AUTH_MODE}
+    #   VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+    #   VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    env_file:
+      - ./frontend/.env.docker
     ports:
       - "5173:5173"
     depends_on:

@@ -14,9 +14,9 @@ class ConfigError(Exception):
 
 
 class AppEnvironment(StrEnum):
-    DEV = "DEV"
-    PROD = "PROD"
-    TEST = "TEST"
+    DEV = "dev"
+    PROD = "prod"
+    TEST = "test"
 
 
 class StorageBackendType(StrEnum):
@@ -37,7 +37,7 @@ class AppConfig(BaseSettings):
     LOCAL_STORAGE_ROOT: Path = PROJECT_ROOT / "local_storage"
     STORAGE_BACKEND: StorageBackendType = StorageBackendType.SUPABASE
     TEST_USER_ID: UUID | None = None
-    AUTH_MODE: str = AuthMode.REAL
+    AUTH_MODE: AuthMode = AuthMode.REAL
     APP_ENVIRONMENT: AppEnvironment = AppEnvironment.PROD
     DB_CONNECTION_STRING: str | None = None
     SUPABASE_URL: str | None = None
