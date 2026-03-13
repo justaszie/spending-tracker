@@ -50,7 +50,7 @@ export default function SignupPage() {
             <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
               <span className="text-xs font-bold">S</span>
             </div>
-            <span className="font-semibold tracking-tight">SpendFlow</span>
+            <span className="font-semibold tracking-tight">SpendPulse</span>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">Create an account</h1>
           <p className="text-sm text-muted-foreground mt-1">

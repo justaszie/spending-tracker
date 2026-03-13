@@ -146,7 +146,7 @@ export default function Dashboard() {
             <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
               <span className="text-xs font-bold">S</span>
             </div>
-            <span>SpendFlow</span>
+            <span>SpendPulse</span>
           </div>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             <a
