@@ -68,11 +68,11 @@ Visit the printed localhost URL.
 ---
 
 ## Summary
-- **Scope**: Full-stack SPA (React + TypeScript frontend, Python/FastAPI backend) with bank statement import, transactions dashboard, and spending category tagging. Supabase for auth and file storage, PostgreSQL for data.
-- **Architecture**: REST APIs, modular backend (API / DB / domain / file storage / statement extractors), background import jobs, demo mode.
-- **Quality**: 90%+ test coverage via unit and integration tests (pytest), static type checking, linting/formatting, pre-push hook and GitHub Actions CI.
+- **Scope**: Full-stack SPA (**React + TypeScript** frontend, **Python/FastAPI** backend) with bank statement import, transactions dashboard, and spending category tagging. Supabase for auth and file storage, PostgreSQL for data.
+- **Architecture**: **REST APIs**, **modular backend** (API / DB / domain / file storage / statement extractors), background import jobs, demo mode.
+- **Quality**: **90%+ test coverage via unit and integration tests (pytest)**, static type checking, linting/formatting, pre-push hook and GitHub Actions CI.
 - **Deployment**: Backend on Koyeb, frontend on Cloudflare Pages, managed Supabase for Auth + storage, PostgreSQL.
-- **Security & Auth**: Frontend login/signup, and session management, endpoints protected via JWT-based auth (Supabase) ; secrets managed via `.env`
+- **Security & Auth**: Frontend login/signup and session management, endpoints protected via **JWT-based auth** (Supabase) ; secrets managed via `.env`
 - **Key source code**:
   - Backend (`app/`): `main.py`, `api/statement_imports.py`, `import_job_runner.py`, `statement_extractors/`, `business_rules/`
   - Frontend (`frontend/`): `src/App.tsx`, `src/pages/dashboard.tsx`, `src/contexts/AuthContext.tsx`, `src/hooks/transactions/`
@@ -81,14 +81,14 @@ Visit the printed localhost URL.
 
 ## Table of Contents
 
-- [Live Demo](#live-demo)
+- [Live Demo](#live-application)
 - [How to run locally](#how-to-run-locally)
 - [Summary](#summary)
 - [Key Features](#key-features)
 - [High Level Architecture](#high-level-architecture)
 - [Project Structure](#project-structure)
 - [Statement Import Pipeline](#statement-import-pipeline)
-- [Statement Extractors](#statement-extractors)
+- [Future Work](#future-work)
 
 ## Key Features
 
