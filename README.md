@@ -20,52 +20,12 @@ You can either sign up or click on __Try demo__ to try it out without creating a
 #### Importing Statements
 ![Import-Select](/screenshots/import-select.png)
 
-![Import-Select](/screenshots/import-scheduling.png)
+![Import-Scheduling](/screenshots/import-scheduling.png)
 
-![Import-Select](/screenshots/import-result.png)
+![Import-Result](/screenshots/import-result.png)
 
 #### Updating Spending Categories
-![Import-Select](/screenshots/dashboard.png)
-
-
-## How to run locally
-### Docker
-The project is packaged in a Docker container. The fastest way to run both frontend and backend is to copy the .env.docker files and run the container. From the project root directory (`spending-tracker/`), run:
-```bash
-    cp .env.docker.example .env.docker
-    cp ./frontend/.env.docker.example ./frontend/.env.docker
-    docker compose up --build
-```
-
-Sample statements to run can be found in `./sample_data/statements/`.
-
-Note that this runs the project in demo mode using a test user. That is because auth requires a running supabase instance for auth and file storage and pulling the docker images for supabase may takes a while. To use the full features follow the instructions below.
-
-### Manual Setup
-The full project requires running an instance of postgres and supabase (either use a managed project or run a [local instance](https://supabase.com/docs/guides/local-development)) and updating the environment variables.
-
-**Backend**
-
-Requirements: Python 3.13+, PostgreSQL, Supabase project (or compatible Postgres + storage), `uv` / `pip` for dependencies
-```bash
-# from repo root
-cp .env.example .env          # then fill in Postgres + Supabase credentials
-uv sync
-uvicorn app.main:app --reload
-```
-
-**Frontend**
-
-Requirements: Node + npm
-```bash
-cd frontend
-cp .env.example .env          # then fill in VITE_API_BASE_URL with the backend URL (including the API version suffix) and supabase creds
-npm install
-npm run dev
-```
-Visit the printed localhost URL.
-
----
+![Import-Dashboard](/screenshots/dashboard.png)
 
 ## Summary
 - **Scope**: Full-stack SPA (**React + TypeScript** frontend, **Python/FastAPI** backend) with bank statement import, transactions dashboard, and spending category tagging. Supabase for auth and file storage, PostgreSQL for data.
@@ -82,23 +42,26 @@ Visit the printed localhost URL.
 ## Table of Contents
 
 - [Live Demo](#live-application)
-- [How to run locally](#how-to-run-locally)
+
 - [Summary](#summary)
 - [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
 - [High Level Architecture](#high-level-architecture)
 - [Project Structure](#project-structure)
 - [Statement Import Pipeline](#statement-import-pipeline)
+- [How to run locally](#how-to-run-locally)
 - [Future Work](#future-work)
+- [Contact Me](#contact-me)
 
 ## Key Features
 
 ### Importing Bank Statements
   - `POST /api/v1/statement-imports`: uploading bank statements to import transactions.
-    - Validates statement file, store it in Supabase file storage, enqueues background import job.
+    - Validates statement file, stores it in Supabase file storage, enqueues background import job.
     - Background job downloads file, runs a bank‑specific extractor (Revolut, Swedbank), applies business rules, deduplicates, converts to standard currency, enriches with spending category, and persists transactions.
     - Each extractor implements a "deduplication key" calculation logic to ensure idempotent imports.
     - Job id, status and failure reasons are persisted for observability, rollbacks, re-runs.
-  - Frontend UI flow that allows to upload file, gives user feedback on job status and displayes result (success, failure)
+  - Frontend UI flow that allows to upload file, gives user feedback on job status and displays result (success, failure)
 
 For technical details of the workflow, see: [Statement Import Pipeline](#statement-import-pipeline)
 
@@ -108,14 +71,23 @@ For technical details of the workflow, see: [Statement Import Pipeline](#stateme
     - Transactions table with search and filter UI (option to view "untagged debit only")
     - Assign category to a transaction (pick existing or create a new one)
 
+## Tech Stack
+| Layer     | Technologies                                             |
+|-----------|----------------------------------------------------------|
+| Backend   | Python 3.13, FastAPI, SQLModel/SQLAlchemy, Pydantic      |
+| Frontend  | React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, React Query |
+| Database  | PostgreSQL                                               |
+| Auth/Storage | Supabase (JWT auth, file storage)                     |
+| CI / CD    | Docker Compose, GitHub Actions CI, pre-push hooks (mypy, ruff, pytest) |
+| Deployment| Koyeb (backend), Cloudflare Pages (frontend)             |
+
 ## High Level Architecture
 ### Backend (`app/`):
 - Python **FastAPI** app with versioned **REST API** under `/api/v1`. See **[API Documentation](https://api.spendpulse.justas.tech/docs)** for more details.
-- **SQLModel / SQLAlchemy** for persistence (PostgreSQL).
+- **SQLModel / SQLAlchemy** for persistence (**PostgreSQL**).
 - **Pydantic** used heavily to validate source data at the boundaries (API requests / responses, File I/O)
 - **Supabase** for auth and for storage of uploaded statement files.
 - Import job workflow that processes statement files and imports transactions in the background.
-- Postgres DB for data persistence
 
 ### Frontend (`frontend/`)
 - **React + TypeScript**, **Tailwind CSS**, shadcn‑style radix-ui components.
@@ -131,7 +103,7 @@ spending-tracker/
 │   ├── api/                # REST API layer
 │   ├── db/                 # DB access Layer
 │   ├── main.py             # Entry point for the FastAPI
-|   |── ...
+|   ├── ...
 ├── frontend/src            # React + TypeScript (Vite)
 ├── tests/                  # Backend test suite
 │   ├── integration/        # Testing API flows
@@ -140,7 +112,7 @@ spending-tracker/
 ├── docker-compose.yml
 ├── backend.Dockerfile
 ├── pyproject.toml
-├── .env.example            # environment variablese used by local server
+├── .env.example            # environment variables used by local server
 ├── .env.docker.example     # environment variables used by Docker
 ```
 
@@ -225,9 +197,58 @@ Each extractor has four parts:
 3. **Conversion function** — `convert_to_standardized_transaction(raw) → ExtractedTransaction`. Maps bank-specific fields to the shared domain shape: determines `side`, `transaction_type`, `counterparty`, and computes the **dedup key**. Each bank's dedup key uses whichever fields reliably identify a unique transaction in that format (Swedbank has a built-in unique ID; Revolut hashes a composite of date, description, amount, and balance).
 4. **Logging** — on completion, each extractor logs total rows, successfully extracted count, and rejected count.
 
+## How to run locally
+### Docker
+The project is packaged in a Docker container. The fastest way to run both frontend and backend is to copy the .env.docker files and run the container. From the project root directory (`spending-tracker/`), run:
+```bash
+    cp .env.docker.example .env.docker
+    cp ./frontend/.env.docker.example ./frontend/.env.docker
+    docker compose up --build
+```
+
+Sample statements to run can be found in `./sample_data/statements/`.
+
+Note that this runs the project in demo mode using a test user. That is because a supabase instance is required for auth and file storage but pulling the docker images for supabase takes a while. To use the full features follow the instructions below.
+
+### Manual Setup
+The full project requires running an instance of postgres and supabase (either use a managed project or run a [local instance](https://supabase.com/docs/guides/local-development)) and updating the environment variables.
+
+**Backend**
+
+Requirements: Python 3.13+, PostgreSQL, Supabase project (or compatible Postgres + storage), `uv` / `pip` for dependencies
+```bash
+# from repo root
+cp .env.example .env          # then fill in Postgres + Supabase credentials
+uv sync
+uvicorn app.main:app --reload
+```
+
+**Frontend**
+
+Requirements: Node + npm
+```bash
+cd frontend
+cp .env.example .env          # then fill in VITE_API_BASE_URL with the backend URL (including the API version suffix) and supabase creds
+npm install
+npm run dev
+```
+Visit the printed localhost URL.
+
+---
+
 ## Future Work
 Currently, the app is mostly useful as a personal solution because it hardcodes the business rules (e.g. how to auto-calculate spending categories). I'd like to make it into a flexible and configurable app:
 - Make the category rules and filter rules flexible with a config UI
 - Create referential tables for categories, with a hierarchical taxonomy to allow analyzing data at multiple levels (e.g. EATING_OUT and FOOD_DELIVERIES -> FOOD level 2 category)
 - UI for users to create new extractors logic using LLMs (e.g. to parse PDFs, auto suggest column mapping)
 - Allow setting category budgets to track spending against goals
+
+## Contact Me
+I’d love to hear from you—whether you’re a hiring manager reviewing this project, a developer interested in collaborating, or someone who would like to share feedback. **I am looking for** full-stack or backend-focused software engineering roles or contracts.
+
+**Justas Zieminykas**
+- **GitHub:** [justaszie](https://github.com/justaszie)
+- **Email:** justas.zieminykas@gmail.com
+- **LinkedIn:** [Justas Zieminykas](https://www.linkedin.com/in/justas-žieminykas-01423988)
+
+---
