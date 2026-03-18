@@ -7,6 +7,7 @@ import { useTransactions } from "@/hooks/transactions/use-transactions";
 import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogries";
 import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
+import { UntaggedReviewBanner } from "@/components/transactions/UntaggedReviewBanner";
 import ErrorPage from "@/pages/error";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import {
@@ -40,6 +41,13 @@ export default function TransactionsPage() {
   };
 
   const { data, isLoading, error } = useTransactions(params);
+  const { data: untaggedDebitData, dataUpdatedAt: untaggedDebitUpdatedAt } =
+    useTransactions({
+    page: 1,
+    size: 1,
+    untaggedOnly: true,
+    side: ["debit"],
+    });
   const { data: spendingCategoriesData } = useSpendingCategories();
 
   const updateTransactionMutation = useUpdateTransaction();
@@ -59,6 +67,7 @@ export default function TransactionsPage() {
 
   const transactions = data?.transactions ?? [];
   const totalCount = data?.total || 0;
+  const untaggedDebitCount = untaggedDebitData?.total || 0;
   const spendingCategories = spendingCategoriesData ?? [];
 
   const handleSort = (
@@ -88,6 +97,10 @@ export default function TransactionsPage() {
 
   return (
     <main className="py-8 px-6">
+      <UntaggedReviewBanner
+        untaggedDebitCount={untaggedDebitCount}
+        refreshedAt={untaggedDebitUpdatedAt}
+      />
       {/* Stats Row - Placeholder for future analytics cards */}
       <div></div>
       <h2 className="mb-1 font-bold">Transaction History</h2>
