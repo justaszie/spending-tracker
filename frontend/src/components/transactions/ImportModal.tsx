@@ -8,13 +8,6 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import {
   Upload,
@@ -22,15 +15,10 @@ import {
   AlertCircle,
   Loader2,
   Building2,
-  FileText,
-  ArrowRight,
-  ExternalLink,
-  Proportions
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApiError, statementImportAPI } from "@/lib/api";
 import type { ImportJobResult, StatementSource, ImportJobStatus } from "@/types/transactions";
-import { Redirect } from "wouter";
 
 interface ImportModalProps {
   open: boolean;
