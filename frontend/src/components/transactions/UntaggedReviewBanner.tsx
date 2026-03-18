@@ -33,7 +33,7 @@ export function UntaggedReviewBanner({
           <span className="font-semibold text-amber-600 dark:text-amber-200">
             {untaggedDebitCount}
           </span>{" "}
-          untagged transaction{untaggedDebitCount === 1 ? "" : "s"} that need categorization.{" "}
+          untagged debit transaction{untaggedDebitCount === 1 ? "" : "s"} that need a spending category.{" "}
           <Button
             asChild
             variant="link"
