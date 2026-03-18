@@ -36,15 +36,15 @@ export function AppHeader({ setImportModalOpen }: AppHeaderProps) {
             const isActive = location === item.href;
 
             return (
-              <Link key={item.href} href={item.href}>
-                <a
-                  className={
-                    "transition-colors hover:text-foreground/80 " +
-                    (isActive ? "text-foreground" : "text-foreground/60")
-                  }
-                >
-                  {item.label}
-                </a>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={
+                  "transition-colors hover:text-foreground/80 " +
+                  (isActive ? "text-foreground" : "text-foreground/60")
+                }
+              >
+                {item.label}
               </Link>
             );
           })}

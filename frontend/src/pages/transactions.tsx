@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
   GetTransactionsParams,
   TransactionUpdatePayload,
@@ -17,7 +16,6 @@ import {
 
 export default function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "untagged">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<SortableField | null>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -39,8 +37,6 @@ export default function TransactionsPage() {
     search: searchTerm || undefined,
     sortBy: sortColumn ? sortByMapping[sortColumn] : undefined,
     sortOrder: sortDirection,
-    untaggedOnly: filterType === "untagged" ? true : undefined,
-    side: filterType === "untagged" ? ["debit"] : undefined,
   };
 
   const { data, isLoading, error } = useTransactions(params);
@@ -90,18 +86,14 @@ export default function TransactionsPage() {
     setCurrentPage(1);
   };
 
-  const handleFilterChange = (filter: "all" | "untagged") => {
-    setFilterType(filter);
-    setCurrentPage(1); // Reset to first page on filter change
-  };
-
   return (
     <main className="py-8 px-6">
       {/* Stats Row - Placeholder for future analytics cards */}
       <div></div>
-
       <h2 className="mb-1 font-bold">Transaction History</h2>
-      <p></p>
+      <p className="text-muted-foreground text-sm mb-6">
+        All transactions
+      </p>
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -109,24 +101,6 @@ export default function TransactionsPage() {
             value={searchTerm}
             onSearchChange={handleSearchChange}
           />
-          <div className="flex items-center border rounded-md bg-card p-1">
-            <Button
-              variant={filterType === "all" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => handleFilterChange("all")}
-              className="h-7 px-3 text-xs"
-            >
-              All
-            </Button>
-            <Button
-              variant={filterType === "untagged" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => handleFilterChange("untagged")}
-              className="h-7 px-3 text-xs"
-            >
-              Untagged
-            </Button>
-          </div>
         </div>
       </div>
 
