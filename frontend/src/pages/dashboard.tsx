@@ -138,7 +138,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
+    <div className="container mx-auto min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
       {/* Navbar */}
       <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center px-6">
@@ -190,6 +190,8 @@ export default function Dashboard() {
         {/* Stats Row - Placeholder for future analytics cards */}
         <div></div>
 
+        <h2 className="mb-1 font-bold">Transaction History</h2>
+        <p></p>
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2 w-full sm:w-auto">
