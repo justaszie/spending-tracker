@@ -11,6 +11,32 @@ import SignupPage from "@/pages/signup";
 import { RequireAuth } from "@/components/RequireAuth";
 import { PublicOnly } from "@/components/PublicOnly";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AppLayout } from "@/components/layout/AppLayout";
+
+function AuthedRouter() {
+  return (
+    <AppLayout>
+      <Switch>
+        <Route path="/demo">
+          {() => <TransactionsPage />}
+        </Route>
+        <Route path="/transactions">
+          {() => <TransactionsPage />}
+        </Route>
+        <Route path="/dashboard">
+          {() => <Redirect to="/transactions" />}
+        </Route>
+        <Route path="/review">
+          {() => <ReviewPage />}
+        </Route>
+        <Route path="/">
+          {() => <Redirect to="/transactions" />}
+        </Route>
+        <Route component={NotFound} />
+      </Switch>
+    </AppLayout>
+  );
+}
 
 function Router() {
   return (
@@ -29,34 +55,13 @@ function Router() {
           </PublicOnly>
         )}
       </Route>
-      <Route path="/demo">
+      <Route>
         {() => (
           <RequireAuth>
-            <TransactionsPage />
+            <AuthedRouter />
           </RequireAuth>
         )}
       </Route>
-      <Route path="/transactions">
-        {() => (
-          <RequireAuth>
-            <TransactionsPage />
-          </RequireAuth>
-        )}
-      </Route>
-      <Route path="/dashboard">
-        {() => <Redirect to="/transactions" />}
-      </Route>
-      <Route path="/review">
-        {() => (
-          <RequireAuth>
-            <ReviewPage />
-          </RequireAuth>
-        )}
-      </Route>
-      <Route path="/">
-        {() => <Redirect to="/transactions" />}
-      </Route>
-      <Route component={NotFound} />
     </Switch>
   );
 }

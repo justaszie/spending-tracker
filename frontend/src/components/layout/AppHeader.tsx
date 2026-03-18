@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { Upload } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 type NavItem = {
@@ -12,7 +13,11 @@ const navItems: NavItem[] = [
   { label: "Review", href: "/review" },
 ];
 
-export function AppHeader() {
+type AppHeaderProps = {
+  setImportModalOpen: (value: boolean) => void;
+};
+
+export function AppHeader({ setImportModalOpen }: AppHeaderProps) {
   const { logout, user, isDemo } = useAuth();
   const [location] = useLocation();
 
@@ -51,6 +56,10 @@ export function AppHeader() {
               Demo mode
             </span>
           )}
+          <Button size="sm" onClick={() => setImportModalOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import Statement
+          </Button>
           <div className="flex items-center gap-1">
             <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
               <p>{user && user.email?.slice(0, 1).toUpperCase()}</p>
@@ -69,4 +78,3 @@ export function AppHeader() {
     </header>
   );
 }
-

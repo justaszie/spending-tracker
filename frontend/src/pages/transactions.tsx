@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
-import { ImportModal } from "@/components/transactions/ImportModal";
 import {
   GetTransactionsParams,
   TransactionUpdatePayload,
@@ -12,8 +10,6 @@ import { useUpdateTransaction } from "@/hooks/transactions/use-update-transactio
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
 import ErrorPage from "@/pages/error";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
-import { queryClient } from "@/lib/queryClient";
-import { AppHeader } from "@/components/layout/AppHeader";
 import {
   SortableField,
   TransactionsTable,
@@ -22,7 +18,6 @@ import {
 export default function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<"all" | "untagged">("all");
-  const [importModalOpen, setImportModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<SortableField | null>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -100,84 +95,56 @@ export default function TransactionsPage() {
     setCurrentPage(1); // Reset to first page on filter change
   };
 
-  // Fire when user comes back from import modal to view refreshed transactions
-  const handleViewTransactions = () => {
-    // Refresh transactions data and close the modal
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    setImportModalOpen(false);
-  };
-
   return (
-    <div className="container mx-auto min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
-      <AppHeader />
+    <main className="py-8 px-6">
+      {/* Stats Row - Placeholder for future analytics cards */}
+      <div></div>
 
-      <main className="py-8 px-6">
-        {/* Stats Row - Placeholder for future analytics cards */}
-        <div></div>
-
-        <h2 className="mb-1 font-bold">Transaction History</h2>
-        <p></p>
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <TransactionSearch
-              value={searchTerm}
-              onSearchChange={handleSearchChange}
-            />
-            <div className="flex items-center border rounded-md bg-card p-1">
-              <Button
-                variant={filterType === "all" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => handleFilterChange("all")}
-                className="h-7 px-3 text-xs"
-              >
-                All
-              </Button>
-              <Button
-                variant={filterType === "untagged" ? "secondary" : "ghost"}
-                size="sm"
-                onClick={() => handleFilterChange("untagged")}
-                className="h-7 px-3 text-xs"
-              >
-                Untagged
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setImportModalOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              Import Statement
+      <h2 className="mb-1 font-bold">Transaction History</h2>
+      <p></p>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <TransactionSearch
+            value={searchTerm}
+            onSearchChange={handleSearchChange}
+          />
+          <div className="flex items-center border rounded-md bg-card p-1">
+            <Button
+              variant={filterType === "all" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => handleFilterChange("all")}
+              className="h-7 px-3 text-xs"
+            >
+              All
             </Button>
-            {/* Not supported right now */}
-            {/* <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Manual
-            </Button> */}
+            <Button
+              variant={filterType === "untagged" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => handleFilterChange("untagged")}
+              className="h-7 px-3 text-xs"
+            >
+              Untagged
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Transactions Table */}
-        <TransactionsTable
-          transactions={transactions}
-          totalCount={totalCount}
-          spendingCategories={spendingCategories}
-          onUpdateTransaction={handleUpdateTransaction}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          sortColumn={sortColumn}
-          sortDirection={sortDirection}
-          onSort={handleSort}
-        />
-      </main>
-
-      <ImportModal
-        open={importModalOpen}
-        onOpenChange={setImportModalOpen}
-        onViewTransactions={handleViewTransactions}
+      {/* Transactions Table */}
+      <TransactionsTable
+        transactions={transactions}
+        totalCount={totalCount}
+        spendingCategories={spendingCategories}
+        onUpdateTransaction={handleUpdateTransaction}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+        onSort={handleSort}
       />
-    </div>
+    </main>
   );
 }
 

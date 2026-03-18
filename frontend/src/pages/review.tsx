@@ -3,10 +3,12 @@ import { TransactionSearch } from "@/components/transactions/TransactionSearch";
 import { useTransactions } from "@/hooks/transactions/use-transactions";
 import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogries";
 import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
-import { GetTransactionsParams, TransactionUpdatePayload } from "@/types/transactions";
+import {
+  GetTransactionsParams,
+  TransactionUpdatePayload,
+} from "@/types/transactions";
 import ErrorPage from "@/pages/error";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
-import { AppHeader } from "@/components/layout/AppHeader";
 import {
   SortableField,
   TransactionsTable,
@@ -70,7 +72,10 @@ export default function ReviewPage() {
     }
   };
 
-  const handleUpdateTransaction = (id: string, updates: TransactionUpdatePayload) => {
+  const handleUpdateTransaction = (
+    id: string,
+    updates: TransactionUpdatePayload,
+  ) => {
     updateTransactionMutation.mutate({ id, updates });
   };
 
@@ -80,36 +85,34 @@ export default function ReviewPage() {
   };
 
   return (
-    <div className="container mx-auto min-h-screen bg-background text-foreground font-sans selection:bg-primary/10">
-      <AppHeader />
+    <main className="py-8 px-6">
+      <h2 className="mb-1 font-bold">Review</h2>
+      <p className="text-muted-foreground text-sm mb-6">
+        Untagged debit transactions that need a category.
+      </p>
 
-      <main className="py-8 px-6">
-        <h2 className="mb-1 font-bold">Review</h2>
-        <p className="text-muted-foreground text-sm mb-6">
-          Untagged debit transactions that need a category.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <TransactionSearch value={searchTerm} onSearchChange={handleSearchChange} />
-          </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <TransactionSearch
+            value={searchTerm}
+            onSearchChange={handleSearchChange}
+          />
         </div>
+      </div>
 
-        <TransactionsTable
-          transactions={transactions}
-          totalCount={totalCount}
-          spendingCategories={spendingCategories}
-          onUpdateTransaction={handleUpdateTransaction}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          sortColumn={sortColumn}
-          sortDirection={sortDirection}
-          onSort={handleSort}
-        />
-      </main>
-    </div>
+      <TransactionsTable
+        transactions={transactions}
+        totalCount={totalCount}
+        spendingCategories={spendingCategories}
+        onUpdateTransaction={handleUpdateTransaction}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+      />
+    </main>
   );
 }
-
