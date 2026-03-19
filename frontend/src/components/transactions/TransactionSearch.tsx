@@ -32,12 +32,12 @@ export function TransactionSearch({
   }, [localValue, value, onSearchChange, debounceMs]);
 
   return (
-    <div className="relative w-full sm:w-72">
+    <div className="relative w-full sm:w-80">
       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
       <Input
         type="search"
         placeholder="Search transactions..."
-        className="pl-9 bg-card"
+        className="h-10 bg-background pl-9"
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}
       />

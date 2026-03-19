@@ -8,6 +8,9 @@ import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogr
 import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
 import { UntaggedReviewBanner } from "@/components/transactions/UntaggedReviewBanner";
+import { TotalSpendCard } from "@/components/transactions/stats/TotalSpendCard";
+import { AvgDailySpendCard } from "@/components/transactions/stats/AvgDailySpendCard";
+import { TopCategoriesCard } from "@/components/transactions/stats/TopCategoriesCard";
 import ErrorPage from "@/pages/error";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
 import {
@@ -96,41 +99,58 @@ export default function TransactionsPage() {
   };
 
   return (
-    <main className="py-8 px-6">
+    <main className="px-6 py-6">
       <UntaggedReviewBanner
         untaggedDebitCount={untaggedDebitCount}
         refreshedAt={untaggedDebitUpdatedAt}
       />
-      {/* Stats Row - Placeholder for future analytics cards */}
-      <div></div>
-      <h2 className="mb-1 font-bold">Transaction History</h2>
-      <p className="text-muted-foreground text-sm mb-6">
-        All transactions
-      </p>
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+
+      <header className="mb-4">
+        <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
+      </header>
+
+      <div className="mb-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12">
+        <div className="xl:col-span-3">
+          <TotalSpendCard />
+        </div>
+        <div className="xl:col-span-3">
+          <AvgDailySpendCard />
+        </div>
+        <div className="md:col-span-2 xl:col-span-6">
+          <TopCategoriesCard />
+        </div>
+      </div>
+
+      <section>
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Transaction history</h2>
+            <p className="text-sm text-muted-foreground">
+              All imported transactions
+            </p>
+          </div>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
           <TransactionSearch
             value={searchTerm}
             onSearchChange={handleSearchChange}
           />
+          </div>
         </div>
-      </div>
 
-      {/* Transactions Table */}
-      <TransactionsTable
-        transactions={transactions}
-        totalCount={totalCount}
-        spendingCategories={spendingCategories}
-        onUpdateTransaction={handleUpdateTransaction}
-        currentPage={currentPage}
-        itemsPerPage={itemsPerPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        sortColumn={sortColumn}
-        sortDirection={sortDirection}
-        onSort={handleSort}
-      />
+        <TransactionsTable
+          transactions={transactions}
+          totalCount={totalCount}
+          spendingCategories={spendingCategories}
+          onUpdateTransaction={handleUpdateTransaction}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          sortColumn={sortColumn}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+        />
+      </section>
     </main>
   );
 }
