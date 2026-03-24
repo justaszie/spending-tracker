@@ -726,3 +726,32 @@ class TestGetSpendingCategories:
         response = test_client.get(f"{self.TRANSACTIONS_API_PATH}/spending-categories")
         assert response.status_code == 200
         assert response.json() == []
+
+
+class TestGetStats:
+    STATS_API_PATH = f"{app_config.V1_API_PREFIX}/transactions/stats"
+
+
+    # def _insert_random_transactions(self, test_db, db_transaction, count: int) -> list:
+    #     inserted_txns = [
+    #         db_transaction(
+    #             transaction_datetime=random_datetime(2025),
+    #             user_id=TEST_USER_ID,
+    #             dedup_key=random_dedup_key(),
+    #         )
+    #         for _ in range(count)
+    #     ]
+
+    #     with Session(test_db, expire_on_commit=False) as session:
+    #         session.add_all(inserted_txns)
+    #         session.commit()
+
+    #     return sorted(
+    #         inserted_txns,
+    #         key=lambda txn: txn.transaction_datetime,
+    #         reverse=True,
+    #     )
+
+"""
+
+"""

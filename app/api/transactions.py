@@ -1,13 +1,21 @@
+import datetime as dt
 import logging
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
+from app.analytics import build_stats_query, generate_transactions_stats
 from app.core.config import app_config
 from app.core.dependencies import AuthDependency, DBDependency
-from app.core.project_types import Side, TransactionsSortField
+from app.core.project_types import (
+    PeriodPreset,
+    PeriodStats,
+    Side,
+    StatsDeltas,
+    TransactionsSortField,
+)
 from app.db.transactions import (
     Transaction,
     get_distinct_spending_categories,
@@ -48,6 +56,39 @@ class TransactionsQueryParams(BaseModel):
     side: list[Side] | None = None
     spending_category: list[str] | None = None
     untagged_only: bool = False
+
+
+class TransactionsStatsRequest(BaseModel):
+    period: PeriodPreset | None = None
+    # Dates only required if period is "custom"
+    date_from: dt.date | None = None
+    date_to: dt.date | None = None
+    include_previous: bool = False
+
+    @model_validator(mode="after")
+    def dates_required_custom_period(self) -> Self:
+        if (
+            self.period == PeriodPreset.CUSTOM
+            and self.date_from is None
+            and self.date_to is None
+        ):
+            raise ValueError(
+                'When period is "custom", at least one of the dates is required'
+            )
+
+        if self.date_from and self.date_to and self.date_from > self.date_to:
+            raise ValueError("date_from cannot be after date_to")
+
+        return self
+
+
+class TransactionsStatsResponse(BaseModel):
+    period: PeriodPreset
+    # if current_period is null, it means there is no data to work with
+    current_period: PeriodStats | None = None
+    # previous data & deltas are null when previous period doesn't exist or not requested
+    previous_period: PeriodStats | None = None
+    deltas: StatsDeltas | None = None
 
 
 @router.get("", response_model=TransactionsReadResponse)
@@ -131,3 +172,27 @@ def patch_transaction(
         raise HTTPException(404, detail="Transaction not found")
 
     return updated
+
+
+@router.get("/stats", response_model=TransactionsStatsResponse)
+def get_transactions_stats(
+    user_id: AuthDependency,
+    db: DBDependency,
+    params: Annotated[TransactionsStatsRequest, Query()],
+) -> TransactionsStatsResponse:
+    query = build_stats_query(
+        user_id=user_id,
+        date_from=params.date_from,
+        date_to=params.date_to,
+        selected_period=params.period,
+        previous_requested=params.include_previous,
+    )
+
+    stats = generate_transactions_stats(query=query, db=db)
+
+    return TransactionsStatsResponse(
+        period=params.period,
+        current_period=stats.current_period,
+        previous_period=stats.previous_period,
+        deltas=stats.deltas,
+    )

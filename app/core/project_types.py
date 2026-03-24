@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Literal, Self
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class StatementSource(StrEnum):
@@ -72,3 +72,51 @@ type TransactionsSortField = Literal[
     "side",
     "eur_amount",
 ]
+
+
+class PeriodPreset(StrEnum):
+    LAST_30 = "L30"
+    MONTH_TO_DATE = "MTD"
+    YEAR_TO_DATE = "YTD"
+    ALL_TIME = "ALL_TIME"
+    CUSTOM = "CUSTOM"
+
+class MetricsGroupName(StrEnum):
+    SPEND = "spend"
+
+class DeltaValues(BaseModel):
+    abs_change: Decimal
+    # Important: the values are percentages, not ratios.
+    # The pct_change can be null if previous value is 0
+    pct_change: Decimal | None
+
+
+class DeltasGroup(BaseModel):
+    total: DeltaValues
+    avg_daily: DeltaValues
+
+
+class CategoryAggregate(BaseModel):
+    category: str | None
+    total: Decimal
+    avg_daily: Decimal | None = None
+    # Can be extended to add other by-category aggregate metrics.
+
+
+class MetricsGroup(BaseModel):
+    total: Decimal
+    avg_daily: Decimal
+    by_category: list[CategoryAggregate] = Field(default_factory=list)
+
+
+class PeriodStats(BaseModel):
+    date_from: dt.date
+    date_to: dt.date
+    days_count: int = Field(ge=1)
+    groups: dict[MetricsGroupName, MetricsGroup] = Field(default_factory=dict)
+
+
+class StatsDeltas(BaseModel):
+    groups: dict[MetricsGroupName, DeltasGroup]
+
+
