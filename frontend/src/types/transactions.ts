@@ -44,6 +44,59 @@ export type TransactionsResponse = {
   size?: number;
 };
 
+export type PeriodPreset = "L30" | "MTD" | "YTD" | "ALL_TIME" | "CUSTOM";
+
+export type TransactionsStatsParams = {
+  period?: PeriodPreset;
+  dateFrom?: string;
+  dateTo?: string;
+  includePrevious?: boolean;
+};
+
+export type StatsNumeric = number | string;
+
+export type TransactionsStatsCategory = {
+  category: string | null;
+  total: StatsNumeric;
+  avg_daily: StatsNumeric | null;
+};
+
+export type TransactionsStatsSpendGroup = {
+  total: StatsNumeric;
+  avg_daily: StatsNumeric;
+  by_category: TransactionsStatsCategory[];
+};
+
+export type TransactionsStatsPeriod = {
+  date_from: string;
+  date_to: string;
+  days_count: number;
+  groups: {
+    spend: TransactionsStatsSpendGroup;
+  };
+};
+
+export type TransactionsStatsDeltaValues = {
+  abs_change: StatsNumeric;
+  pct_change: StatsNumeric | null;
+};
+
+export type TransactionsStatsDeltas = {
+  groups: {
+    spend: {
+      total: TransactionsStatsDeltaValues;
+      avg_daily: TransactionsStatsDeltaValues;
+    };
+  };
+};
+
+export type TransactionsStatsResponse = {
+  period: PeriodPreset;
+  current_period: TransactionsStatsPeriod | null;
+  previous_period: TransactionsStatsPeriod | null;
+  deltas: TransactionsStatsDeltas | null;
+};
+
 export type ImportJobStatus = "pending" | "running" | "completed" | "failed";
 
 export type StatementSource = "swedbank" | "revolut";

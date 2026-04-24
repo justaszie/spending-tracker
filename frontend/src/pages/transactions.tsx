@@ -6,6 +6,7 @@ import {
 import { useTransactions } from "@/hooks/transactions/use-transactions";
 import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogries";
 import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
+import { useTransactionsStats } from "@/hooks/transactions/use-transactions-stats";
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
 import { UntaggedReviewBanner } from "@/components/transactions/UntaggedReviewBanner";
 import { TotalSpendCard } from "@/components/transactions/stats/TotalSpendCard";
@@ -25,6 +26,12 @@ export default function TransactionsPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const itemsPerPage = 50;
+  const statsParams = {
+    period: "ALL_TIME" as const,
+    dateFrom: "2026-01-10",
+    dateTo: "2026-01-20",
+    includePrevious: true,
+  };
 
   const sortByMapping: Record<SortableField, GetTransactionsParams["sortBy"]> =
     {
@@ -44,12 +51,14 @@ export default function TransactionsPage() {
   };
 
   const { data, isLoading, error } = useTransactions(params);
+  const { data: statsData, isLoading: statsLoading } =
+    useTransactionsStats(statsParams);
   const { data: untaggedDebitData, dataUpdatedAt: untaggedDebitUpdatedAt } =
     useTransactions({
-    page: 1,
-    size: 1,
-    untaggedOnly: true,
-    side: ["debit"],
+      page: 1,
+      size: 1,
+      untaggedOnly: true,
+      side: ["debit"],
     });
   const { data: spendingCategoriesData } = useSpendingCategories();
 
@@ -72,6 +81,52 @@ export default function TransactionsPage() {
   const totalCount = data?.total || 0;
   const untaggedDebitCount = untaggedDebitData?.total || 0;
   const spendingCategories = spendingCategoriesData ?? [];
+
+  const toNumber = (value: number | string | null | undefined): number => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") return Number(value);
+    return 0;
+  };
+
+  const currentSpendGroup = statsData?.current_period?.groups?.spend;
+  const previousSpendGroup = statsData?.previous_period?.groups?.spend;
+  const spendDeltas = statsData?.deltas?.groups?.spend;
+
+  const totalSpend = toNumber(currentSpendGroup?.total);
+  const avgDailySpend = toNumber(currentSpendGroup?.avg_daily);
+  const periodDaysCount = statsData?.current_period?.days_count ?? 0;
+  const previousTotalSpend = previousSpendGroup
+    ? toNumber(previousSpendGroup.total)
+    : null;
+  const totalDeltaPct =
+    spendDeltas?.total?.pct_change === null ||
+    spendDeltas?.total?.pct_change === undefined
+      ? null
+      : toNumber(spendDeltas.total.pct_change);
+  const previousPeriodLabel =
+    statsData?.previous_period?.date_from && statsData?.previous_period?.date_to
+      ? `${statsData.previous_period.date_from} - ${statsData.previous_period.date_to}`
+      : null;
+
+  const categorySpending = currentSpendGroup?.by_category ?? [];
+  let topCategories = categorySpending
+    .sort((t1, t2) => Number(t2.total) - Number(t1.total))
+    .slice(0, 6)
+    .map((cat) => ({
+      name: cat.category ?? "Uncategorized",
+      amount: toNumber(cat.total),
+    }));
+  // If there are > 5 categories in the stats, we lump other categories into "Remaining"
+  if (categorySpending.length > 5) {
+    const remainingTotal = categorySpending
+      .slice(6)
+      .reduce((total, cat) => total + toNumber(cat.total), 0);
+
+      topCategories.push({
+      name: "Other categories",
+      amount: remainingTotal,
+    });
+  }
 
   const handleSort = (
     column: "date" | "counterparty" | "amount" | "category",
@@ -105,21 +160,40 @@ export default function TransactionsPage() {
         refreshedAt={untaggedDebitUpdatedAt}
       />
 
-      <header className="mb-4">
-        <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
-      </header>
+      {/* Only display stats row if there are transactions */}
+      {transactions.length > 0 && (
+        <>
+          <header className="mb-4">
+            <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
+          </header>
 
-      <div className="mb-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12">
-        <div className="xl:col-span-3">
-          <TotalSpendCard />
-        </div>
-        <div className="xl:col-span-3">
-          <AvgDailySpendCard />
-        </div>
-        <div className="md:col-span-2 xl:col-span-6">
-          <TopCategoriesCard />
-        </div>
-      </div>
+          <div className="mb-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12">
+            <div className="xl:col-span-3">
+              <TotalSpendCard
+                total={totalSpend}
+                changePercent={totalDeltaPct}
+                previousAmount={previousTotalSpend}
+                previousPeriodLabel={previousPeriodLabel}
+                isLoading={statsLoading && !statsData}
+              />
+            </div>
+            <div className="xl:col-span-3">
+              <AvgDailySpendCard
+                avgDaily={avgDailySpend}
+                overDays={periodDaysCount}
+                isLoading={statsLoading && !statsData}
+              />
+            </div>
+            <div className="md:col-span-2 xl:col-span-6">
+              <TopCategoriesCard
+                total={totalSpend}
+                categories={topCategories}
+                isLoading={statsLoading && !statsData}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       <section>
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -130,10 +204,10 @@ export default function TransactionsPage() {
             </p>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">
-          <TransactionSearch
-            value={searchTerm}
-            onSearchChange={handleSearchChange}
-          />
+            <TransactionSearch
+              value={searchTerm}
+              onSearchChange={handleSearchChange}
+            />
           </div>
         </div>
 
@@ -154,4 +228,3 @@ export default function TransactionsPage() {
     </main>
   );
 }
-

@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabaseClient";
 import type {
   GetTransactionsParams,
+  TransactionsStatsParams,
+  TransactionsStatsResponse,
   TransactionsResponse,
   Transaction,
   ImportJobResult,
@@ -188,6 +190,35 @@ export const transactionsAPI = {
       await throwApiErrorFromResponse(response, "Failed to fetch spending categories");
     }
     return response.json() as Promise<string[]>;
+  },
+
+  getTransactionsStats: async (
+    params: TransactionsStatsParams = {},
+  ): Promise<TransactionsStatsResponse> => {
+    const { period, dateFrom, dateTo, includePrevious } = params;
+    const queryParams = new URLSearchParams();
+
+    if (period) queryParams.set("period", period);
+    if (dateFrom) queryParams.set("date_from", dateFrom);
+    if (dateTo) queryParams.set("date_to", dateTo);
+    if (includePrevious !== undefined) {
+      queryParams.set("include_previous", String(includePrevious));
+    }
+
+    const query = queryParams.toString();
+    const response = await fetch(
+      `${API_BASE_URL}/transactions/stats${query ? `?${query}` : ""}`,
+      {
+        method: "GET",
+        headers: await getAuthHeaders(),
+      },
+    );
+
+    if (!response.ok) {
+      await throwApiErrorFromResponse(response, "Failed to fetch transaction stats");
+    }
+
+    return response.json() as Promise<TransactionsStatsResponse>;
   },
 
   patchTransaction: async (
