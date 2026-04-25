@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   GetTransactionsParams,
+  PeriodPreset,
   TransactionUpdatePayload,
 } from "@/types/transactions";
 import { useTransactions } from "@/hooks/transactions/use-transactions";
@@ -14,6 +15,7 @@ import { AvgDailySpendCard } from "@/components/transactions/stats/AvgDailySpend
 import { TopCategoriesCard } from "@/components/transactions/stats/TopCategoriesCard";
 import ErrorPage from "@/pages/error";
 import { FullScreenLoader } from "@/components/FullScreenLoader";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   SortableField,
   TransactionsTable,
@@ -24,12 +26,69 @@ export default function TransactionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortColumn, setSortColumn] = useState<SortableField | null>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodPreset>("MTD");
 
   const itemsPerPage = 50;
+  const periodOptions: ReadonlyArray<{ key: PeriodPreset; label: string }> = [
+    { key: "MTD", label: "This Month" },
+    { key: "L30", label: "Last 30 Days" },
+    { key: "YTD", label: "This Year" },
+    { key: "ALL_TIME", label: "All Time" },
+  ];
+
+  // Builds a UI-friendly header label for currently selected period in the stats.
+  const buildPeriodLabel = (selectedPeriod: PeriodPreset): string => {
+    const today = new Date();
+
+    switch (selectedPeriod) {
+      case "MTD":
+        return `${today.toLocaleString("en-US", {
+          month: "long",
+          year: "numeric",
+        })} - Month to Date`;
+      case "L30": {
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - 29);
+
+        const isSameYear = startDate.getFullYear() === today.getFullYear();
+
+        if (isSameYear) {
+          const startLabel = startDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+          const endLabel = today.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+
+          return `${startLabel} – ${endLabel} — Last 30 Days`;
+        }
+
+        const formatWithYear = (date: Date) =>
+          date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+
+        return `${formatWithYear(startDate)} – ${formatWithYear(today)} — Last 30 Days`;
+      }
+      case "YTD":
+        return `${today.getFullYear()} - Year to Date`;
+      case "ALL_TIME":
+        return "All Time";
+      default:
+        return "Custom dates";
+    }
+  };
+  const selectedPeriodLabel = buildPeriodLabel(selectedPeriod);
+
   const statsParams = {
-    period: "ALL_TIME" as const,
-    dateFrom: "2026-01-10",
-    dateTo: "2026-01-20",
+    period: selectedPeriod,
+    // dateFrom: "2026-01-10",
+    // dateTo: "2026-01-20",
     includePrevious: true,
   };
 
@@ -164,8 +223,32 @@ export default function TransactionsPage() {
       {transactions.length > 0 && (
         <>
           <header className="mb-4">
-            <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
+            <h1 className="text-xl font-semibold tracking-tight">Spending Overview</h1>
           </header>
+
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              {selectedPeriodLabel}
+            </p>
+            {/* Static for now; later this selection will drive stats query params. */}
+            <Tabs
+              value={selectedPeriod}
+              onValueChange={(value) => setSelectedPeriod(value as PeriodPreset)}
+              className="w-full md:w-auto"
+            >
+              <TabsList className="grid h-auto w-full grid-cols-2 gap-1 md:w-auto md:grid-cols-4">
+                {periodOptions.map((option) => (
+                  <TabsTrigger
+                    key={option.key}
+                    value={option.key}
+                    className="px-4 py-2"
+                  >
+                    {option.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
 
           <div className="mb-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12">
             <div className="xl:col-span-3">

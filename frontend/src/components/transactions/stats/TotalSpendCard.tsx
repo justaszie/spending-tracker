@@ -37,9 +37,15 @@ export function TotalSpendCard({
           </p>
         ) : previousPeriodLabel !== null ? (
           previousAmount === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No spending in previous period
-            </p>
+            <div className="flex items-center justify-between">
+               <span className="text-sm text-muted-foreground">
+                No spending in previous period
+              </span>
+              <span className="text-xs text-muted-foreground">
+                  {previousPeriodLabel ?? "—"}
+              </span>
+            </div>
+
           ) : (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between text-sm">
