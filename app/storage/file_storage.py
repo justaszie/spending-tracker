@@ -113,7 +113,7 @@ class LocalFileStorage:
         full_path.write_bytes(file_data)
         logger.info("Stored statement locally at %s", full_path)
 
-        return cast(str, relative_path)
+        return relative_path
 
     def load_file(
         self,

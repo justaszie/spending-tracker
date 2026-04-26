@@ -31,7 +31,7 @@ export function AppHeader({ setImportModalOpen }: AppHeaderProps) {
           <span>SpendPulse</span>
         </div>
 
-        <nav className="flex items-center space-x-6 text-sm font-medium">
+        <nav className="flex items-center gap-1 text-sm font-medium">
           {navItems.map((item) => {
             const isActive = location === item.href;
 
@@ -40,8 +40,10 @@ export function AppHeader({ setImportModalOpen }: AppHeaderProps) {
                 key={item.href}
                 href={item.href}
                 className={
-                  "transition-colors hover:text-foreground/80 " +
-                  (isActive ? "text-foreground" : "text-foreground/60")
+                  "rounded-md px-3 py-1.5 transition-colors " +
+                  (isActive
+                    ? "bg-muted text-foreground"
+                    : "text-foreground/65 hover:bg-muted/60 hover:text-foreground")
                 }
               >
                 {item.label}

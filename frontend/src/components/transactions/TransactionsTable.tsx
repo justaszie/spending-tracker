@@ -60,10 +60,10 @@ export function TransactionsTable({
   onSort,
 }: TransactionsTableProps) {
   return (
-    <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {transactions.length > 0 && (
-        <div className="px-6 py-3 border-b bg-muted/20 flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">
+        <div className="flex items-center justify-between border-b bg-muted/25 px-6 py-3 text-sm">
+          <span className="font-medium text-foreground/80">
             Showing {(currentPage - 1) * itemsPerPage + 1}-
             {Math.min(currentPage * itemsPerPage, totalCount ?? 0)} of{" "}
             {totalCount ?? 0} transactions
@@ -74,7 +74,7 @@ export function TransactionsTable({
               size="sm"
               onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="h-7 px-3"
+              className="h-8 px-3"
             >
               ← Prev
             </Button>
@@ -89,7 +89,7 @@ export function TransactionsTable({
                     variant={currentPage === pageNum ? "secondary" : "outline"}
                     size="sm"
                     onClick={() => onPageChange(pageNum)}
-                    className="h-7 w-7 p-0"
+                    className="h-8 w-8 p-0"
                   >
                     {pageNum}
                   </Button>
@@ -101,7 +101,7 @@ export function TransactionsTable({
               size="sm"
               onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
-              className="h-7 px-3"
+              className="h-8 px-3"
             >
               Next →
             </Button>
@@ -144,7 +144,7 @@ export function TransactionsTable({
               sortDirection={sortDirection}
               onSort={onSort}
             />
-            <TableHead className="w-[200px]">Note</TableHead>
+            <TableHead className="w-[200px] text-foreground/80">Note</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -189,7 +189,7 @@ function SortableHeader({
     <TableHead
       className={cn(
         className,
-        "cursor-pointer hover:bg-muted/60 select-none",
+        "cursor-pointer select-none text-foreground/80 hover:bg-muted/60",
       )}
       onClick={() => onSort(column)}
     >
@@ -224,10 +224,10 @@ function TransactionRow({
   };
 
   return (
-    <TableRow className="group hover:bg-muted/30 transition-colors">
+    <TableRow className="group transition-colors hover:bg-muted/20">
       <TableCell className="font-mono text-xs text-muted-foreground">
         {format(new Date(transaction.transaction_datetime), "dd MMM yyyy")}
-        <div className="text-[10px] opacity-60">
+        <div className="text-[10px] text-muted-foreground/80">
           {format(new Date(transaction.transaction_datetime), "HH:mm")}
         </div>
       </TableCell>
