@@ -5,7 +5,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 from sqlalchemy import Engine, Select, String, UniqueConstraint, cast, func, or_
-from sqlmodel import Date, Field, Session, SQLModel, select
+from sqlmodel import Date, Field, Session, SQLModel, col, select
+from sqlmodel.sql.expression import SelectOfScalar
 
 from app.core.project_types import (
     Side,
@@ -59,12 +60,10 @@ class Reimbursement(SQLModel, table=True):
         primary_key=True,
         nullable=False,
     )
-    credit_txn_id: uuid.UUID = (
-        Field(
-            foreign_key="transactions.id",
-            primary_key=True,
-            nullable=False,
-        ),
+    credit_txn_id: uuid.UUID = Field(
+        foreign_key="transactions.id",
+        primary_key=True,
+        nullable=False,
     )
     user_id: uuid.UUID = Field(nullable=False)
     orig_reimbursed_amount: Decimal = Field(nullable=False)
@@ -201,7 +200,7 @@ def _build_transactions_query(
     sort_order: Literal["asc", "desc"] | None = None,
     filters: dict[str, list[Any]] | None = None,
     no_category_only: bool | None = False,
-) -> Select:
+) -> SelectOfScalar[Transaction]:
     statement = select(Transaction).where(Transaction.user_id == user_id)
 
     if search and len(search) > 1:
@@ -255,7 +254,7 @@ class StatsData(BaseModel):
 
 
 class CategorySummary(BaseModel):
-    spending_category: str | None # There can be txns with no category
+    spending_category: str | None  # There can be txns with no category
     eur_total_spend: Decimal
     eur_total_reimbursed: Decimal
     net_total_spend: Decimal
@@ -272,7 +271,7 @@ def get_total_spend_data(
     reimbursements = _build_reimbursements_query(user_id).subquery()
     # Step 2: query transactions, joining reimbursements CTE and get sum of money spent
     query = (
-        select(
+        select(  # type: ignore[call-overload]
             func.coalesce(func.sum(Transaction.eur_amount), 0).label("eur_total_spend"),
             func.coalesce(func.sum(reimbursements.c.eur_reimbursed_amount), 0).label(
                 "eur_total_reimbursed"
@@ -290,7 +289,7 @@ def get_total_spend_data(
         .select_from(Transaction)
         .join(
             reimbursements,
-            Transaction.id == reimbursements.c.debit_txn_id,
+            col(Transaction.id) == reimbursements.c.debit_txn_id,
             isouter=True,
         )
         .where(Transaction.user_id == user_id, Transaction.side == Side.DEBIT)
@@ -350,7 +349,7 @@ def get_spend_data_by_category(
         .select_from(Transaction)
         .join(
             reimbursements,
-            Transaction.id == reimbursements.c.debit_txn_id,
+            col(Transaction.id) == reimbursements.c.debit_txn_id,
             isouter=True,
         )
         .where(Transaction.user_id == user_id, Transaction.side == Side.DEBIT)
@@ -362,7 +361,7 @@ def get_spend_data_by_category(
     if date_to:
         query = query.where(cast(Transaction.transaction_datetime, Date) <= date_to)
 
-    query = query.group_by(Transaction.spending_category)
+    query = query.group_by(col(Transaction.spending_category))
 
     with Session(db) as session:
         rows = session.exec(query).all()
@@ -386,16 +385,15 @@ def get_spend_data_by_category(
         return result
 
 
-# TODO: add user_id filter after it's added to the model
 def _build_reimbursements_query(user_id: uuid.UUID) -> Select:
     """Returns a query to get total reimbursed amount by transaction"""
     return (
         select(
-            Reimbursement.debit_txn_id,
+            col(Reimbursement.debit_txn_id),
             func.sum(Reimbursement.eur_reimbursed_amount).label(
                 "eur_reimbursed_amount"
             ),
         )
         .where(Reimbursement.user_id == user_id)
-        .group_by(Reimbursement.debit_txn_id)
+        .group_by(col(Reimbursement.debit_txn_id))
     )

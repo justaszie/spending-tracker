@@ -731,7 +731,6 @@ class TestGetSpendingCategories:
 class TestGetStats:
     STATS_API_PATH = f"{app_config.V1_API_PREFIX}/transactions/stats"
 
-
     # def _insert_random_transactions(self, test_db, db_transaction, count: int) -> list:
     #     inserted_txns = [
     #         db_transaction(
@@ -751,6 +750,7 @@ class TestGetStats:
     #         key=lambda txn: txn.transaction_datetime,
     #         reverse=True,
     #     )
+
 
 """
 

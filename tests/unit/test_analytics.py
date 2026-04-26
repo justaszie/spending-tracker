@@ -2,7 +2,6 @@ import datetime as dt
 import uuid
 
 import pytest
-from sqlalchemy.util.typing import NoneType
 
 import app.analytics as analytics
 from app.core.project_types import PeriodPreset
@@ -34,9 +33,11 @@ class TestBuildStatsQuery:
         )
 
         assert query.user_id == TEST_USER_ID
-        assert query.date_from is None
-        assert query.date_to is None
+        assert query.current_date_from is None
+        assert query.current_date_to is None
         assert query.include_previous is False
+        assert query.previous_date_from is None
+        assert query.previous_date_to is None
 
     @pytest.mark.parametrize("previous_requested", [True, False])
     def test_custom_passes_through_dates_and_previous_flag(self, previous_requested):
@@ -52,9 +53,15 @@ class TestBuildStatsQuery:
         )
 
         assert query.user_id == TEST_USER_ID
-        assert query.date_from == date_from
-        assert query.date_to == date_to
+        assert query.current_date_from == date_from
+        assert query.current_date_to == date_to
         assert query.include_previous is previous_requested
+        if previous_requested:
+            assert query.previous_date_to == date_from - dt.timedelta(days=1)
+            assert query.previous_date_from == date_from - dt.timedelta(days=11)
+        else:
+            assert query.previous_date_from is None
+            assert query.previous_date_to is None
 
     def test_custom_preserves_original_date_from(self):
         date_to = dt.date(2026, 2, 1)
@@ -66,9 +73,24 @@ class TestBuildStatsQuery:
             previous_requested=False,
         )
 
-        assert query.date_from is None
-        assert query.date_to == date_to
+        assert query.current_date_from is None
+        assert query.current_date_to == date_to
         assert query.include_previous is False
+        assert query.previous_date_from is None
+        assert query.previous_date_to is None
+
+    def test_custom_disables_previous_when_date_from_missing(self):
+        query = analytics.build_stats_query(
+            user_id=TEST_USER_ID,
+            date_from=None,
+            date_to=dt.date(2026, 2, 1),
+            selected_period=PeriodPreset.CUSTOM,
+            previous_requested=True,
+        )
+
+        assert query.include_previous is False
+        assert query.previous_date_from is None
+        assert query.previous_date_to is None
 
     def test_custom_empty_date_to_resolves_today(self, frozen_today):
         query = analytics.build_stats_query(
@@ -79,9 +101,11 @@ class TestBuildStatsQuery:
             previous_requested=False,
         )
 
-        assert query.date_from is None
-        assert query.date_to == frozen_today
+        assert query.current_date_from is None
+        assert query.current_date_to == frozen_today
         assert query.include_previous is False
+        assert query.previous_date_from is None
+        assert query.previous_date_to is None
 
     @pytest.mark.parametrize("previous_requested", [True, False])
     def test_last_30_resolves_rolling_dates(self, frozen_today, previous_requested):
@@ -91,9 +115,19 @@ class TestBuildStatsQuery:
             previous_requested=previous_requested,
         )
 
-        assert query.date_from == frozen_today - dt.timedelta(days=29)
-        assert query.date_to == frozen_today
+        assert query.current_date_from == frozen_today - dt.timedelta(days=29)
+        assert query.current_date_to == frozen_today
         assert query.include_previous is previous_requested
+        if previous_requested:
+            assert query.previous_date_to == query.current_date_from - dt.timedelta(
+                days=1
+            )
+            assert query.previous_date_from == query.previous_date_to - dt.timedelta(
+                days=29
+            )
+        else:
+            assert query.previous_date_from is None
+            assert query.previous_date_to is None
 
     @pytest.mark.parametrize("previous_requested", [True, False])
     def test_month_to_date_resolves_from_month_start(
@@ -105,11 +139,23 @@ class TestBuildStatsQuery:
             previous_requested=previous_requested,
         )
 
-        assert query.date_from == dt.date(
+        assert query.current_date_from == dt.date(
             year=frozen_today.year, month=frozen_today.month, day=1
         )
-        assert query.date_to == frozen_today
+        assert query.current_date_to == frozen_today
         assert query.include_previous is previous_requested
+        if previous_requested:
+            assert query.previous_date_from == dt.date(
+                year=frozen_today.year, month=frozen_today.month - 1, day=1
+            )
+            assert query.previous_date_to == dt.date(
+                year=frozen_today.year,
+                month=frozen_today.month - 1,
+                day=frozen_today.day,
+            )
+        else:
+            assert query.previous_date_from is None
+            assert query.previous_date_to is None
 
     @pytest.mark.parametrize("previous_requested", [True, False])
     def test_year_to_date_resolves_from_year_start(
@@ -121,6 +167,17 @@ class TestBuildStatsQuery:
             previous_requested=previous_requested,
         )
 
-        assert query.date_from == dt.date(year=frozen_today.year, month=1, day=1)
-        assert query.date_to == frozen_today
+        assert query.current_date_from == dt.date(
+            year=frozen_today.year, month=1, day=1
+        )
+        assert query.current_date_to == frozen_today
         assert query.include_previous is previous_requested
+        if previous_requested:
+            prev_year = frozen_today.year - 1
+            assert query.previous_date_from == dt.date(year=prev_year, month=1, day=1)
+            assert query.previous_date_to == dt.date(
+                year=prev_year, month=frozen_today.month, day=frozen_today.day
+            )
+        else:
+            assert query.previous_date_from is None
+            assert query.previous_date_to is None

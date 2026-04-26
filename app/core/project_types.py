@@ -81,8 +81,9 @@ class PeriodPreset(StrEnum):
     ALL_TIME = "ALL_TIME"
     CUSTOM = "CUSTOM"
 
-class MetricsGroupName(StrEnum):
-    SPEND = "spend"
+
+type MetricsGroupName = Literal["spend"]
+
 
 class DeltaValues(BaseModel):
     abs_change: Decimal
@@ -104,19 +105,17 @@ class CategoryAggregate(BaseModel):
 
 
 class MetricsGroup(BaseModel):
-    total: Decimal
-    avg_daily: Decimal
+    total: Decimal = Field(default=Decimal("0"))
+    avg_daily: Decimal = Field(default=Decimal("0"))
     by_category: list[CategoryAggregate] = Field(default_factory=list)
 
 
 class PeriodStats(BaseModel):
-    date_from: dt.date
-    date_to: dt.date
-    days_count: int = Field(ge=1)
+    date_from: dt.date | None
+    date_to: dt.date | None
+    days_count: int = Field(ge=1, default=0)
     groups: dict[MetricsGroupName, MetricsGroup] = Field(default_factory=dict)
 
 
 class StatsDeltas(BaseModel):
     groups: dict[MetricsGroupName, DeltasGroup]
-
-

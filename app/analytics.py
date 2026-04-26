@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import Engine
 
 from app.core.project_types import (
+    CategoryAggregate,
     DeltasGroup,
     DeltaValues,
     MetricsGroup,
@@ -104,37 +105,46 @@ def build_stats_query(
 
     # Calculate date filters for previous period
     previous_date_from, previous_date_to = None, None
+    current_date_from = current_dates["date_from"]
+    current_date_to = current_dates["date_to"]
+
     if include_previous:
         if selected_period == PeriodPreset.LAST_30:
-            previous_date_to = current_dates["date_from"] - dt.timedelta(days=1)
+            if not current_date_from or not current_date_to:
+                raise ValueError("One of the dates is not resolved")
+            previous_date_to = current_date_from - dt.timedelta(days=1)
             previous_date_from = previous_date_to - dt.timedelta(days=29)
         elif selected_period == PeriodPreset.MONTH_TO_DATE:
-            previous_dates = _calculate_previous_mtd(
-                current_date=current_dates["date_to"]
-            )
+            if not current_date_to:
+                raise ValueError("Date to must be resolved")
+            previous_dates = _calculate_previous_mtd(current_date=current_date_to)
             previous_date_from = previous_dates["date_from"]
             previous_date_to = previous_dates["date_to"]
         elif selected_period == PeriodPreset.YEAR_TO_DATE:
-            prev_year = current_dates["date_to"].year - 1
+            if not current_date_to:
+                raise ValueError("Date to must be resolved")
+            prev_year = current_date_to.year - 1
             previous_date_from = dt.date(year=prev_year, month=1, day=1)
             previous_date_to = dt.date(
                 year=prev_year,
-                month=current_dates["date_to"].month,
-                day=current_dates["date_to"].day,
+                month=current_date_to.month,
+                day=current_date_to.day,
             )
         elif selected_period == PeriodPreset.CUSTOM:
-            # if include_previous is True, we have both dates provided
-            days_count = (
-                current_dates["date_to"] - current_dates["date_from"]
-            ).days + 1
-            previous_date_to = current_dates["date_from"] - dt.timedelta(days=1)
+            # if include_previous is True, both dates must be resolved
+            if not current_date_from or not current_date_to:
+                raise ValueError("One of the dates is not resolved")
+
+            days_count = (current_date_to - current_date_from).days + 1
+
+            previous_date_to = current_date_from - dt.timedelta(days=1)
             previous_date_from = previous_date_to - dt.timedelta(days=days_count - 1)
 
     return TransactionStatsQuery(
         user_id=user_id,
         selected_period=selected_period,
-        current_date_from=current_dates["date_from"],
-        current_date_to=current_dates["date_to"],
+        current_date_from=current_date_from,
+        current_date_to=current_date_to,
         include_previous=include_previous,
         previous_date_from=previous_date_from,
         previous_date_to=previous_date_to,
@@ -188,9 +198,9 @@ def generate_transactions_stats(
         spend_deltas = calculate_spend_stats_deltas(
             current_spend=current_period_stats.groups["spend"],
             previous_spend=previous_period_stats.groups["spend"],
-            metrics=["total", "avg_daily"]
+            metrics=["total", "avg_daily"],
         )
-        deltas = StatsDeltas(groups = {"spend": spend_deltas})
+        deltas = StatsDeltas(groups={"spend": spend_deltas})
 
     return TransactionStatsResults(
         current_period=current_period_stats,
@@ -204,8 +214,8 @@ def generate_transactions_stats(
 
 def get_transaction_stats_for_period(
     user_id: uuid.UUID,
-    date_from: dt.date,
-    date_to: dt.date,
+    date_from: dt.date | None,
+    date_to: dt.date | None,
     db: Engine,
 ) -> PeriodStats:
     if date_from and date_to and date_from > date_to:
@@ -215,13 +225,25 @@ def get_transaction_stats_for_period(
     )
 
     # If the query did not contain filter dates, we use the dates from fetched data to define the period
-    final_date_from = date_from or period_data.earliest_txn_datetime.date()
-    final_date_to = date_to or period_data.latest_txn_datetime.date()
-
-    days_count = (final_date_to - final_date_from).days + 1
-    current_avg_net_spend = Decimal(period_data.net_total_spend / days_count).quantize(
-        Decimal("1.00")
+    final_date_from = date_from or (
+        period_data.earliest_txn_datetime.date()
+        if period_data.earliest_txn_datetime
+        else None
     )
+    final_date_to = date_to or (
+        period_data.latest_txn_datetime.date()
+        if period_data.latest_txn_datetime
+        else None
+    )
+
+    if final_date_from and final_date_to:
+        days_count = (final_date_to - final_date_from).days + 1
+        current_avg_net_spend = Decimal(
+            period_data.net_total_spend / days_count
+        ).quantize(Decimal("1.00"))
+    else:
+        days_count = 0
+        current_avg_net_spend = Decimal("0")
 
     stats_by_category = get_spend_data_by_category(
         user_id=user_id, db=db, date_from=date_from, date_to=date_to
@@ -231,13 +253,13 @@ def get_transaction_stats_for_period(
         total=period_data.net_total_spend,
         avg_daily=current_avg_net_spend,
         by_category=[
-            {
-                "category": cat.spending_category,
-                "total": cat.net_total_spend,
-                "avg_daily": Decimal(cat.net_total_spend / days_count).quantize(
+            CategoryAggregate(
+                category=cat.spending_category,
+                total=cat.net_total_spend,
+                avg_daily=Decimal(cat.net_total_spend / days_count).quantize(
                     Decimal("1.00")
                 ),
-            }
+            )
             for cat in stats_by_category
         ],
     )

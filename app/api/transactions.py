@@ -59,7 +59,7 @@ class TransactionsQueryParams(BaseModel):
 
 
 class TransactionsStatsRequest(BaseModel):
-    period: PeriodPreset | None = None
+    period: PeriodPreset
     # Dates only required if period is "custom"
     date_from: dt.date | None = None
     date_to: dt.date | None = None
