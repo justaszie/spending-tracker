@@ -24,6 +24,9 @@ You can either sign up or click on __Try demo__ to try it out without creating a
 
 ![Import-Result](/screenshots/import-result.png)
 
+#### Spending Overview
+![Spending-Overview](/screenshots/analytics.png)
+
 #### Updating Spending Categories
 ![Import-Dashboard](/screenshots/dashboard.png)
 
