@@ -15,9 +15,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ArrowDown, ArrowUp, MoreHorizontal, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CategorySelector } from "@/components/transactions/CategorySelector";
+import { ReimbursementModal } from "@/components/transactions/ReimbursementModal";
 import { Transaction, TransactionUpdatePayload } from "@/types/transactions";
 
 // Helper for formatting currency
@@ -59,6 +66,8 @@ export function TransactionsTable({
   sortDirection,
   onSort,
 }: TransactionsTableProps) {
+  const [selectedDebit, setSelectedDebit] = useState<Transaction | null>(null);
+
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {transactions.length > 0 && (
@@ -155,6 +164,7 @@ export function TransactionsTable({
               transaction={t}
               spendingCategories={spendingCategories}
               onUpdate={(updates) => onUpdateTransaction(t.id, updates)}
+              onAddReimbursement={() => setSelectedDebit(t)}
             />
           ))}
           {transactions.length === 0 && (
@@ -166,6 +176,14 @@ export function TransactionsTable({
           )}
         </TableBody>
       </Table>
+
+      <ReimbursementModal
+        open={selectedDebit !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedDebit(null);
+        }}
+        debit={selectedDebit}
+      />
     </div>
   );
 }
@@ -210,10 +228,12 @@ function TransactionRow({
   transaction,
   spendingCategories,
   onUpdate,
+  onAddReimbursement,
 }: {
   transaction: Transaction;
   spendingCategories: string[];
   onUpdate: (updates: TransactionUpdatePayload) => void;
+  onAddReimbursement: () => void;
 }) {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteTemp, setNoteTemp] = useState(transaction.note || "");
@@ -300,13 +320,24 @@ function TransactionRow({
         </Popover>
       </TableCell>
       <TableCell>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
+        {transaction.side === "debit" && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={onAddReimbursement}>
+                Add reimbursement
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </TableCell>
     </TableRow>
   );

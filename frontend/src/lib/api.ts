@@ -8,6 +8,10 @@ import type {
   ImportJobResult,
   StatementSource,
 } from "@/types/transactions";
+import type {
+  Reimbursement,
+  ReimbursementCreatePayload,
+} from "@/types/reimbursements";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -237,6 +241,72 @@ export const transactionsAPI = {
       await throwApiErrorFromResponse(response, "Failed to update transaction");
     }
     return response.json() as Promise<Transaction>;
+  },
+};
+
+const MOCK_REIMBURSEMENTS =
+  String(import.meta.env.VITE_MOCK_REIMBURSEMENTS ?? "")
+    .toLowerCase()
+    .trim() === "true";
+
+async function mockCreateReimbursement(
+  payload: ReimbursementCreatePayload,
+): Promise<Reimbursement> {
+  // Small simulated latency so consumers see a real pending state.
+  await new Promise((resolve) => setTimeout(resolve, 250));
+
+  const roll = Math.random();
+  if (roll < 0.5) {
+    return {
+      debit_txn_id: payload.debit_txn_id,
+      credit_txn_id: payload.credit_txn_id,
+      orig_reimbursed_amount: payload.orig_reimbursed_amount,
+      orig_reimbursed_ccy: "EUR",
+      eur_reimbursed_amount: payload.orig_reimbursed_amount,
+    };
+  }
+  if (roll < 0.75) {
+    throw new ApiError({
+      status: 409,
+      message: "A reimbursement already exists between these two transactions",
+      raw: {
+        detail: "A reimbursement already exists between these two transactions",
+      },
+    });
+  }
+  const detail = [
+    {
+      loc: ["body", "orig_reimbursed_amount"],
+      msg: "Input should be greater than 0",
+      type: "greater_than",
+    },
+  ];
+  throw new ApiError({
+    status: 422,
+    message: "Failed to add reimbursement",
+    fieldErrors: normalizeFastApi422(detail),
+    raw: { detail },
+  });
+}
+
+export const reimbursementsAPI = {
+  createReimbursement: async (
+    payload: ReimbursementCreatePayload,
+  ): Promise<Reimbursement> => {
+    if (MOCK_REIMBURSEMENTS) {
+      return mockCreateReimbursement(payload);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/reimbursements`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      await throwApiErrorFromResponse(response, "Failed to add reimbursement");
+    }
+    return response.json() as Promise<Reimbursement>;
   },
 };
 
