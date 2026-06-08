@@ -5,6 +5,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 from sqlalchemy import Engine, Select, String, UniqueConstraint, cast, func, or_
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Date, Field, Session, SQLModel, col, select
 from sqlmodel.sql.expression import SelectOfScalar
 
@@ -21,6 +22,10 @@ class TransactionInsertError(Exception):
 
 
 class TransactionNotFoundError(Exception):
+    pass
+
+
+class DuplicateReimbursementError(Exception):
     pass
 
 
@@ -191,6 +196,50 @@ def update_transaction(
         session.refresh(existing)
 
         return existing
+
+
+def insert_reimbursement(
+    *,
+    db: Engine,
+    user_id: uuid.UUID,
+    debit_txn_id: uuid.UUID,
+    credit_txn_id: uuid.UUID,
+    orig_reimbursed_amount: Decimal,
+    credit_orig_amount: Decimal,
+    credit_orig_currency: str,
+    credit_eur_amount: Decimal,
+) -> Reimbursement:
+    """Persist a Reimbursement linking one Debit to one Credit.
+
+    `eur_reimbursed_amount` is pro-rated from the credit's already-stored
+    EUR conversion to keep full reimbursements lossless and avoid an
+    additional FX lookup. Raises DuplicateReimbursementError if the
+    (debit_txn_id, credit_txn_id) composite PK already exists.
+    """
+    eur_reimbursed_amount = (
+        credit_eur_amount * (orig_reimbursed_amount / credit_orig_amount)
+    ).quantize(Decimal("0.01"))
+
+    reimbursement = Reimbursement(
+        debit_txn_id=debit_txn_id,
+        credit_txn_id=credit_txn_id,
+        user_id=user_id,
+        orig_reimbursed_amount=orig_reimbursed_amount.quantize(Decimal("0.01")),
+        orig_reimbursed_ccy=credit_orig_currency,
+        eur_reimbursed_amount=eur_reimbursed_amount,
+    )
+
+    try:
+        with Session(db, expire_on_commit=False) as session:
+            session.add(reimbursement)
+            session.commit()
+            session.refresh(reimbursement)
+    except IntegrityError as e:
+        raise DuplicateReimbursementError(
+            "Reimbursement already exists for this debit/credit pair"
+        ) from e
+
+    return reimbursement
 
 
 def _build_transactions_query(
