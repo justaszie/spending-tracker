@@ -1,5 +1,6 @@
 import datetime as dt
 import logging
+from decimal import Decimal
 from typing import Annotated, Literal, Self
 from uuid import UUID
 
@@ -17,15 +18,18 @@ from app.core.project_types import (
     TransactionsSortField,
 )
 from app.db.transactions import (
+    DuplicateReimbursementError,
     Transaction,
     get_distinct_spending_categories,
     get_total_count,
     get_transaction,
     get_transactions,
+    insert_reimbursement,
     update_transaction,
 )
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
+reimbursements_router = APIRouter(prefix="/reimbursements", tags=["Reimbursements"])
 
 logger = logging.getLogger(__name__)
 
@@ -195,4 +199,82 @@ def get_transactions_stats(
         current_period=stats.current_period,
         previous_period=stats.previous_period,
         deltas=stats.deltas,
+    )
+
+
+class ReimbursementCreateRequest(BaseModel):
+    debit_txn_id: UUID
+    credit_txn_id: UUID
+    orig_reimbursed_amount: Decimal = Field(gt=0)
+
+
+class ReimbursementResponse(BaseModel):
+    debit_txn_id: UUID
+    credit_txn_id: UUID
+    orig_reimbursed_amount: Decimal
+    orig_reimbursed_ccy: str
+    eur_reimbursed_amount: Decimal
+    created_at: dt.datetime
+    updated_at: dt.datetime
+
+
+@reimbursements_router.post("", response_model=ReimbursementResponse, status_code=201)
+def create_reimbursement(
+    user_id: AuthDependency,
+    db: DBDependency,
+    payload: ReimbursementCreateRequest,
+) -> ReimbursementResponse:
+    debit_txn = get_transaction(
+        transaction_id=payload.debit_txn_id, user_id=user_id, db=db
+    )
+    if not debit_txn:
+        raise HTTPException(status_code=404, detail="Debit transaction not found")
+
+    credit_txn = get_transaction(
+        transaction_id=payload.credit_txn_id, user_id=user_id, db=db
+    )
+    if not credit_txn:
+        raise HTTPException(status_code=404, detail="Credit transaction not found")
+
+    if debit_txn.side != Side.DEBIT:
+        raise HTTPException(
+            status_code=422,
+            detail="debit_txn_id must reference a Debit transaction",
+        )
+
+    if credit_txn.side != Side.CREDIT:
+        raise HTTPException(
+            status_code=422,
+            detail="credit_txn_id must reference a Credit transaction",
+        )
+
+    try:
+        reimbursement = insert_reimbursement(
+            db=db,
+            user_id=user_id,
+            debit_txn_id=debit_txn.id,
+            credit_txn_id=credit_txn.id,
+            orig_reimbursed_amount=payload.orig_reimbursed_amount,
+            credit_orig_amount=credit_txn.orig_amount,
+            credit_orig_currency=credit_txn.orig_currency,
+            credit_eur_amount=credit_txn.eur_amount,
+        )
+    except DuplicateReimbursementError as e:
+        raise HTTPException(
+            status_code=409,
+            detail="Reimbursement already exists for this debit/credit pair",
+        ) from e
+
+    return ReimbursementResponse(
+        debit_txn_id=reimbursement.debit_txn_id,
+        credit_txn_id=reimbursement.credit_txn_id,
+        orig_reimbursed_amount=reimbursement.orig_reimbursed_amount.quantize(
+            Decimal("0.01")
+        ),
+        orig_reimbursed_ccy=reimbursement.orig_reimbursed_ccy,
+        eur_reimbursed_amount=reimbursement.eur_reimbursed_amount.quantize(
+            Decimal("0.01")
+        ),
+        created_at=reimbursement.created_at,
+        updated_at=reimbursement.updated_at,
     )

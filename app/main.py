@@ -14,6 +14,7 @@ from supabase import Client, create_client
 from supabase_auth.errors import AuthApiError
 
 from app.api.statement_imports import router as imports_router
+from app.api.transactions import reimbursements_router
 from app.api.transactions import router as transactions_router
 from app.core.config import AppEnvironment, ConfigError, StorageBackendType, app_config
 from app.storage.file_storage import (
@@ -193,6 +194,7 @@ api_prefix = app_config.V1_API_PREFIX
 app.include_router(core_router, prefix=api_prefix)
 app.include_router(imports_router, prefix=api_prefix)
 app.include_router(transactions_router, prefix=api_prefix)
+app.include_router(reimbursements_router, prefix=api_prefix)
 
 
 # Middleware to log processed requests
