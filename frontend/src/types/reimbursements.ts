@@ -4,6 +4,8 @@ export type Reimbursement = {
   orig_reimbursed_amount: number;
   orig_reimbursed_ccy: string;
   eur_reimbursed_amount: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ReimbursementCreatePayload = {

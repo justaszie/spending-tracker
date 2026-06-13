@@ -36,3 +36,10 @@ frontend/.DS_Store
 frontend/server/public
 frontend/vite.config.ts.*
 frontend/*.tar.gz
+
+# Coding Agent Docs
+CONTEXT.md
+
+# Coding Toolss
+.scratch/
+ralph

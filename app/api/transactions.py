@@ -214,6 +214,8 @@ class ReimbursementResponse(BaseModel):
     orig_reimbursed_amount: Decimal
     orig_reimbursed_ccy: str
     eur_reimbursed_amount: Decimal
+    created_at: dt.datetime
+    updated_at: dt.datetime
 
 
 @reimbursements_router.post("", response_model=ReimbursementResponse, status_code=201)
@@ -273,4 +275,6 @@ def create_reimbursement(
         eur_reimbursed_amount=reimbursement.eur_reimbursed_amount.quantize(
             Decimal("0.01")
         ),
+        created_at=reimbursement.created_at,
+        updated_at=reimbursement.updated_at,
     )

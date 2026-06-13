@@ -74,6 +74,8 @@ class Reimbursement(SQLModel, table=True):
     orig_reimbursed_amount: Decimal = Field(nullable=False)
     orig_reimbursed_ccy: str = Field(nullable=False)
     eur_reimbursed_amount: Decimal = Field(nullable=False)
+    created_at: dt.datetime = Field(nullable=False, default_factory=dt.datetime.now)
+    updated_at: dt.datetime = Field(nullable=False, default_factory=dt.datetime.now)
 
 
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
