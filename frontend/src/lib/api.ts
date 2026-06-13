@@ -60,16 +60,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function getFastApiValueErrorMessage(detail: unknown): string | null {
   if (!Array.isArray(detail)) return null;
   const match = detail
-    .map((item) => (isRecord(item) ? (item as FastApiValidationErrorItem) : null))
+    .map((item) =>
+      isRecord(item) ? (item as FastApiValidationErrorItem) : null
+    )
     .filter((item): item is FastApiValidationErrorItem => Boolean(item))
-    .find((item) => item.type === "value_error" && typeof item.msg === "string" && item.msg);
+    .find(
+      (item) =>
+        item.type === "value_error" && typeof item.msg === "string" && item.msg
+    );
   return match?.msg ?? null;
 }
 
 function normalizeLocToPath(loc: Array<string | number> | undefined): string {
   if (!loc?.length) return "body";
   const parts = loc
-    .filter((p) => p !== "body" && p !== "query" && p !== "path" && p !== "header")
+    .filter(
+      (p) => p !== "body" && p !== "query" && p !== "path" && p !== "header"
+    )
     .map(String);
   return parts.length ? parts.join(".") : "body";
 }
@@ -77,7 +84,9 @@ function normalizeLocToPath(loc: Array<string | number> | undefined): string {
 function normalizeFastApi422(detail: unknown): ApiFieldError[] {
   if (!Array.isArray(detail)) return [];
   return detail
-    .map((item) => (isRecord(item) ? (item as FastApiValidationErrorItem) : null))
+    .map((item) =>
+      isRecord(item) ? (item as FastApiValidationErrorItem) : null
+    )
     .filter((item): item is FastApiValidationErrorItem => Boolean(item))
     .map((item) => ({
       path: normalizeLocToPath(item.loc),
@@ -88,7 +97,9 @@ function normalizeFastApi422(detail: unknown): ApiFieldError[] {
 function summarizeFieldErrors(fieldErrors: ApiFieldError[]): string | null {
   if (!fieldErrors.length) return null;
   const prioritized = fieldErrors.find((e) =>
-    ["file_size", "file_type", "statement_file", "statement_source"].includes(e.path),
+    ["file_size", "file_type", "statement_file", "statement_source"].includes(
+      e.path
+    )
   );
   if (prioritized) return prioritized.message;
   return fieldErrors[0]?.message ?? null;
@@ -96,7 +107,7 @@ function summarizeFieldErrors(fieldErrors: ApiFieldError[]): string | null {
 
 async function throwApiErrorFromResponse(
   response: Response,
-  fallbackMessage: string,
+  fallbackMessage: string
 ): Promise<never> {
   const contentType = response.headers.get("content-type") ?? "";
   let raw: unknown = undefined;
@@ -134,7 +145,7 @@ async function throwApiErrorFromResponse(
 
 export const transactionsAPI = {
   getTransactions: async (
-    params: GetTransactionsParams = {},
+    params: GetTransactionsParams = {}
   ): Promise<TransactionsResponse> => {
     const {
       page = 1,
@@ -160,7 +171,7 @@ export const transactionsAPI = {
     }
     if (spendingCategory?.length) {
       spendingCategory.forEach((value) =>
-        queryParams.append("spending_category", value),
+        queryParams.append("spending_category", value)
       );
     }
     if (untaggedOnly) {
@@ -172,7 +183,7 @@ export const transactionsAPI = {
       {
         method: "GET",
         headers: await getAuthHeaders(),
-      },
+      }
     );
     if (!response.ok) {
       await throwApiErrorFromResponse(response, "Failed to fetch transactions");
@@ -188,16 +199,19 @@ export const transactionsAPI = {
   getSpendingCategories: async (): Promise<string[]> => {
     const response = await fetch(
       `${API_BASE_URL}/transactions/spending-categories`,
-      { method: "GET", headers: await getAuthHeaders() },
+      { method: "GET", headers: await getAuthHeaders() }
     );
     if (!response.ok) {
-      await throwApiErrorFromResponse(response, "Failed to fetch spending categories");
+      await throwApiErrorFromResponse(
+        response,
+        "Failed to fetch spending categories"
+      );
     }
     return response.json() as Promise<string[]>;
   },
 
   getTransactionsStats: async (
-    params: TransactionsStatsParams = {},
+    params: TransactionsStatsParams = {}
   ): Promise<TransactionsStatsResponse> => {
     const { period, dateFrom, dateTo, includePrevious } = params;
     const queryParams = new URLSearchParams();
@@ -215,11 +229,14 @@ export const transactionsAPI = {
       {
         method: "GET",
         headers: await getAuthHeaders(),
-      },
+      }
     );
 
     if (!response.ok) {
-      await throwApiErrorFromResponse(response, "Failed to fetch transaction stats");
+      await throwApiErrorFromResponse(
+        response,
+        "Failed to fetch transaction stats"
+      );
     }
 
     return response.json() as Promise<TransactionsStatsResponse>;
@@ -227,7 +244,7 @@ export const transactionsAPI = {
 
   patchTransaction: async (
     transactionId: string,
-    payload: { spending_category?: string | null; note?: string | null },
+    payload: { spending_category?: string | null; note?: string | null }
   ): Promise<Transaction> => {
     const response = await fetch(
       `${API_BASE_URL}/transactions/${transactionId}`,
@@ -235,7 +252,7 @@ export const transactionsAPI = {
         method: "PATCH",
         headers: await getAuthHeaders(),
         body: JSON.stringify(payload),
-      },
+      }
     );
     if (!response.ok) {
       await throwApiErrorFromResponse(response, "Failed to update transaction");
@@ -244,59 +261,10 @@ export const transactionsAPI = {
   },
 };
 
-const MOCK_REIMBURSEMENTS =
-  String(import.meta.env.VITE_MOCK_REIMBURSEMENTS ?? "")
-    .toLowerCase()
-    .trim() === "true";
-
-async function mockCreateReimbursement(
-  payload: ReimbursementCreatePayload,
-): Promise<Reimbursement> {
-  // Small simulated latency so consumers see a real pending state.
-  await new Promise((resolve) => setTimeout(resolve, 250));
-
-  const roll = Math.random();
-  if (roll < 0.5) {
-    return {
-      debit_txn_id: payload.debit_txn_id,
-      credit_txn_id: payload.credit_txn_id,
-      orig_reimbursed_amount: payload.orig_reimbursed_amount,
-      orig_reimbursed_ccy: "EUR",
-      eur_reimbursed_amount: payload.orig_reimbursed_amount,
-    };
-  }
-  if (roll < 0.75) {
-    throw new ApiError({
-      status: 409,
-      message: "A reimbursement already exists between these two transactions",
-      raw: {
-        detail: "A reimbursement already exists between these two transactions",
-      },
-    });
-  }
-  const detail = [
-    {
-      loc: ["body", "orig_reimbursed_amount"],
-      msg: "Input should be greater than 0",
-      type: "greater_than",
-    },
-  ];
-  throw new ApiError({
-    status: 422,
-    message: "Failed to add reimbursement",
-    fieldErrors: normalizeFastApi422(detail),
-    raw: { detail },
-  });
-}
-
 export const reimbursementsAPI = {
   createReimbursement: async (
-    payload: ReimbursementCreatePayload,
+    payload: ReimbursementCreatePayload
   ): Promise<Reimbursement> => {
-    if (MOCK_REIMBURSEMENTS) {
-      return mockCreateReimbursement(payload);
-    }
-
     const response = await fetch(`${API_BASE_URL}/reimbursements`, {
       method: "POST",
       headers: await getAuthHeaders(),
@@ -313,7 +281,7 @@ export const reimbursementsAPI = {
 export const statementImportAPI = {
   uploadStatement: async (
     file: File,
-    statementSource: StatementSource,
+    statementSource: StatementSource
   ): Promise<ImportJobResult> => {
     const formData = new FormData();
     formData.append("statement_file", file);
@@ -341,21 +309,19 @@ export const statementImportAPI = {
     if (!response.ok) {
       await throwApiErrorFromResponse(
         response,
-        "Upload failed. Please try again.",
+        "Upload failed. Please try again."
       );
     }
     return response.json() as Promise<ImportJobResult>;
   },
 
-  getImportJobStatus: async (
-    importJobId: string,
-  ): Promise<ImportJobResult> => {
+  getImportJobStatus: async (importJobId: string): Promise<ImportJobResult> => {
     const response = await fetch(
       `${API_BASE_URL}/statement-imports/${importJobId}`,
       {
         method: "GET",
         headers: await getAuthHeaders(),
-      },
+      }
     );
     if (!response.ok) {
       await throwApiErrorFromResponse(response, "Failed to fetch job status");

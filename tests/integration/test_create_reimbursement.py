@@ -51,7 +51,9 @@ def _make_debit(db_transaction, *, user_id=TEST_USER_ID, dedup_key="debit-1", **
     return db_transaction(**defaults)
 
 
-def _make_credit(db_transaction, *, user_id=TEST_USER_ID, dedup_key="credit-1", **kwargs):
+def _make_credit(
+    db_transaction, *, user_id=TEST_USER_ID, dedup_key="credit-1", **kwargs
+):
     defaults = dict(
         user_id=user_id,
         dedup_key=dedup_key,
