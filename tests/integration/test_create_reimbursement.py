@@ -1,5 +1,7 @@
+import datetime as dt
 import uuid
 from decimal import Decimal
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -39,14 +41,14 @@ def _persist(test_db, *txns):
 
 
 def _make_debit(db_transaction, *, user_id=TEST_USER_ID, dedup_key="debit-1", **kwargs):
-    defaults = dict(
-        user_id=user_id,
-        dedup_key=dedup_key,
-        side=Side.DEBIT,
-        orig_amount=Decimal("10.00"),
-        orig_currency="EUR",
-        eur_amount=Decimal("10.00"),
-    )
+    defaults = {
+        "user_id": user_id,
+        "dedup_key": dedup_key,
+        "side": Side.DEBIT,
+        "orig_amount": Decimal("10.00"),
+        "orig_currency": "EUR",
+        "eur_amount": Decimal("10.00"),
+    }
     defaults.update(kwargs)
     return db_transaction(**defaults)
 
@@ -54,14 +56,14 @@ def _make_debit(db_transaction, *, user_id=TEST_USER_ID, dedup_key="debit-1", **
 def _make_credit(
     db_transaction, *, user_id=TEST_USER_ID, dedup_key="credit-1", **kwargs
 ):
-    defaults = dict(
-        user_id=user_id,
-        dedup_key=dedup_key,
-        side=Side.CREDIT,
-        orig_amount=Decimal("10.00"),
-        orig_currency="EUR",
-        eur_amount=Decimal("10.00"),
-    )
+    defaults = {
+        "user_id": user_id,
+        "dedup_key": dedup_key,
+        "side": Side.CREDIT,
+        "orig_amount": Decimal("10.00"),
+        "orig_currency": "EUR",
+        "eur_amount": Decimal("10.00"),
+    }
     defaults.update(kwargs)
     return db_transaction(**defaults)
 
@@ -71,14 +73,16 @@ def test_happy_path_creates_reimbursement(test_client, test_db, db_transaction):
     credit = _make_credit(db_transaction)
     _persist(test_db, debit, credit)
 
-    response = test_client.post(
-        REIMBURSEMENTS_PATH,
-        json={
-            "debit_txn_id": str(debit.id),
-            "credit_txn_id": str(credit.id),
-            "orig_reimbursed_amount": 10.0,
-        },
-    )
+    frozen_now = dt.datetime(2024, 1, 15, 12, 30, 45)
+    with patch("app.db.transactions._now", lambda: frozen_now):
+        response = test_client.post(
+            REIMBURSEMENTS_PATH,
+            json={
+                "debit_txn_id": str(debit.id),
+                "credit_txn_id": str(credit.id),
+                "orig_reimbursed_amount": 10.0,
+            },
+        )
 
     assert response.status_code == 201
     body = response.json()
@@ -88,6 +92,8 @@ def test_happy_path_creates_reimbursement(test_client, test_db, db_transaction):
         "orig_reimbursed_amount": "10.00",
         "orig_reimbursed_ccy": "EUR",
         "eur_reimbursed_amount": "10.00",
+        "created_at": frozen_now.isoformat(),
+        "updated_at": frozen_now.isoformat(),
     }
     assert "user_id" not in body
 
@@ -101,6 +107,8 @@ def test_happy_path_creates_reimbursement(test_client, test_db, db_transaction):
         assert row.orig_reimbursed_amount == Decimal("10.00")
         assert row.orig_reimbursed_ccy == "EUR"
         assert row.eur_reimbursed_amount == Decimal("10.00")
+        assert row.created_at == frozen_now
+        assert row.updated_at == frozen_now
 
 
 def test_pro_rate_math_on_non_eur_credit(test_client, test_db, db_transaction):

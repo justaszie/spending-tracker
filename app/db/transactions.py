@@ -57,6 +57,11 @@ class Transaction(SQLModel, table=True):
     user_id: uuid.UUID = Field(nullable=False, index=True)
 
 
+def _now() -> dt.datetime:
+    """Wrapper over datetime.now so tests can patch the time easily"""
+    return dt.datetime.now()
+
+
 class Reimbursement(SQLModel, table=True):
     __tablename__ = "reimbursements"
 
@@ -74,8 +79,8 @@ class Reimbursement(SQLModel, table=True):
     orig_reimbursed_amount: Decimal = Field(nullable=False)
     orig_reimbursed_ccy: str = Field(nullable=False)
     eur_reimbursed_amount: Decimal = Field(nullable=False)
-    created_at: dt.datetime = Field(nullable=False, default_factory=dt.datetime.now)
-    updated_at: dt.datetime = Field(nullable=False, default_factory=dt.datetime.now)
+    created_at: dt.datetime = Field(nullable=False, default_factory=lambda: _now())
+    updated_at: dt.datetime = Field(nullable=False, default_factory=lambda: _now())
 
 
 def insert_transactions(transactions: list[Transaction], db: Engine) -> None:
