@@ -7,9 +7,10 @@ OWN_ACCOUNT_NAMES = (
     r"^JUSTAS ZIEMINYKAS$",
     r"^TO GBP$",
     r"^TO GBP SAVINGS$",
-    r"^TO JUSTAS Å½IEMINYKAS$",
-    r"^TO JUSTAS ŽIEMINYKAS$",
-    r"^TO JUSTAS ZIEMINYKAS$",
+    r"^(TO|FROM) JUSTAS Å½IEMINYKAS$",
+    r"^(TO|FROM) JUSTAS ŽIEMINYKAS$",
+    r"^(TO|FROM) JUSTAS ZIEMINYKAS$",
+    r"^Payment From JUSTAS ZIEMINYKAS$",
     r"^TO USD$",
     r"^TO INVESTMENT ACCOUNT$",
 )

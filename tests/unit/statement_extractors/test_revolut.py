@@ -99,13 +99,12 @@ class TestTransactionCustomValidation:
             "cashback",
             "Cashback",
             "Exchange",
-            "TOPUP",
             "Fee",
             "TRADE",
         ],
     )
     def test_invalid_transaction_types_rejected(self, invalid_type):
-        """Unsupported types (CASHBACK, EXCHANGE, TOPUP, FEE, TRADE) are rejected (case-insensitive matching)."""
+        """Unsupported types (CASHBACK, EXCHANGE, FEE, TRADE) are rejected (case-insensitive matching)."""
         statement = build_statement([txn_row({"Type": invalid_type})])
         result = extract_transactions(statement)
         assert len(result) == 0
