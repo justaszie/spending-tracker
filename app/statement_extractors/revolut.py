@@ -103,11 +103,18 @@ class RawTransactionRevolut(BaseModel):
         if self.type.upper() in {
             "CASHBACK",
             "EXCHANGE",
-            "TOPUP",
             "FEE",
             "TRADE",
         }:
             raise ValueError(f"Transaction type {self.type} is not supported")
+
+        # Exclude top up transactions
+        if self.type.upper() == "TOPUP" and (
+            "top-up" in self.description.lower() or "top up" in self.description.lower()
+        ):
+            raise ValueError(
+                f"Top up transactions are excluded. Description: {self.description}"
+            )
 
         return self
 
