@@ -51,7 +51,7 @@ class Transaction(SQLModel, table=True):
     spending_category: str | None = Field(default=None)
     meal_type: str | None = Field(default=None)
     dedup_key: str = Field(nullable=False)
-    import_job_id: uuid.UUID = Field(
+    import_job_id: uuid.UUID | None = Field(
         nullable=True, default=None, foreign_key="statement_import_jobs.id"
     )
     user_id: uuid.UUID = Field(nullable=False, index=True)
@@ -203,6 +203,23 @@ def update_transaction(
         session.refresh(existing)
 
         return existing
+
+
+def insert_transaction(
+    db: Engine,
+    txn_data: Transaction,
+) -> Transaction:
+    """Persists and returns a Transaction record"""
+    with Session(db) as session:
+        try:
+            session.add(txn_data)
+            session.commit()
+            session.refresh(txn_data)
+            return txn_data
+        except Exception as e:
+            raise TransactionInsertError(
+                "Error while inserting transactions into database"
+            ) from e
 
 
 def insert_reimbursement(
