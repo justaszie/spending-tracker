@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
+import { CreateTransactionButton } from "@/components/transactions/CreateTransactionButton";
 import { useTransactions } from "@/hooks/transactions/use-transactions";
 import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogries";
 import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
@@ -98,6 +99,7 @@ export default function ReviewPage() {
             onSearchChange={handleSearchChange}
           />
         </div>
+        <CreateTransactionButton />
       </div>
 
       <TransactionsTable

@@ -9,6 +9,7 @@ import { useSpendingCategories } from "@/hooks/transactions/use-spending-cateogr
 import { useUpdateTransaction } from "@/hooks/transactions/use-update-transaction";
 import { useTransactionsStats } from "@/hooks/transactions/use-transactions-stats";
 import { TransactionSearch } from "@/components/transactions/TransactionSearch";
+import { CreateTransactionButton } from "@/components/transactions/CreateTransactionButton";
 import { UntaggedReviewBanner } from "@/components/transactions/UntaggedReviewBanner";
 import { TotalSpendCard } from "@/components/transactions/stats/TotalSpendCard";
 import { AvgDailySpendCard } from "@/components/transactions/stats/AvgDailySpendCard";
@@ -291,6 +292,7 @@ export default function TransactionsPage() {
               value={searchTerm}
               onSearchChange={handleSearchChange}
             />
+            <CreateTransactionButton />
           </div>
         </div>
 

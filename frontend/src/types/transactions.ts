@@ -1,10 +1,18 @@
 export type TransactionSide = "credit" | "debit";
-export type TransactionSource = "swedbank" | "revolut";
+export type TransactionSource = "swedbank" | "revolut" | "manual";
+
+export type TransactionType =
+  | "card_payment"
+  | "cash_withdrawal"
+  | "cash_payment"
+  | "transfer"
+  | "card_refund"
+  | "other";
 
 export type Transaction = {
   id: string;
   transaction_datetime: string;
-  type?: string;
+  type?: TransactionType;
   counterparty: string;
   orig_amount: string;
   orig_currency: string;
@@ -21,6 +29,17 @@ export type Transaction = {
 export type TransactionUpdatePayload = Partial<
   Pick<Transaction, "spending_category" | "note">
 >;
+
+export type TransactionCreatePayload = {
+  transaction_datetime: string;
+  counterparty: string;
+  orig_amount: number;
+  orig_currency: string;
+  side: TransactionSide;
+  type: TransactionType;
+  spending_category?: string | null;
+  note?: string | null;
+};
 
 export type GetTransactionsParams = {
   page?: number;
