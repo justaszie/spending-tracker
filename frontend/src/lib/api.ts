@@ -5,6 +5,7 @@ import type {
   TransactionsStatsResponse,
   TransactionsResponse,
   Transaction,
+  TransactionCreatePayload,
   ImportJobResult,
   StatementSource,
 } from "@/types/transactions";
@@ -240,6 +241,20 @@ export const transactionsAPI = {
     }
 
     return response.json() as Promise<TransactionsStatsResponse>;
+  },
+
+  createTransaction: async (
+    payload: TransactionCreatePayload
+  ): Promise<Transaction> => {
+    const response = await fetch(`${API_BASE_URL}/transactions`, {
+      method: "POST",
+      headers: await getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      await throwApiErrorFromResponse(response, "Failed to add transaction");
+    }
+    return response.json() as Promise<Transaction>;
   },
 
   patchTransaction: async (
