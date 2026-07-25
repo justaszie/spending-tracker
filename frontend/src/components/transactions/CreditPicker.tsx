@@ -44,7 +44,7 @@ export function CreditPicker({ selectedId, onSelect }: CreditPickerProps) {
   });
 
   useEffect(() => {
-    const pageTxs = query.data?.transactions;
+    const pageTxs = query.data?.transactions.map((item) => item.transaction);
     if (!pageTxs) return;
     if (page === 1) {
       setAccumulated(pageTxs);

@@ -42,10 +42,16 @@ reimbursements_router = APIRouter(prefix="/reimbursements", tags=["Reimbursement
 logger = logging.getLogger(__name__)
 
 
+class TransactionListItem(BaseModel):
+    transaction: Transaction
+    eur_total_reimbursed: Decimal
+    net_eur_amount: Decimal
+
+
 class TransactionsReadResponse(BaseModel):
     page: int
     size: int
-    transactions: list[Transaction]
+    transactions: list[TransactionListItem]
     total: int
 
 
@@ -139,7 +145,7 @@ def get_all_transactions(
     if query.spending_category:
         filters["spending_category"] = list(query.spending_category)
 
-    transactions = get_transactions(
+    transaction_rows = get_transactions(
         user_id=user_id,
         db=db,
         offset=offset,
@@ -157,6 +163,18 @@ def get_all_transactions(
         filters=filters if filters else None,
         no_category_only=query.untagged_only,
     )
+    transactions = [
+        TransactionListItem(
+            transaction=txn,
+            eur_total_reimbursed=Decimal(eur_total_reimbursed).quantize(
+                Decimal("0.01")
+            ),
+            net_eur_amount=(txn.eur_amount - Decimal(eur_total_reimbursed)).quantize(
+                Decimal("0.01")
+            ),
+        )
+        for txn, eur_total_reimbursed in transaction_rows
+    ]
     return TransactionsReadResponse(
         transactions=transactions,
         page=query.page,

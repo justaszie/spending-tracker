@@ -56,8 +56,14 @@ export type GetTransactionsParams = {
   spendingCategory?: string[];
 };
 
+export type TransactionListItem = {
+  transaction: Transaction;
+  eur_total_reimbursed: string;
+  net_eur_amount: string;
+};
+
 export type TransactionsResponse = {
-  transactions: Transaction[];
+  transactions: TransactionListItem[];
   total?: number;
   page?: number;
   size?: number;

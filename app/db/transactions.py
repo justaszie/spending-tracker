@@ -116,23 +116,40 @@ def get_transactions(
     sort_order: Literal["asc", "desc"] | None = None,
     filters: dict[str, list[Any]] | None = None,
     no_category_only: bool | None = False,
-) -> list[Transaction]:
+) -> list[tuple[Transaction, Decimal]]:
+    """Returns each transaction paired with its total reimbursed EUR amount
+    (0 when the transaction has no reimbursements)."""
     with Session(db) as session:
-        statement = _build_transactions_query(
-            user_id=user_id,
-            search=search,
-            sort_by=sort_by,
-            sort_order=sort_order,
-            filters=filters,
-            no_category_only=no_category_only,
+        reimbursements = _build_reimbursements_query(user_id).subquery()
+        statement = (
+            _build_transactions_query(
+                user_id=user_id,
+                search=search,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                filters=filters,
+                no_category_only=no_category_only,
+            )
+            .join(
+                reimbursements,
+                col(Transaction.id) == reimbursements.c.debit_txn_id,
+                isouter=True,
+            )
+            .add_columns(
+                func.coalesce(reimbursements.c.eur_reimbursed_amount, 0).label(
+                    "eur_total_reimbursed"
+                )
+            )
         )
         statement = statement.offset(offset)
 
         if limit is not None:
             statement = statement.limit(limit)
 
-        result = session.exec(statement).all()
-        return list(result)
+        # session.execute (not exec) because the statement selects a
+        # (Transaction, eur_total_reimbursed) row, not a scalar Transaction
+        result = session.execute(statement).all()
+        return [(txn, eur_total_reimbursed) for txn, eur_total_reimbursed in result]
 
 
 def get_total_count(

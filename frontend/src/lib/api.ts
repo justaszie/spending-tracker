@@ -190,10 +190,6 @@ export const transactionsAPI = {
       await throwApiErrorFromResponse(response, "Failed to fetch transactions");
     }
     const data = await response.json();
-    // Backend may return list directly or { transactions, total, page, limit }
-    if (Array.isArray(data)) {
-      return { transactions: data, total: data.length, page, size };
-    }
     return data as TransactionsResponse;
   },
 

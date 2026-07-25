@@ -1,6 +1,7 @@
 import random
 import uuid
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,6 +9,7 @@ from sqlmodel import Session
 
 from app.core.config import app_config
 from app.core.dependencies import get_authenticated_user, get_db_engine
+from app.db.transactions import Reimbursement
 from app.main import app
 
 TEST_USER_ID = uuid.UUID("e92460b8-c69a-4706-bf9c-addefd582836")
@@ -85,8 +87,14 @@ class TestGetTransactions:
         first_of_page = sorted_txns[first_idx]
         last_of_page = sorted_txns[last_idx]
 
-        assert body["transactions"][0]["dedup_key"] == first_of_page.dedup_key
-        assert body["transactions"][-1]["dedup_key"] == last_of_page.dedup_key
+        assert (
+            body["transactions"][0]["transaction"]["dedup_key"]
+            == first_of_page.dedup_key
+        )
+        assert (
+            body["transactions"][-1]["transaction"]["dedup_key"]
+            == last_of_page.dedup_key
+        )
 
     @pytest.mark.parametrize(
         ("page", "size"),
@@ -304,7 +312,9 @@ class TestGetTransactions:
         )
         assert response.status_code == 200
         body = response.json()
-        assert [t["dedup_key"] for t in body["transactions"]] == [matching.dedup_key]
+        assert [t["transaction"]["dedup_key"] for t in body["transactions"]] == [
+            matching.dedup_key
+        ]
 
         # Total should reflect all matching rows, not just the page size.
         assert body["total"] == 1
@@ -411,7 +421,9 @@ class TestGetTransactions:
         )
         assert response.status_code == 200
         body = response.json()
-        assert [t["dedup_key"] for t in body["transactions"]] == expected_dedup_keys
+        assert [
+            t["transaction"]["dedup_key"] for t in body["transactions"]
+        ] == expected_dedup_keys
 
     def test_invalid_sort_by_returns_422(self, test_client):
         response = test_client.get(
@@ -454,8 +466,10 @@ class TestGetTransactions:
         assert response.status_code == 200
         body = response.json()
         assert len(body["transactions"]) == 1
-        assert body["transactions"][0]["dedup_key"] == debit_txn.dedup_key
-        assert body["transactions"][0]["side"] == "debit"
+        assert (
+            body["transactions"][0]["transaction"]["dedup_key"] == debit_txn.dedup_key
+        )
+        assert body["transactions"][0]["transaction"]["side"] == "debit"
         assert body["total"] == 1
 
     def test_side_filter_returns_only_credit_transactions(
@@ -485,8 +499,10 @@ class TestGetTransactions:
         assert response.status_code == 200
         body = response.json()
         assert len(body["transactions"]) == 1
-        assert body["transactions"][0]["dedup_key"] == credit_txn.dedup_key
-        assert body["transactions"][0]["side"] == "credit"
+        assert (
+            body["transactions"][0]["transaction"]["dedup_key"] == credit_txn.dedup_key
+        )
+        assert body["transactions"][0]["transaction"]["side"] == "credit"
 
     def test_side_filter_multiple_values_returns_both(
         self,
@@ -515,7 +531,7 @@ class TestGetTransactions:
         assert response.status_code == 200
         body = response.json()
         assert len(body["transactions"]) == 2
-        dedup_keys = {t["dedup_key"] for t in body["transactions"]}
+        dedup_keys = {t["transaction"]["dedup_key"] for t in body["transactions"]}
         assert dedup_keys == {debit_txn.dedup_key, credit_txn.dedup_key}
 
     def test_spending_category_filter_returns_only_matching(
@@ -545,8 +561,13 @@ class TestGetTransactions:
         assert response.status_code == 200
         body = response.json()
         assert len(body["transactions"]) == 1
-        assert body["transactions"][0]["dedup_key"] == groceries_txn.dedup_key
-        assert body["transactions"][0]["spending_category"] == "GROCERIES"
+        assert (
+            body["transactions"][0]["transaction"]["dedup_key"]
+            == groceries_txn.dedup_key
+        )
+        assert (
+            body["transactions"][0]["transaction"]["spending_category"] == "GROCERIES"
+        )
         assert body["total"] == 1
 
     def test_untagged_only_returns_only_null_spending_category(
@@ -576,8 +597,11 @@ class TestGetTransactions:
         assert response.status_code == 200
         body = response.json()
         assert len(body["transactions"]) == 1
-        assert body["transactions"][0]["dedup_key"] == untagged_txn.dedup_key
-        assert body["transactions"][0]["spending_category"] is None
+        assert (
+            body["transactions"][0]["transaction"]["dedup_key"]
+            == untagged_txn.dedup_key
+        )
+        assert body["transactions"][0]["transaction"]["spending_category"] is None
 
     def test_untagged_only_with_side_filter(
         self,
@@ -615,9 +639,12 @@ class TestGetTransactions:
         assert response.status_code == 200
         body = response.json()
         assert len(body["transactions"]) == 1
-        assert body["transactions"][0]["dedup_key"] == debit_untagged.dedup_key
-        assert body["transactions"][0]["side"] == "debit"
-        assert body["transactions"][0]["spending_category"] is None
+        assert (
+            body["transactions"][0]["transaction"]["dedup_key"]
+            == debit_untagged.dedup_key
+        )
+        assert body["transactions"][0]["transaction"]["side"] == "debit"
+        assert body["transactions"][0]["transaction"]["spending_category"] is None
 
     def test_untagged_only_returns_empty_when_all_tagged(
         self,
@@ -641,6 +668,118 @@ class TestGetTransactions:
         assert response.status_code == 200
         body = response.json()
         assert body["transactions"] == []
+
+    def test_reimbursed_and_net_amounts_sum_multiple_reimbursements(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        debit = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="debit-reimbursed",
+            side="debit",
+            eur_amount=Decimal("50.00"),
+        )
+        plain_debit = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="debit-plain",
+            side="debit",
+            eur_amount=Decimal("20.00"),
+        )
+        credit_1 = db_transaction(
+            user_id=TEST_USER_ID, dedup_key="credit-1", side="credit"
+        )
+        credit_2 = db_transaction(
+            user_id=TEST_USER_ID, dedup_key="credit-2", side="credit"
+        )
+
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([debit, plain_debit, credit_1, credit_2])
+            session.commit()
+            session.add_all(
+                [
+                    Reimbursement(
+                        debit_txn_id=debit.id,
+                        credit_txn_id=credit_1.id,
+                        user_id=TEST_USER_ID,
+                        orig_reimbursed_amount=Decimal("10.00"),
+                        orig_reimbursed_ccy="EUR",
+                        eur_reimbursed_amount=Decimal("10.00"),
+                    ),
+                    Reimbursement(
+                        debit_txn_id=debit.id,
+                        credit_txn_id=credit_2.id,
+                        user_id=TEST_USER_ID,
+                        orig_reimbursed_amount=Decimal("5.50"),
+                        orig_reimbursed_ccy="EUR",
+                        eur_reimbursed_amount=Decimal("5.50"),
+                    ),
+                ]
+            )
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH, params={"page": 1, "size": 50}
+        )
+        assert response.status_code == 200
+        body = response.json()
+
+        by_dedup_key = {
+            item["transaction"]["dedup_key"]: item for item in body["transactions"]
+        }
+
+        reimbursed_item = by_dedup_key["debit-reimbursed"]
+        assert reimbursed_item["eur_total_reimbursed"] == "15.50"
+        assert reimbursed_item["net_eur_amount"] == "34.50"
+
+        plain_item = by_dedup_key["debit-plain"]
+        assert plain_item["eur_total_reimbursed"] == "0.00"
+        assert plain_item["net_eur_amount"] == "20.00"
+
+    def test_reimbursements_of_other_users_are_excluded(
+        self,
+        test_client,
+        test_db,
+        db_transaction,
+    ):
+        other_user_id = uuid.uuid4()
+        debit = db_transaction(
+            user_id=TEST_USER_ID,
+            dedup_key="debit-1",
+            side="debit",
+            eur_amount=Decimal("50.00"),
+        )
+        credit = db_transaction(
+            user_id=TEST_USER_ID, dedup_key="credit-1", side="credit"
+        )
+
+        with Session(test_db, expire_on_commit=False) as session:
+            session.add_all([debit, credit])
+            session.commit()
+            session.add(
+                Reimbursement(
+                    debit_txn_id=debit.id,
+                    credit_txn_id=credit.id,
+                    user_id=other_user_id,
+                    orig_reimbursed_amount=Decimal("10.00"),
+                    orig_reimbursed_ccy="EUR",
+                    eur_reimbursed_amount=Decimal("10.00"),
+                )
+            )
+            session.commit()
+
+        response = test_client.get(
+            self.TRANSACTIONS_API_PATH, params={"page": 1, "size": 50}
+        )
+        assert response.status_code == 200
+        body = response.json()
+
+        by_dedup_key = {
+            item["transaction"]["dedup_key"]: item for item in body["transactions"]
+        }
+        assert by_dedup_key["debit-1"]["eur_total_reimbursed"] == "0.00"
+        assert by_dedup_key["debit-1"]["net_eur_amount"] == "50.00"
 
 
 class TestGetSingleTransaction:
