@@ -21,11 +21,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowDown, ArrowUp, MoreHorizontal, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, MoreHorizontal, Pencil, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { CategorySelector } from "@/components/transactions/CategorySelector";
 import { ReimbursementModal } from "@/components/transactions/ReimbursementModal";
-import { Transaction, TransactionUpdatePayload } from "@/types/transactions";
+import {
+  Transaction,
+  TransactionListItem,
+  TransactionUpdatePayload,
+} from "@/types/transactions";
 
 // Helper for formatting currency
 const formatCurrency = (amount: number, currency: string = "EUR") => {
@@ -38,7 +43,7 @@ const formatCurrency = (amount: number, currency: string = "EUR") => {
 export type SortableField = "date" | "counterparty" | "amount" | "category";
 
 export type TransactionsTableProps = {
-  transactions: Transaction[];
+  transactions: TransactionListItem[];
   totalCount: number;
   spendingCategories: string[];
   onUpdateTransaction: (id: string, updates: TransactionUpdatePayload) => void;
@@ -158,13 +163,15 @@ export function TransactionsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactions.map((t) => (
+          {transactions.map((item) => (
             <TransactionRow
-              key={t.id}
-              transaction={t}
+              key={item.transaction.id}
+              item={item}
               spendingCategories={spendingCategories}
-              onUpdate={(updates) => onUpdateTransaction(t.id, updates)}
-              onAddReimbursement={() => setSelectedDebit(t)}
+              onUpdate={(updates) =>
+                onUpdateTransaction(item.transaction.id, updates)
+              }
+              onAddReimbursement={() => setSelectedDebit(item.transaction)}
             />
           ))}
           {transactions.length === 0 && (
@@ -225,16 +232,18 @@ function SortableHeader({
 }
 
 function TransactionRow({
-  transaction,
+  item,
   spendingCategories,
   onUpdate,
   onAddReimbursement,
 }: {
-  transaction: Transaction;
+  item: TransactionListItem;
   spendingCategories: string[];
   onUpdate: (updates: TransactionUpdatePayload) => void;
   onAddReimbursement: () => void;
 }) {
+  const transaction = item.transaction;
+  const reimbursedAmount = Number(item.eur_total_reimbursed);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteTemp, setNoteTemp] = useState(transaction.note || "");
 
@@ -255,16 +264,28 @@ function TransactionRow({
         <div className="font-medium text-sm">{transaction.counterparty}</div>
       </TableCell>
       <TableCell>
-        <div
-          className={cn(
-            "font-mono font-medium",
-            transaction.side === "credit"
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "",
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            className={cn(
+              "font-mono font-medium",
+              transaction.side === "credit"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "",
+            )}
+          >
+            {transaction.side === "debit" ? "-" : "+"}
+            {formatCurrency(Number(item.net_eur_amount))}
+          </div>
+          {reimbursedAmount > 0 && (
+            <Badge
+              variant="secondary"
+              className="gap-1 font-mono text-[10px] font-medium text-emerald-700 dark:text-emerald-400"
+              title={`${formatCurrency(reimbursedAmount)} reimbursed of ${formatCurrency(Number(transaction.eur_amount))} total`}
+            >
+              <Undo2 className="h-3 w-3" />
+              {formatCurrency(reimbursedAmount)}
+            </Badge>
           )}
-        >
-          {transaction.side === "debit" ? "-" : "+"}
-          {formatCurrency(Number(transaction.eur_amount))}
         </div>
       </TableCell>
       <TableCell>
