@@ -240,6 +240,20 @@ def monthly_software_subscriptions(
     return None
 
 
+def car_rentals(
+    transaction: ImportableTransaction,
+) -> CategoryData | None:
+    counterparty = transaction.counterparty.lower().strip()
+    if "citybee" in counterparty or (
+        "bolt" in counterparty
+        and transaction.eur_amount > 2
+        and transaction.eur_amount < 8
+    ):
+        return {"spending_category": "TRANSPORT_CITY", "note": "Car rental"}
+
+    return None
+
+
 # For now, the list of specific categorization rules is setup manually
 CATEGORY_RULES: list[CategoryRuleFunction] = [
     streaming_services,
@@ -251,6 +265,7 @@ CATEGORY_RULES: list[CategoryRuleFunction] = [
     shopping_other,
     gym_membership,
     monthly_software_subscriptions,
+    car_rentals,
 ]
 
 
