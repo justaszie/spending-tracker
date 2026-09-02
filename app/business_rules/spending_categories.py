@@ -265,6 +265,7 @@ CATEGORY_RULES: list[CategoryRuleFunction] = [
     shopping_other,
     gym_membership,
     monthly_software_subscriptions,
+    car_rentals,
 ]
 
 
