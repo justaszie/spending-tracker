@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 
 from app.business_rules.spending_categories import (
+    car_rentals,
     eating_out,
     food_delivery,
     groceries,
@@ -320,5 +321,62 @@ class TestMonthlySoftwareSubscriptions:
     def test_no_match(self, importable_transaction):
         transaction = importable_transaction(counterparty="Maxima")
         result = monthly_software_subscriptions(transaction)
+
+        assert result is None
+
+
+class TestCarRentals:
+    @pytest.mark.parametrize(
+        "counterparty",
+        [
+            "citybee",  # Lowercase
+            "CityBee",  # Mixed case
+            "CITYBEE LT",
+        ],
+    )
+    def test_citybee_matches_any_amount(self, importable_transaction, counterparty):
+        amount_outside_bolt_range = Decimal("25.00")
+        transaction = importable_transaction(
+            counterparty=counterparty, eur_amount=amount_outside_bolt_range
+        )
+        result = car_rentals(transaction)
+
+        assert result is not None
+        assert result["spending_category"] == "TRANSPORT_CITY"
+        assert result["note"] == "Car rental"
+
+    @pytest.mark.parametrize(
+        "eur_amount",
+        [Decimal("2.01"), Decimal("5.00"), Decimal("7.99")],
+    )
+    def test_bolt_eligible_amount_matches(self, importable_transaction, eur_amount):
+        transaction = importable_transaction(counterparty="Bolt", eur_amount=eur_amount)
+        result = car_rentals(transaction)
+
+        assert result is not None
+        assert result["spending_category"] == "TRANSPORT_CITY"
+        assert result["note"] == "Car rental"
+
+    @pytest.mark.parametrize(
+        "eur_amount",
+        [
+            Decimal("2.00"),  # Lower bound is exclusive
+            Decimal("1.50"),
+            Decimal("8.00"),  # Upper bound is exclusive
+            Decimal("12.00"),
+        ],
+    )
+    # E.g. bolt taxi will be likely higher.
+    def test_bolt_amount_out_of_range(self, importable_transaction, eur_amount):
+        transaction = importable_transaction(counterparty="Bolt", eur_amount=eur_amount)
+        result = car_rentals(transaction)
+
+        assert result is None
+
+    def test_no_counterparty_match(self, importable_transaction):
+        transaction = importable_transaction(
+            counterparty="Maxima", eur_amount=Decimal("5.00")
+        )
+        result = car_rentals(transaction)
 
         assert result is None
