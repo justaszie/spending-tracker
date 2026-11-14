@@ -1,6 +1,7 @@
 export const STANDARD_CATEGORY_LABELS: Record<string, string> = {
   BEAUTY_PRODUCTS: "Beauty products",
   CAFE_SNACKS: "Cafe & snacks",
+  CAR_MAINTENANCE: "Car maintenance",
   CONFERENCES: "Conferences",
   DRINKS: "Drinks",
   EATING_OUT: "Eating out",
@@ -40,5 +41,13 @@ export function getCategoryLabel(code: string): string {
     return "";
   }
 
-  return STANDARD_CATEGORY_LABELS[trimmed] ?? (trimmed[0].toUpperCase() + trimmed.toLowerCase().slice(1));
+  const standardLabel = STANDARD_CATEGORY_LABELS[trimmed.toUpperCase()];
+  if (standardLabel) {
+    return standardLabel;
+  }
+
+  // Categories without an explicit label (e.g. user-created ones):
+  // "car_maintenance" -> "Car maintenance"
+  const words = trimmed.replace(/[_\s]+/g, " ").trim().toLowerCase();
+  return words ? words[0].toUpperCase() + words.slice(1) : trimmed;
 }
